@@ -484,22 +484,24 @@ describe('DispatchService — Delivery Status Transitions', () => {
   it('recordDelivery transitions a delivery to delivered status', async () => {
     const deliveredAt = new Date('2026-03-28T14:00:00Z');
 
-    mockUpdateWhere.mockReturnValue({
-      returning: vi.fn(() => [
-        { id: 'del-1', status: 'delivered', deliveredAt },
-      ]),
+    // Mock the full update chain for this specific call
+    mockUpdate.mockReturnValueOnce({
+      set: vi.fn((setData: any) => {
+        expect(setData).toEqual({ status: 'delivered', deliveredAt });
+        return {
+          where: vi.fn(() => ({
+            returning: vi.fn(() => [
+              { id: 'del-1', status: 'delivered', deliveredAt },
+            ]),
+          })),
+        };
+      }),
     });
 
     const result = await dispatchService.recordDelivery('del-1', deliveredAt);
     expect(result).not.toBeNull();
     expect(result.status).toBe('delivered');
     expect(result.deliveredAt).toEqual(deliveredAt);
-
-    // Verify the update set the correct fields
-    expect(mockUpdateSet).toHaveBeenCalledWith({
-      status: 'delivered',
-      deliveredAt,
-    });
   });
 
   it('assignDeliveries transitions deliveries from pending to assigned', async () => {
