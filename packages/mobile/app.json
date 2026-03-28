@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "SafeCare Driver",
+    "slug": "safecare-driver",
+    "scheme": "safecare",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#1A6B3C"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "org.safecare.driver"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1A6B3C"
+      },
+      "package": "org.safecare.driver"
+    },
+    "plugins": ["expo-router", "expo-secure-store"]
+  }
+}
