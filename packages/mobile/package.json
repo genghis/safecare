@@ -7,7 +7,8 @@
     "dev": "expo start",
     "build:ios": "eas build --platform ios",
     "build:android": "eas build --platform android",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@safecare/shared": "workspace:*",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^3.1.0"
   }
 }
