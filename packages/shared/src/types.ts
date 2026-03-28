@@ -39,7 +39,7 @@ export interface Recipient {
   createdAt: Date;
 }
 
-export type VehicleSize = 'sedan' | 'suv' | 'minivan' | 'truck' | 'van';
+export type VehicleSize = 'compact' | 'sedan' | 'suv' | 'minivan' | 'truck';
 
 export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 

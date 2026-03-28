@@ -49,11 +49,11 @@ export const VEHICLE_SIZES: Record<
   string,
   { label: string; defaultMaxDeliveries: number; description: string }
 > = {
-  sedan: { label: 'Sedan', defaultMaxDeliveries: 5, description: 'Standard car — trunk only' },
-  suv: { label: 'SUV', defaultMaxDeliveries: 8, description: 'SUV or crossover — folding rear seats' },
-  minivan: { label: 'Minivan', defaultMaxDeliveries: 12, description: 'Minivan — large cargo area' },
-  truck: { label: 'Pickup Truck', defaultMaxDeliveries: 15, description: 'Pickup with bed or cap' },
-  van: { label: 'Cargo Van', defaultMaxDeliveries: 25, description: 'Full cargo van or sprinter' },
+  compact: { label: 'Compact / Hatchback', defaultMaxDeliveries: 2, description: 'Small car — a couple bags in the back seat' },
+  sedan: { label: 'Sedan', defaultMaxDeliveries: 3, description: 'Standard car — trunk fits a few boxes' },
+  suv: { label: 'SUV / Crossover', defaultMaxDeliveries: 5, description: 'SUV — folding rear seats for more room' },
+  minivan: { label: 'Minivan', defaultMaxDeliveries: 7, description: 'Minivan — can load up the back' },
+  truck: { label: 'Pickup Truck / Van', defaultMaxDeliveries: 10, description: 'Truck bed or cargo van — the big runs' },
 };
 
 /** Days of week with labels */

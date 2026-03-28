@@ -56,7 +56,7 @@ export class DriverService {
           : null,
         vehicleSize: data.vehicleSize ?? 'sedan',
         vehicleModel: data.vehicleModel,
-        maxDeliveries: data.maxDeliveries ?? 5,
+        maxDeliveries: data.maxDeliveries ?? 3,
         languages: data.languages,
         availability: JSON.stringify(data.availability ?? []),
         deliveryZoneIds: data.deliveryZoneIds ?? [],

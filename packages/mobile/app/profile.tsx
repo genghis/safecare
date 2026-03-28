@@ -14,11 +14,11 @@ const VEHICLE_SIZES: Record<
   string,
   { label: string; defaultMaxDeliveries: number }
 > = {
-  sedan: { label: "Sedan", defaultMaxDeliveries: 5 },
-  suv: { label: "SUV", defaultMaxDeliveries: 8 },
-  minivan: { label: "Minivan", defaultMaxDeliveries: 12 },
-  truck: { label: "Pickup Truck", defaultMaxDeliveries: 15 },
-  van: { label: "Cargo Van", defaultMaxDeliveries: 25 },
+  compact: { label: "Compact / Hatchback", defaultMaxDeliveries: 2 },
+  sedan: { label: "Sedan", defaultMaxDeliveries: 3 },
+  suv: { label: "SUV / Crossover", defaultMaxDeliveries: 5 },
+  minivan: { label: "Minivan", defaultMaxDeliveries: 7 },
+  truck: { label: "Pickup / Van", defaultMaxDeliveries: 10 },
 };
 
 const DAYS_OF_WEEK = [
@@ -60,7 +60,7 @@ export default function ProfileScreen() {
 
   // Vehicle state
   const [vehicleSize, setVehicleSize] = useState<string>("sedan");
-  const [maxDeliveries, setMaxDeliveries] = useState(5);
+  const [maxDeliveries, setMaxDeliveries] = useState(3);
 
   // Availability state
   const [selectedDays, setSelectedDays] = useState<Set<string>>(new Set());

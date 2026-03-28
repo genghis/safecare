@@ -31,7 +31,7 @@ const DayOfWeekEnum = z.enum([
 
 const updateProfileSchema = z.object({
   vehicleSize: z
-    .enum(['sedan', 'suv', 'minivan', 'truck', 'van'])
+    .enum(['compact', 'sedan', 'suv', 'minivan', 'truck'])
     .optional(),
   vehicleModel: z.string().optional(),
   maxDeliveries: z.number().int().positive().optional(),

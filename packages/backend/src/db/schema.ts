@@ -56,7 +56,7 @@ export const drivers = pgTable('drivers', {
   vettedStatus: text('vetted_status').default('pending'),
   vehicleSize: text('vehicle_size').default('sedan'),
   vehicleModel: text('vehicle_model'),
-  maxDeliveries: integer('max_deliveries').default(5),
+  maxDeliveries: integer('max_deliveries').default(3),
   languages: text('languages').array(),
   availability: jsonb('availability').default([]),  // AvailabilitySlot[]
   deliveryZoneIds: text('delivery_zone_ids').array().default([]),

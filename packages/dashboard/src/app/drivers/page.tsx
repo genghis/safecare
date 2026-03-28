@@ -51,11 +51,11 @@ interface Driver {
 // ---------------------------------------------------------------------------
 
 const VEHICLE_SIZE_LABELS: Record<string, { label: string; max: number }> = {
-  sedan: { label: "Sedan", max: 5 },
-  suv: { label: "SUV", max: 8 },
-  minivan: { label: "Minivan", max: 12 },
-  truck: { label: "Pickup Truck", max: 15 },
-  van: { label: "Cargo Van", max: 25 },
+  compact: { label: "Compact / Hatchback", max: 2 },
+  sedan: { label: "Sedan", max: 3 },
+  suv: { label: "SUV / Crossover", max: 5 },
+  minivan: { label: "Minivan", max: 7 },
+  truck: { label: "Pickup / Van", max: 10 },
 };
 
 const DAYS_OF_WEEK = [
