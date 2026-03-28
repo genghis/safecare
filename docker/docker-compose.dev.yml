@@ -1,5 +1,3 @@
-version: "3.8"
-
 # Development override — only infrastructure services.
 # Run with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 # Backend and dashboard are run locally via `pnpm dev`.
@@ -12,6 +10,10 @@ services:
   redis:
     ports:
       - "6379:6379"
+
+  nominatim:
+    ports:
+      - "8080:8080"
 
   # Disable application containers in dev mode
   backend:

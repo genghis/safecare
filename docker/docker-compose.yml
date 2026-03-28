@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -43,6 +41,55 @@ services:
       retries: 5
       start_period: 5s
 
+  # ---------------------------------------------------------------------------
+  # Self-hosted geocoding (Nominatim with OpenStreetMap data)
+  #
+  # Default region: US Midwest (~2GB disk, ~1.5GB RAM after import)
+  #
+  # To change the region, update PBF_URL and REPLICATION_URL below.
+  # Regional extracts are available at: https://download.geofabrik.de/
+  #
+  # Examples:
+  #   US Midwest:    https://download.geofabrik.de/north-america/us-midwest-latest.osm.pbf
+  #   US South:      https://download.geofabrik.de/north-america/us-south-latest.osm.pbf
+  #   US Northeast:  https://download.geofabrik.de/north-america/us-northeast-latest.osm.pbf
+  #   US West:       https://download.geofabrik.de/north-america/us-west-latest.osm.pbf
+  #   Full US:       https://download.geofabrik.de/north-america/us-latest.osm.pbf (~10GB RAM)
+  #   Single state:  https://download.geofabrik.de/north-america/us/illinois-latest.osm.pbf
+  #
+  # IMPORTANT: If you change the region, delete the nominatim volume first:
+  #   docker compose down && docker volume rm docker_nominatimdata
+  #   docker compose up -d
+  #
+  # First start takes 15-60 min (downloads + imports OSM data). Subsequent
+  # starts are fast. On Raspberry Pi, first import may take 1-2 hours.
+  # ---------------------------------------------------------------------------
+  nominatim:
+    image: mediagis/nominatim:4.4
+    container_name: safecare-nominatim
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PBF_URL: https://download.geofabrik.de/north-america/us-midwest-latest.osm.pbf
+      REPLICATION_URL: https://download.geofabrik.de/north-america/us-midwest-updates/
+      NOMINATIM_PASSWORD: safecare
+      # Low-memory settings for RPi / 8GB machines
+      POSTGRES_SHARED_BUFFERS: 256MB
+      POSTGRES_WORK_MEM: 16MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 1GB
+      POSTGRES_MAINTENANCE_WORK_MEM: 256MB
+      THREADS: 2
+    volumes:
+      - nominatimdata:/var/lib/postgresql/14/main
+    shm_size: 1g
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s  # import takes a while on first start
+
   backend:
     build:
       context: ../
@@ -61,6 +108,7 @@ services:
     environment:
       DATABASE_URL: postgres://safecare:safecare@postgres:5432/safecare
       REDIS_URL: redis://redis:6379
+      GEOCODING_URL: http://nominatim:8080
 
   dashboard:
     build:
@@ -83,4 +131,6 @@ volumes:
   pgdata:
     driver: local
   redisdata:
+    driver: local
+  nominatimdata:
     driver: local
