@@ -382,7 +382,12 @@ describe('DispatchService — Download Token Security', () => {
         leftJoin: vi.fn(() => ({ where: vi.fn(() => []) })),
       });
 
-      mockReturning.mockReturnValueOnce([newCheckIn]);
+      // Mock insert chain to return the new check-in
+      mockInsert.mockReturnValueOnce({
+        values: vi.fn(() => ({
+          returning: vi.fn(() => [newCheckIn]),
+        })),
+      });
 
       const result = await dispatchService.driverCheckIn('driver-B', 'session-2');
       expect(result).toEqual(newCheckIn);
