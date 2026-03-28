@@ -53,8 +53,8 @@ export default function DeliveriesPage() {
   useEffect(() => {
     async function fetchData() {
       const [deliveriesRes, driversRes] = await Promise.all([
-        apiGet<Delivery[]>("/api/admin/deliveries"),
-        apiGet<Driver[]>("/api/admin/drivers"),
+        apiGet<Delivery[]>("/api/deliveries"),
+        apiGet<Driver[]>("/api/drivers"),
       ]);
 
       if (deliveriesRes.ok && Array.isArray(deliveriesRes.data)) {
@@ -71,7 +71,7 @@ export default function DeliveriesPage() {
   async function handleAssign(deliveryId: string) {
     if (!selectedDriverId) return;
 
-    const res = await apiPost(`/api/admin/deliveries/${deliveryId}/assign`, {
+    const res = await apiPost(`/api/deliveries/${deliveryId}/assign`, {
       driverId: selectedDriverId,
     });
 

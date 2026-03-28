@@ -75,7 +75,9 @@ services:
     env_file:
       - ../.env
     environment:
-      NEXT_PUBLIC_API_URL: http://backend:3001
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      PORT: 3000
+      HOSTNAME: "0.0.0.0"
 
 volumes:
   pgdata:

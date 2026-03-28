@@ -1,9 +1,9 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { dispatchService } from '../services/dispatch.service.js';
-import { eq } from 'drizzle-orm';
+import { eq, ne, desc } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { driverCheckIns } from '../db/schema.js';
+import { driverCheckIns, dispatchSessions, deliveries } from '../db/schema.js';
 
 const createSessionSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -57,22 +57,44 @@ export default async function dispatchRoutes(fastify: FastifyInstance) {
 
   /**
    * GET /api/dispatch/sessions/active
-   * Get the current active dispatch session (admin only).
+   * Get the latest non-completed dispatch session with check-ins and deliveries.
    */
   fastify.get(
     '/api/dispatch/sessions/active',
     { preHandler: [fastify.requireAdmin] },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const session = await dispatchService.getActiveSession();
+      // Find the latest session that is not 'completed'
+      const sessions = await db
+        .select()
+        .from(dispatchSessions)
+        .where(ne(dispatchSessions.status, 'completed'))
+        .orderBy(desc(dispatchSessions.createdAt))
+        .limit(1);
+
+      const session = sessions[0] ?? null;
 
       if (!session) {
-        return reply.code(404).send({
-          success: false,
-          error: 'No active dispatch session',
+        return reply.send({
+          success: true,
+          data: { session: null, checkIns: [], deliveries: [] },
         });
       }
 
-      return reply.send({ success: true, data: session });
+      // Fetch check-ins and deliveries for this session
+      const checkIns = await db
+        .select()
+        .from(driverCheckIns)
+        .where(eq(driverCheckIns.dispatchSessionId, session.id));
+
+      const sessionDeliveries = await db
+        .select()
+        .from(deliveries)
+        .where(eq(deliveries.dispatchSessionId, session.id));
+
+      return reply.send({
+        success: true,
+        data: { session, checkIns, deliveries: sessionDeliveries },
+      });
     },
   );
 
@@ -83,11 +105,8 @@ export default async function dispatchRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/api/dispatch/sessions/:id',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
       const session = await dispatchService.getSession(id);
 
       if (!session) {
@@ -108,11 +127,8 @@ export default async function dispatchRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/api/dispatch/sessions/:id/assign',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
       const parsed = assignDeliveriesSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.code(400).send({
@@ -141,11 +157,8 @@ export default async function dispatchRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/api/dispatch/sessions/:id/release',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
       const parsed = releaseRoutesSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.code(400).send({
@@ -174,11 +187,8 @@ export default async function dispatchRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/api/dispatch/sessions/:id/check-ins',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
 
       const checkIns = await db
         .select()

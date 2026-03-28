@@ -44,11 +44,8 @@ export default async function recipientRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/api/recipients/:id',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
       const recipient = await recipientService.findById(id);
 
       if (!recipient) {

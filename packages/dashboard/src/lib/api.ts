@@ -60,8 +60,11 @@ export async function api<T = unknown>(
       };
     }
 
+    // Backend wraps responses in { success, data }. Unwrap if present.
+    const unwrapped = data?.data !== undefined ? data.data : data;
+
     return {
-      data: data as T,
+      data: unwrapped as T,
       ok: true,
       status: response.status,
     };

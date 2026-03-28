@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
+
+const ZoneMap = dynamic(() => import("@/components/zone-map"), { ssr: false });
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,16 +65,12 @@ export default function ZonesPage() {
   const [formActive, setFormActive] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Point input
-  const [pointLat, setPointLat] = useState("");
-  const [pointLng, setPointLng] = useState("");
-
   const [saving, setSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Fetch zones
   const fetchZones = useCallback(async () => {
-    const res = await apiGet<Zone[]>("/api/admin/zones");
+    const res = await apiGet<Zone[]>("/api/zones");
     if (res.ok && Array.isArray(res.data)) {
       setZones(res.data);
     }
@@ -93,8 +92,6 @@ export default function ZonesPage() {
     setFormColor(PRESET_COLORS[0].value);
     setFormPoints([]);
     setFormActive(true);
-    setPointLat("");
-    setPointLng("");
   }
 
   function startCreate() {
@@ -109,17 +106,10 @@ export default function ZonesPage() {
     setFormColor(zone.color);
     setFormPoints([...zone.polygon]);
     setFormActive(zone.active);
-    setPointLat("");
-    setPointLng("");
   }
 
-  function handleAddPoint() {
-    const lat = parseFloat(pointLat);
-    const lng = parseFloat(pointLng);
-    if (isNaN(lat) || isNaN(lng)) return;
+  function handleAddPoint(lat: number, lng: number) {
     setFormPoints((prev) => [...prev, { lat, lng }]);
-    setPointLat("");
-    setPointLng("");
   }
 
   function handleRemovePoint(index: number) {
@@ -142,14 +132,14 @@ export default function ZonesPage() {
     };
 
     if (isCreating) {
-      const res = await apiPost<Zone>("/api/admin/zones", body);
+      const res = await apiPost<Zone>("/api/zones", body);
       if (res.ok) {
         await fetchZones();
         resetForm();
       }
     } else if (editingZoneId) {
       const res = await apiPut<Zone>(
-        `/api/admin/zones/${editingZoneId}`,
+        `/api/zones/${editingZoneId}`,
         body
       );
       if (res.ok) {
@@ -161,7 +151,7 @@ export default function ZonesPage() {
   }
 
   async function handleDelete(zoneId: string) {
-    const res = await apiDelete(`/api/admin/zones/${zoneId}`);
+    const res = await apiDelete(`/api/zones/${zoneId}`);
     if (res.ok) {
       await fetchZones();
       if (editingZoneId === zoneId) resetForm();
@@ -170,7 +160,7 @@ export default function ZonesPage() {
   }
 
   async function handleToggleActive(zone: Zone) {
-    const res = await apiPut<Zone>(`/api/admin/zones/${zone.id}`, {
+    const res = await apiPut<Zone>(`/api/zones/${zone.id}`, {
       ...zone,
       active: !zone.active,
     });
@@ -334,55 +324,20 @@ export default function ZonesPage() {
                   </span>
                 </div>
 
-                {/* Polygon points */}
+                {/* Zone map */}
                 <div className="space-y-3">
                   <label className="text-sm font-medium">
-                    Polygon Coordinates
+                    Zone Boundary
                   </label>
-                  <p className="text-xs text-muted-foreground">
-                    Map-based zone drawing coming in Phase 2. For now, enter
-                    polygon coordinates manually or paste from a mapping tool.
-                  </p>
+                  <ZoneMap
+                    zones={zones.filter((z) => z.id !== editingZoneId)}
+                    editingPoints={formPoints}
+                    editingColor={formColor}
+                    onAddPoint={handleAddPoint}
+                    onUpdatePoints={setFormPoints}
+                  />
 
-                  {/* Point input */}
-                  <div className="flex items-end gap-2">
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">
-                        Latitude
-                      </label>
-                      <Input
-                        type="number"
-                        step="any"
-                        value={pointLat}
-                        onChange={(e) => setPointLat(e.target.value)}
-                        placeholder="e.g., 40.7128"
-                        className="w-36"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">
-                        Longitude
-                      </label>
-                      <Input
-                        type="number"
-                        step="any"
-                        value={pointLng}
-                        onChange={(e) => setPointLng(e.target.value)}
-                        placeholder="e.g., -74.0060"
-                        className="w-36"
-                      />
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleAddPoint}
-                      disabled={!pointLat || !pointLng}
-                    >
-                      Add Point
-                    </Button>
-                  </div>
-
-                  {/* Points list */}
+                  {/* Read-only points table */}
                   {formPoints.length > 0 && (
                     <div className="rounded-md border">
                       <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-x-4 px-3 py-2 border-b text-xs font-medium text-muted-foreground">
@@ -434,8 +389,8 @@ export default function ZonesPage() {
 
                   {formPoints.length === 0 && (
                     <p className="text-xs text-muted-foreground italic">
-                      No points added yet. Add at least 3 points to define a
-                      polygon.
+                      No points added yet. Click on the map to add at least 3
+                      points to define a polygon.
                     </p>
                   )}
                 </div>

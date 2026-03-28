@@ -22,4 +22,5 @@ export const config = {
   PORT: parseInt(process.env.PORT ?? '3001', 10),
   HOST: process.env.HOST ?? '0.0.0.0',
   NODE_ENV: process.env.NODE_ENV ?? 'development',
+  GEOCODING_URL: process.env.GEOCODING_URL ?? 'https://nominatim.openstreetmap.org',
 } as const;

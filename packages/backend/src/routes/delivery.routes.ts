@@ -12,6 +12,10 @@ const createDeliverySchema = z.object({
   notes: z.string().optional(),
 });
 
+const assignDriverSchema = z.object({
+  driverId: z.string().uuid(),
+});
+
 const statusFilterSchema = z.object({
   status: z
     .enum([
@@ -131,17 +135,55 @@ export default async function deliveryRoutes(fastify: FastifyInstance) {
   );
 
   /**
+   * POST /api/deliveries/:id/assign
+   * Assign a driver to a delivery (admin only).
+   */
+  fastify.post(
+    '/api/deliveries/:id/assign',
+    { preHandler: [fastify.requireAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
+      const parsed = assignDriverSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid request body',
+          details: parsed.error.issues,
+        });
+      }
+
+      const result = await db
+        .update(deliveries)
+        .set({
+          driverId: parsed.data.driverId,
+          status: 'assigned',
+        })
+        .where(eq(deliveries.id, id))
+        .returning({ id: deliveries.id, driverId: deliveries.driverId, status: deliveries.status });
+
+      if (result.length === 0) {
+        return reply.code(404).send({
+          success: false,
+          error: 'Delivery not found',
+        });
+      }
+
+      return reply.send({
+        success: true,
+        data: result[0],
+      });
+    },
+  );
+
+  /**
    * PATCH /api/deliveries/:id/acknowledge
    * Mark a delivery as acknowledged (by recipient).
    * No auth required - typically triggered via SMS/webhook callback.
    */
   fastify.patch(
     '/api/deliveries/:id/acknowledge',
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
 
       const result = await db
         .update(deliveries)

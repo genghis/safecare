@@ -31,9 +31,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=build /app/packages/dashboard/public ./public
 COPY --from=build --chown=nextjs:nodejs /app/packages/dashboard/.next/standalone ./
-COPY --from=build --chown=nextjs:nodejs /app/packages/dashboard/.next/static ./.next/static
+COPY --from=build --chown=nextjs:nodejs /app/packages/dashboard/.next/static ./packages/dashboard/.next/static
+COPY --from=build --chown=nextjs:nodejs /app/packages/dashboard/public ./packages/dashboard/public
 
 USER nextjs
 
@@ -41,4 +41,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["node", "packages/dashboard/server.js"]

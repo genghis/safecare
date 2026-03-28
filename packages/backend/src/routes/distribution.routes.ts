@@ -1,7 +1,12 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { eq, ne, desc, sql } from 'drizzle-orm';
+import { db } from '../db/index.js';
+import { deliveries, dispatchSessions, recipients } from '../db/schema.js';
+import { config } from '../config.js';
 import { distributionService } from '../services/distribution.service.js';
 import { dispatchService } from '../services/dispatch.service.js';
+import { driverService } from '../services/driver.service.js';
 
 const proposeSchema = z.object({
   sessionId: z.string().uuid(),
@@ -38,6 +43,163 @@ const confirmSchema = z.object({
 
 export default async function distributionRoutes(fastify: FastifyInstance) {
   /**
+   * GET /api/distribution
+   * Returns distribution state for the dashboard.
+   * Query params: sessionId (optional), day (optional).
+   */
+  fastify.get(
+    '/api/distribution',
+    { preHandler: [fastify.requireAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { sessionId, day } = request.query as {
+        sessionId?: string;
+        day?: string;
+      };
+
+      // Determine which session to use
+      let activeSessionId = sessionId;
+      if (!activeSessionId) {
+        const sessions = await db
+          .select()
+          .from(dispatchSessions)
+          .where(ne(dispatchSessions.status, 'completed'))
+          .orderBy(desc(dispatchSessions.createdAt))
+          .limit(1);
+        activeSessionId = sessions[0]?.id;
+      }
+
+      // Fetch all available sessions for the dropdown
+      const allSessions = await db
+        .select()
+        .from(dispatchSessions)
+        .orderBy(desc(dispatchSessions.createdAt));
+
+      if (!activeSessionId) {
+        return reply.send({
+          success: true,
+          data: {
+            drivers: [],
+            unassigned: [],
+            warnings: ['No dispatch session found.'],
+            sessions: allSessions,
+          },
+        });
+      }
+
+      // Fetch vetted drivers (optionally filtered by day availability)
+      const allDrivers = await driverService.list();
+      const vettedDrivers = allDrivers.filter(
+        (d) => d.vettedStatus === 'vetted',
+      );
+
+      // Build driver assignment map from existing deliveries in this session
+      const sessionDeliveries = await db
+        .select({
+          id: deliveries.id,
+          recipientId: deliveries.recipientId,
+          driverId: deliveries.driverId,
+          status: deliveries.status,
+          address: sql<string>`pgp_sym_decrypt(${deliveries.addressEnc}::bytea, ${config.DEK})`,
+          lat: deliveries.lat,
+          lng: deliveries.lng,
+          notes: deliveries.notes,
+          recipientName: sql<string>`pgp_sym_decrypt(${recipients.nameEnc}::bytea, ${config.DEK})`,
+        })
+        .from(deliveries)
+        .leftJoin(recipients, eq(deliveries.recipientId, recipients.id))
+        .where(eq(deliveries.dispatchSessionId, activeSessionId));
+
+      // Group deliveries by driver
+      const driverDeliveryMap = new Map<
+        string,
+        Array<{
+          deliveryId: string;
+          recipientName: string;
+          address: string;
+          lat: number;
+          lng: number;
+          notes: string;
+          status: string | null;
+        }>
+      >();
+
+      const unassigned: Array<{
+        deliveryId: string;
+        recipientName: string;
+        address: string;
+        lat: number;
+        lng: number;
+        reason: string;
+      }> = [];
+
+      for (const d of sessionDeliveries) {
+        const entry = {
+          deliveryId: d.id,
+          recipientName: d.recipientName ?? '',
+          address: d.address ?? '',
+          lat: parseFloat(d.lat ?? '0'),
+          lng: parseFloat(d.lng ?? '0'),
+          notes: d.notes ?? '',
+          status: d.status,
+        };
+
+        if (d.driverId) {
+          const existing = driverDeliveryMap.get(d.driverId) ?? [];
+          existing.push(entry);
+          driverDeliveryMap.set(d.driverId, existing);
+        } else {
+          unassigned.push({
+            deliveryId: d.id,
+            recipientName: d.recipientName ?? '',
+            address: d.address ?? '',
+            lat: parseFloat(d.lat ?? '0'),
+            lng: parseFloat(d.lng ?? '0'),
+            reason: 'Not yet assigned to a driver',
+          });
+        }
+      }
+
+      // Build driver response objects
+      const driverResults = vettedDrivers.map((driver) => ({
+        driverId: driver.id,
+        driverName: driver.name,
+        vehicleSize: driver.vehicleSize ?? 'sedan',
+        maxDeliveries: driver.maxDeliveries ?? 3,
+        deliveries: driverDeliveryMap.get(driver.id) ?? [],
+        loadPercent: Math.round(
+          ((driverDeliveryMap.get(driver.id)?.length ?? 0) /
+            (driver.maxDeliveries ?? 3)) *
+            100,
+        ),
+      }));
+
+      const warnings: string[] = [];
+      if (unassigned.length > 0) {
+        warnings.push(
+          `${unassigned.length} delivery(ies) not yet assigned.`,
+        );
+      }
+      for (const dr of driverResults) {
+        if (dr.loadPercent > 100) {
+          warnings.push(
+            `Driver ${dr.driverName} exceeds capacity (${dr.deliveries.length}/${dr.maxDeliveries}).`,
+          );
+        }
+      }
+
+      return reply.send({
+        success: true,
+        data: {
+          drivers: driverResults,
+          unassigned,
+          warnings,
+          sessions: allSessions,
+        },
+      });
+    },
+  );
+
+  /**
    * POST /api/distribution/propose
    * Generate a distribution proposal (admin only).
    */
@@ -54,9 +216,9 @@ export default async function distributionRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const proposal = await distributionService.propose(
+      const proposal = await distributionService.generateProposal(
         parsed.data.sessionId,
-        parsed.data.dayOfWeek,
+        parsed.data.dayOfWeek as any,
       );
 
       return reply.send({ success: true, data: proposal });
@@ -108,7 +270,7 @@ export default async function distributionRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const proposal = await distributionService.adjustCapacity(
+      const proposal = await distributionService.adjustDriverCapacity(
         parsed.data.sessionId,
         parsed.data.driverId,
         parsed.data.maxDeliveries,

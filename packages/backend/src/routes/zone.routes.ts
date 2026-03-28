@@ -28,7 +28,7 @@ export default async function zoneRoutes(fastify: FastifyInstance) {
     '/api/zones',
     { preHandler: [fastify.requireAdmin] },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const zones = await zoneService.listActive();
+      const zones = await zoneService.list();
       return reply.send({ success: true, data: zones });
     },
   );
@@ -40,11 +40,8 @@ export default async function zoneRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/api/zones/:id',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
       const zone = await zoneService.findById(id);
 
       if (!zone) {
@@ -91,11 +88,8 @@ export default async function zoneRoutes(fastify: FastifyInstance) {
   fastify.put(
     '/api/zones/:id',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
       const parsed = updateZoneSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.code(400).send({
@@ -125,11 +119,8 @@ export default async function zoneRoutes(fastify: FastifyInstance) {
   fastify.delete(
     '/api/zones/:id',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
       const result = await zoneService.deactivate(id);
 
       if (!result) {

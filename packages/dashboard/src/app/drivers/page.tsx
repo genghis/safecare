@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/status-badge";
-import { apiGet, apiPut } from "@/lib/api";
+import { apiGet, apiPost, apiPut } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -88,9 +88,20 @@ export default function DriversPage() {
   const [editAvailability, setEditAvailability] = useState<DriverAvailability[]>([]);
   const [editSaving, setEditSaving] = useState(false);
 
+  // Add modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addName, setAddName] = useState("");
+  const [addPhone, setAddPhone] = useState("");
+  const [addEmail, setAddEmail] = useState("");
+  const [addVehicleSize, setAddVehicleSize] = useState("sedan");
+  const [addMaxDeliveries, setAddMaxDeliveries] = useState(3);
+  const [addTeam, setAddTeam] = useState("");
+  const [addAvailability, setAddAvailability] = useState<DriverAvailability[]>([]);
+  const [addSaving, setAddSaving] = useState(false);
+
   useEffect(() => {
     async function fetchDrivers() {
-      const res = await apiGet<Driver[]>("/api/admin/drivers");
+      const res = await apiGet<Driver[]>("/api/drivers");
       if (res.ok && Array.isArray(res.data)) {
         setDrivers(res.data);
       }
@@ -177,7 +188,7 @@ export default function DriversPage() {
     setEditSaving(true);
 
     const res = await apiPut<Driver>(
-      `/api/admin/drivers/${editingDriver.id}`,
+      `/api/drivers/${editingDriver.id}/profile`,
       {
         name: editName,
         phone: editPhone,
@@ -210,6 +221,85 @@ export default function DriversPage() {
   }
 
   // ---------------------------------------------------------------------------
+  // Add modal
+  // ---------------------------------------------------------------------------
+
+  function openAddModal() {
+    setAddName("");
+    setAddPhone("");
+    setAddEmail("");
+    setAddVehicleSize("sedan");
+    setAddMaxDeliveries(VEHICLE_SIZE_LABELS["sedan"].max);
+    setAddTeam("");
+    setAddAvailability([]);
+    setShowAddModal(true);
+  }
+
+  function closeAddModal() {
+    setShowAddModal(false);
+  }
+
+  function handleToggleAddAvailDay(dayValue: string) {
+    const exists = addAvailability.some((a) => a.day === dayValue);
+    if (exists) {
+      setAddAvailability((prev) => prev.filter((a) => a.day !== dayValue));
+    } else {
+      setAddAvailability((prev) => [
+        ...prev,
+        { day: dayValue, startTime: "09:00", endTime: "17:00" },
+      ]);
+    }
+  }
+
+  function handleAddAvailTimeChange(
+    dayValue: string,
+    field: "startTime" | "endTime",
+    value: string
+  ) {
+    setAddAvailability((prev) =>
+      prev.map((a) => (a.day === dayValue ? { ...a, [field]: value } : a))
+    );
+  }
+
+  async function handleSaveAdd() {
+    if (!addName || !addPhone) return;
+    setAddSaving(true);
+
+    const res = await apiPost<{ success: boolean; data: Driver }>(
+      "/api/drivers",
+      {
+        name: addName,
+        phone: addPhone,
+        email: addEmail,
+        vehicleSize: addVehicleSize,
+        maxDeliveries: addMaxDeliveries,
+        team: addTeam,
+        availability: addAvailability,
+      }
+    );
+
+    if (res.ok) {
+      const newDriver: Driver = {
+        id: (res.data as any)?.id ?? "",
+        name: addName,
+        phone: addPhone,
+        vetted: false,
+        vehicleSize: addVehicleSize,
+        vehicle: addVehicleSize,
+        maxDeliveries: addMaxDeliveries,
+        team: addTeam,
+        status: "pending",
+        availability: addAvailability,
+        zones: [],
+        createdAt: new Date().toISOString(),
+      };
+      setDrivers((prev) => [...prev, newDriver]);
+      closeAddModal();
+    }
+    setAddSaving(false);
+  }
+
+  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
@@ -222,7 +312,7 @@ export default function DriversPage() {
             Manage volunteer drivers, availability, and capacity.
           </p>
         </div>
-        <Button>Add Driver</Button>
+        <Button onClick={openAddModal}>Add Driver</Button>
       </div>
 
       <div className="mb-4">
@@ -340,11 +430,11 @@ export default function DriversPage() {
       {/* Edit modal */}
       {editingDriver && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto py-8"
           onClick={closeEdit}
         >
           <div
-            className="w-full max-w-lg rounded-lg border bg-card p-0 shadow-lg"
+            className="w-full max-w-lg rounded-lg border bg-card p-0 shadow-lg max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <Card className="border-0 shadow-none">
@@ -478,6 +568,170 @@ export default function DriversPage() {
                 </Button>
                 <Button onClick={handleSaveEdit} disabled={editSaving}>
                   {editSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Add Driver modal */}
+      {showAddModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto py-8"
+          onClick={closeAddModal}
+        >
+          <div
+            className="w-full max-w-lg rounded-lg border bg-card p-0 shadow-lg max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Card className="border-0 shadow-none">
+              <CardHeader>
+                <CardTitle className="text-lg">Add Driver</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Name */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Name *</label>
+                  <Input
+                    value={addName}
+                    onChange={(e) => setAddName(e.target.value)}
+                    placeholder="Full name"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Phone *</label>
+                  <Input
+                    value={addPhone}
+                    onChange={(e) => setAddPhone(e.target.value)}
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Email</label>
+                  <Input
+                    value={addEmail}
+                    onChange={(e) => setAddEmail(e.target.value)}
+                    placeholder="driver@example.com"
+                  />
+                </div>
+
+                {/* Vehicle Size */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Vehicle Size</label>
+                  <select
+                    value={addVehicleSize}
+                    onChange={(e) => {
+                      setAddVehicleSize(e.target.value);
+                      const v = VEHICLE_SIZE_LABELS[e.target.value];
+                      if (v) setAddMaxDeliveries(v.max);
+                    }}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {Object.entries(VEHICLE_SIZE_LABELS).map(([key, val]) => (
+                      <option key={key} value={key}>
+                        {val.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Max Deliveries */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Max Deliveries</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={addMaxDeliveries}
+                    onChange={(e) =>
+                      setAddMaxDeliveries(parseInt(e.target.value) || 1)
+                    }
+                    className="max-w-[120px]"
+                  />
+                </div>
+
+                {/* Team */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Team</label>
+                  <Input
+                    value={addTeam}
+                    onChange={(e) => setAddTeam(e.target.value)}
+                    placeholder="Team name"
+                  />
+                </div>
+
+                {/* Availability */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Availability</label>
+                  <div className="space-y-2">
+                    {DAYS_OF_WEEK.map((day) => {
+                      const avail = addAvailability.find(
+                        (a) => a.day === day.value
+                      );
+                      const isActive = !!avail;
+                      return (
+                        <div
+                          key={day.value}
+                          className="flex items-center gap-3"
+                        >
+                          <button
+                            onClick={() => handleToggleAddAvailDay(day.value)}
+                            className={`rounded-md border px-3 py-1 text-xs font-medium transition-colors w-12 ${
+                              isActive
+                                ? "border-primary bg-accent/50 ring-1 ring-primary"
+                                : "border-border hover:bg-accent/30"
+                            }`}
+                          >
+                            {day.short}
+                          </button>
+                          {isActive && avail && (
+                            <div className="flex items-center gap-1 text-xs">
+                              <Input
+                                type="time"
+                                value={avail.startTime}
+                                onChange={(e) =>
+                                  handleAddAvailTimeChange(
+                                    day.value,
+                                    "startTime",
+                                    e.target.value
+                                  )
+                                }
+                                className="h-8 w-28 text-xs"
+                              />
+                              <span className="text-muted-foreground">to</span>
+                              <Input
+                                type="time"
+                                value={avail.endTime}
+                                onChange={(e) =>
+                                  handleAddAvailTimeChange(
+                                    day.value,
+                                    "endTime",
+                                    e.target.value
+                                  )
+                                }
+                                className="h-8 w-28 text-xs"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+              <div className="flex items-center justify-end gap-2 p-6 pt-0">
+                <Button variant="ghost" onClick={closeAddModal}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveAdd}
+                  disabled={addSaving || !addName || !addPhone}
+                >
+                  {addSaving ? "Adding..." : "Add Driver"}
                 </Button>
               </div>
             </Card>

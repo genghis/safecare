@@ -128,7 +128,7 @@ export default function DistributionPage() {
     if (selectedDay) params.set("day", selectedDay);
 
     const res = await apiGet<DistributionState>(
-      `/api/admin/distribution?${params.toString()}`
+      `/api/distribution?${params.toString()}`
     );
 
     if (res.ok && res.data) {
@@ -167,7 +167,7 @@ export default function DistributionPage() {
 
   async function handleAutoDistribute() {
     setDistributing(true);
-    const res = await apiPost<DistributionState>("/api/admin/distribution/propose", {
+    const res = await apiPost<DistributionState>("/api/distribution/propose", {
       sessionId: selectedSession,
       day: selectedDay,
     });
@@ -180,7 +180,7 @@ export default function DistributionPage() {
   }
 
   async function handleMoveDelivery(deliveryId: string, toDriverId: string) {
-    const res = await apiPost<DistributionState>("/api/admin/distribution/move", {
+    const res = await apiPost<DistributionState>("/api/distribution/move", {
       deliveryId,
       toDriverId,
       sessionId: selectedSession,
@@ -198,7 +198,7 @@ export default function DistributionPage() {
     const newMax = Math.max(1, driver.maxDeliveries + delta);
 
     const res = await apiPost<DistributionState>(
-      "/api/admin/distribution/adjust-capacity",
+      "/api/distribution/adjust-capacity",
       {
         driverId,
         maxDeliveries: newMax,
@@ -220,7 +220,7 @@ export default function DistributionPage() {
 
   async function handleRemoveDriver(driverId: string) {
     const res = await apiPost<DistributionState>(
-      "/api/admin/distribution/remove-driver",
+      "/api/distribution/remove-driver",
       {
         driverId,
         sessionId: selectedSession,
@@ -236,7 +236,7 @@ export default function DistributionPage() {
 
   async function handleRemoveDelivery(driverId: string, deliveryId: string) {
     // Move delivery back to unassigned pool
-    const res = await apiPost<DistributionState>("/api/admin/distribution/move", {
+    const res = await apiPost<DistributionState>("/api/distribution/move", {
       deliveryId,
       toDriverId: null,
       sessionId: selectedSession,
@@ -250,7 +250,7 @@ export default function DistributionPage() {
 
   async function handleConfirm() {
     setConfirming(true);
-    const res = await apiPost("/api/admin/distribution/confirm", {
+    const res = await apiPost("/api/distribution/confirm", {
       sessionId: selectedSession,
     });
     if (res.ok) {

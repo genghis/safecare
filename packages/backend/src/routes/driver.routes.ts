@@ -20,13 +20,13 @@ const updateStatusSchema = z.object({
 });
 
 const DayOfWeekEnum = z.enum([
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-  'sunday',
+  'mon',
+  'tue',
+  'wed',
+  'thu',
+  'fri',
+  'sat',
+  'sun',
 ]);
 
 const updateProfileSchema = z.object({
@@ -69,11 +69,8 @@ export default async function driverRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/api/drivers/:id',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
       const driver = await driverService.findById(id);
 
       if (!driver) {
@@ -129,11 +126,8 @@ export default async function driverRoutes(fastify: FastifyInstance) {
   fastify.patch(
     '/api/drivers/:id/status',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
       const parsed = updateStatusSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.code(400).send({
@@ -169,11 +163,8 @@ export default async function driverRoutes(fastify: FastifyInstance) {
   fastify.put(
     '/api/drivers/:id/profile',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { id } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
       const parsed = updateProfileSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.code(400).send({
@@ -183,7 +174,7 @@ export default async function driverRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const result = await driverService.updateProfile(id, parsed.data);
+      const result = await driverService.updateProfile(id, parsed.data as any);
 
       if (!result) {
         return reply.code(404).send({
@@ -203,16 +194,13 @@ export default async function driverRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/api/drivers/available/:day',
     { preHandler: [fastify.requireAdmin] },
-    async (
-      request: FastifyRequest<{ Params: { day: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const { day } = request.params;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { day } = request.params as { day: string };
       const parsedDay = DayOfWeekEnum.safeParse(day);
       if (!parsedDay.success) {
         return reply.code(400).send({
           success: false,
-          error: 'Invalid day of week. Must be one of: monday, tuesday, wednesday, thursday, friday, saturday, sunday',
+          error: 'Invalid day of week. Must be one of: mon, tue, wed, thu, fri, sat, sun',
         });
       }
 

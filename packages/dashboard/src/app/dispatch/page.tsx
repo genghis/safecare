@@ -18,7 +18,6 @@ interface DispatchSession {
   id: string;
   date: string;
   status: "active" | "released" | "completed";
-  strictness: StrictnessLevel;
   createdAt: string;
   releasedAt?: string;
 }
@@ -41,30 +40,6 @@ interface DeliveryStatus {
   updatedAt: string;
 }
 
-type StrictnessLevel = "standard" | "high" | "maximum";
-
-const STRICTNESS_OPTIONS: {
-  value: StrictnessLevel;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: "standard",
-    label: "Standard",
-    description: "GPS verification, photo optional",
-  },
-  {
-    value: "high",
-    label: "High",
-    description: "GPS + photo required, recipient confirmation",
-  },
-  {
-    value: "maximum",
-    label: "Maximum",
-    description: "GPS + photo + signature + recipient PIN",
-  },
-];
-
 const AUTO_REFRESH_INTERVAL = 10_000;
 
 export default function DispatchPage() {
@@ -77,7 +52,6 @@ export default function DispatchPage() {
   const [sessionDate, setSessionDate] = useState(
     () => new Date().toISOString().split("T")[0]
   );
-  const [strictness, setStrictness] = useState<StrictnessLevel>("standard");
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -86,7 +60,7 @@ export default function DispatchPage() {
       session: DispatchSession | null;
       checkIns: DriverCheckIn[];
       deliveries: DeliveryStatus[];
-    }>("/api/admin/dispatch/current");
+    }>("/api/dispatch/sessions/active");
 
     if (res.ok && res.data) {
       setSession(res.data.session);
@@ -94,9 +68,6 @@ export default function DispatchPage() {
         (res.data.checkIns || []).map((c) => ({ ...c, selected: true }))
       );
       setDeliveries(res.data.deliveries || []);
-      if (res.data.session?.strictness) {
-        setStrictness(res.data.session.strictness);
-      }
     }
     setLoading(false);
     setLastRefreshed(new Date());
@@ -125,12 +96,12 @@ export default function DispatchPage() {
 
   async function handleCreateSession() {
     setCreating(true);
-    const res = await apiPost<{ session: DispatchSession }>(
-      "/api/admin/dispatch/sessions",
-      { date: sessionDate, strictness }
+    const res = await apiPost<DispatchSession>(
+      "/api/dispatch/sessions",
+      { date: sessionDate }
     );
-    if (res.ok && res.data?.session) {
-      setSession(res.data.session);
+    if (res.ok && res.data) {
+      setSession(res.data);
       setCheckIns([]);
       setDeliveries([]);
     }
@@ -146,7 +117,7 @@ export default function DispatchPage() {
       .map((c) => c.driverId);
 
     const res = await apiPost<{ session: DispatchSession }>(
-      `/api/admin/dispatch/sessions/${session.id}/release`,
+      `/api/dispatch/sessions/${session.id}/release`,
       { driverIds: selectedDriverIds }
     );
 
@@ -154,15 +125,6 @@ export default function DispatchPage() {
       await fetchSession();
     }
     setReleasing(false);
-  }
-
-  async function handleStrictnessChange(level: StrictnessLevel) {
-    setStrictness(level);
-    if (session) {
-      await apiPost(`/api/admin/dispatch/sessions/${session.id}/strictness`, {
-        strictness: level,
-      });
-    }
   }
 
   function toggleDriver(id: string) {
@@ -229,48 +191,20 @@ export default function DispatchPage() {
             <CardTitle className="text-lg">Create New Session</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {/* Date Picker */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="session-date"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Session Date
-                </label>
-                <Input
-                  id="session-date"
-                  type="date"
-                  value={sessionDate}
-                  onChange={(e) => setSessionDate(e.target.value)}
-                  className="max-w-[200px]"
-                />
-              </div>
-
-              {/* Strictness Level */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">
-                  Strictness Level
-                </label>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {STRICTNESS_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setStrictness(opt.value)}
-                      className={`rounded-lg border p-4 text-left transition-colors ${
-                        strictness === opt.value
-                          ? "border-primary bg-accent/50 ring-1 ring-primary"
-                          : "border-border hover:bg-accent/30"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{opt.label}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {opt.description}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="space-y-2">
+              <label
+                htmlFor="session-date"
+                className="text-sm font-medium text-foreground"
+              >
+                Session Date
+              </label>
+              <Input
+                id="session-date"
+                type="date"
+                value={sessionDate}
+                onChange={(e) => setSessionDate(e.target.value)}
+                className="max-w-[200px]"
+              />
             </div>
           </CardContent>
           <CardFooter>
@@ -374,29 +308,37 @@ export default function DispatchPage() {
             </Card>
           </div>
 
-          {/* Strictness Level Selector */}
+          {/* Recipient Notifications */}
           <Card className="mb-6">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Strictness Level</CardTitle>
+              <CardTitle className="text-lg">Recipient Notifications</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-3">
-                {STRICTNESS_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => handleStrictnessChange(opt.value)}
-                    className={`rounded-lg border px-4 py-3 text-left transition-colors ${
-                      strictness === opt.value
-                        ? "border-primary bg-accent/50 ring-1 ring-primary"
-                        : "border-border hover:bg-accent/30"
-                    }`}
-                  >
-                    <p className="text-sm font-semibold">{opt.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {opt.description}
+              <p className="text-sm text-muted-foreground mb-4">
+                Recipients are automatically notified when their delivery is on
+                its way and when it arrives.
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 rounded-md border p-3">
+                  <div className="mt-0.5 h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">En route notification</p>
+                    <p className="text-xs text-muted-foreground">
+                      Sent when a driver starts their route
                     </p>
-                  </button>
-                ))}
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-md border p-3">
+                  <div className="mt-0.5 h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      Delivered notification
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Sent when the driver marks the delivery complete
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
