@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import bcrypt from 'bcrypt';
 
 // ---------------------------------------------------------------------------
-// Mocks — must be declared before importing the module under test
+// Mocks — vi.hoisted ensures these are available when vi.mock factories run
 // ---------------------------------------------------------------------------
 
 // Fake Redis store for OTP tests
@@ -26,17 +26,31 @@ vi.mock('ioredis', () => {
 });
 
 // Fake DB: capture calls and return configurable results
-let dbInsertReturnValue: any[] = [];
-let dbSelectReturnValue: any[] = [];
+const {
+  dbState,
+  mockReturning,
+  mockValues,
+  mockInsert,
+  mockWhere,
+  mockLimit,
+  mockFrom,
+  mockSelect,
+} = vi.hoisted(() => {
+  const dbState = {
+    insertReturnValue: [] as any[],
+    selectReturnValue: [] as any[],
+  };
+  const mockReturning = vi.fn(() => dbState.insertReturnValue);
+  const mockValues = vi.fn(() => ({ returning: mockReturning }));
+  const mockInsert = vi.fn(() => ({ values: mockValues }));
 
-const mockReturning = vi.fn(() => dbInsertReturnValue);
-const mockValues = vi.fn(() => ({ returning: mockReturning }));
-const mockInsert = vi.fn(() => ({ values: mockValues }));
+  const mockWhere = vi.fn(() => dbState.selectReturnValue);
+  const mockLimit = vi.fn(() => dbState.selectReturnValue);
+  const mockFrom = vi.fn(() => ({ where: mockWhere, limit: mockLimit }));
+  const mockSelect = vi.fn(() => ({ from: mockFrom }));
 
-const mockWhere = vi.fn(() => dbSelectReturnValue);
-const mockLimit = vi.fn(() => dbSelectReturnValue);
-const mockFrom = vi.fn(() => ({ where: mockWhere, limit: mockLimit }));
-const mockSelect = vi.fn(() => ({ from: mockFrom }));
+  return { dbState, mockReturning, mockValues, mockInsert, mockWhere, mockLimit, mockFrom, mockSelect };
+});
 
 vi.mock('../db/index.js', () => ({
   db: {
@@ -63,8 +77,8 @@ describe('AuthService — Admin Authentication', () => {
   beforeEach(() => {
     authService = new AuthService();
     vi.clearAllMocks();
-    dbInsertReturnValue = [];
-    dbSelectReturnValue = [];
+    dbState.insertReturnValue = [];
+    dbState.selectReturnValue = [];
     // Clear redis store
     for (const key of Object.keys(redisStore)) {
       delete redisStore[key];
@@ -79,7 +93,7 @@ describe('AuthService — Admin Authentication', () => {
     it('hashes the password with bcrypt — stored hash is NOT plaintext', async () => {
       const plainPassword = 'SuperSecret123!';
 
-      dbInsertReturnValue = [
+      dbState.insertReturnValue = [
         { id: 'admin-uuid-1', email: 'admin@test.com', role: 'admin' },
       ];
 
@@ -109,7 +123,7 @@ describe('AuthService — Admin Authentication', () => {
 
     it('rejects a wrong password and returns null', async () => {
       const correctHash = await bcrypt.hash('correctPassword', 12);
-      dbSelectReturnValue = [
+      dbState.selectReturnValue = [
         { id: 'admin-1', email: 'a@b.com', passwordHash: correctHash, role: 'admin' },
       ];
 
@@ -121,7 +135,7 @@ describe('AuthService — Admin Authentication', () => {
     it('returns a JWT with sub and role:admin on valid credentials', async () => {
       const password = 'correctPassword';
       const correctHash = await bcrypt.hash(password, 12);
-      dbSelectReturnValue = [
+      dbState.selectReturnValue = [
         { id: 'admin-42', email: 'a@b.com', passwordHash: correctHash, role: 'admin' },
       ];
 
@@ -141,7 +155,7 @@ describe('AuthService — Admin Authentication', () => {
     });
 
     it('rejects a non-existent email and returns null', async () => {
-      dbSelectReturnValue = []; // no rows
+      dbState.selectReturnValue = []; // no rows
 
       const result = await authService.loginAdmin(
         'noone@test.com',
@@ -187,8 +201,8 @@ describe('AuthService — Driver OTP Authentication', () => {
   beforeEach(() => {
     authService = new AuthService();
     vi.clearAllMocks();
-    dbInsertReturnValue = [];
-    dbSelectReturnValue = [];
+    dbState.insertReturnValue = [];
+    dbState.selectReturnValue = [];
     for (const key of Object.keys(redisStore)) {
       delete redisStore[key];
     }
@@ -233,7 +247,7 @@ describe('AuthService — Driver OTP Authentication', () => {
       const otp = await authService.driverRequestOTP('+15551234567');
 
       // DB lookup should find the driver
-      dbSelectReturnValue = [{ id: 'driver-99' }];
+      dbState.selectReturnValue = [{ id: 'driver-99' }];
 
       const result = await authService.driverVerifyOTP(
         '+15551234567',
@@ -281,7 +295,7 @@ describe('AuthService — Driver OTP Authentication', () => {
 
     it('deletes the OTP from Redis after successful verification (single-use)', async () => {
       const otp = await authService.driverRequestOTP('+15551234567');
-      dbSelectReturnValue = [{ id: 'driver-1' }];
+      dbState.selectReturnValue = [{ id: 'driver-1' }];
 
       await authService.driverVerifyOTP('+15551234567', otp, signJwt);
 
@@ -292,7 +306,7 @@ describe('AuthService — Driver OTP Authentication', () => {
 
     it('second verification with same OTP fails (single-use enforcement)', async () => {
       const otp = await authService.driverRequestOTP('+15551234567');
-      dbSelectReturnValue = [{ id: 'driver-1' }];
+      dbState.selectReturnValue = [{ id: 'driver-1' }];
 
       // First verification succeeds
       const first = await authService.driverVerifyOTP(
