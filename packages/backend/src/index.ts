@@ -11,6 +11,8 @@ import driverRoutes from './routes/driver.routes.js';
 import dispatchRoutes from './routes/dispatch.routes.js';
 import driverAppRoutes from './routes/driver-app.routes.js';
 import deliveryRoutes from './routes/delivery.routes.js';
+import zoneRoutes from './routes/zone.routes.js';
+import distributionRoutes from './routes/distribution.routes.js';
 import { initQueues, closeQueues } from './jobs/index.js';
 
 async function main() {
@@ -45,6 +47,8 @@ async function main() {
   await fastify.register(dispatchRoutes);
   await fastify.register(driverAppRoutes);
   await fastify.register(deliveryRoutes);
+  await fastify.register(zoneRoutes);
+  await fastify.register(distributionRoutes);
 
   // --- Health check ---
   fastify.get('/api/health', async () => {

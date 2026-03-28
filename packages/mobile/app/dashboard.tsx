@@ -135,6 +135,17 @@ export default function DashboardScreen() {
     <View style={styles.container}>
       <StatusBar sessionStatus={sessionStatus} />
 
+      <View style={styles.topBar}>
+        <Pressable
+          style={styles.profileLink}
+          onPress={() => router.push("/profile")}
+          accessibilityRole="button"
+          accessibilityLabel="My Profile"
+        >
+          <Text style={styles.profileLinkText}>My Profile</Text>
+        </Pressable>
+      </View>
+
       {sessionStatus === "idle" && (
         <View style={styles.centeredContent}>
           <Text style={styles.welcomeText}>Ready to start your shift?</Text>
@@ -330,6 +341,23 @@ const styles = StyleSheet.create({
   endShiftText: {
     color: "#FFFFFF",
     fontSize: 18,
+    fontWeight: "700",
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  profileLink: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    minHeight: 48,
+    justifyContent: "center",
+  },
+  profileLinkText: {
+    color: "#1A6B3C",
+    fontSize: 16,
     fontWeight: "700",
   },
 });

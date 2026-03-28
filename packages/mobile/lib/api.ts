@@ -131,3 +131,32 @@ export function confirmPurge() {
     method: "POST",
   });
 }
+
+// ---------------------------------------------------------------------------
+// Driver Profile
+// ---------------------------------------------------------------------------
+
+/** Fetch current driver profile and availability. */
+export function getProfile() {
+  return request<any>("/driver/profile");
+}
+
+/** Update driver profile (vehicle, availability, zones). */
+export function updateProfile(data: {
+  vehicleSize: string;
+  maxDeliveries: number;
+  availability: Record<string, { start: string; end: string }>;
+  selectedZones: string[];
+}) {
+  return request<any>("/driver/profile", {
+    method: "PUT",
+    body: data,
+  });
+}
+
+/** Fetch available delivery zones. */
+export function getZones() {
+  return request<{ zones: Array<{ id: string; name: string; color: string }> }>(
+    "/zones"
+  );
+}

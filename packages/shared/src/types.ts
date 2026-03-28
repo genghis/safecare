@@ -39,19 +39,71 @@ export interface Recipient {
   createdAt: Date;
 }
 
+export type VehicleSize = 'sedan' | 'suv' | 'minivan' | 'truck' | 'van';
+
+export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+export interface AvailabilitySlot {
+  day: DayOfWeek;
+  startTime: string; // "HH:mm" 24h format
+  endTime: string;   // "HH:mm" 24h format
+}
+
+export interface DeliveryZone {
+  id: string;
+  name: string;
+  polygon: Array<{ lat: number; lng: number }>; // GeoJSON-style polygon points
+}
+
 export interface Driver {
   id: string;
   name: string;
   phone: string;
   email: string;
   vettedStatus: VettedStatus;
+  vehicleSize: VehicleSize;
   vehicleModel: string;
-  cargoCapacity: number;
+  maxDeliveries: number;        // max stops per shift based on vehicle + preference
   languages: string[];
-  geoPreferences: string;
-  timeConstraints: string;
+  availability: AvailabilitySlot[];
+  deliveryZoneIds: string[];    // zones this driver is willing to cover
   teamName: string;
   createdAt: Date;
+}
+
+export interface DistributionProposal {
+  sessionId: string;
+  assignments: DistributionAssignment[];
+  unassigned: UnassignedDelivery[];
+  warnings: string[];
+}
+
+export interface DistributionAssignment {
+  driverId: string;
+  driverName: string;
+  vehicleSize: VehicleSize;
+  maxDeliveries: number;
+  deliveries: Array<{
+    deliveryId: string;
+    recipientName: string;
+    address: string;
+    lat: number;
+    lng: number;
+    notes: string;
+    distanceFromPrev: number; // km from previous stop
+  }>;
+  totalDistance: number; // km total route
+  estimatedTime: number; // minutes
+  loadPercent: number;   // deliveries / maxDeliveries * 100
+}
+
+export interface UnassignedDelivery {
+  deliveryId: string;
+  recipientName: string;
+  address: string;
+  lat: number;
+  lng: number;
+  reason: string; // e.g. "no driver covers this zone", "all drivers at capacity"
 }
 
 export interface Delivery {

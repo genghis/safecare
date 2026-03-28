@@ -21,6 +21,10 @@ export default function RootLayout() {
           options={{ title: "Dashboard", headerBackVisible: false }}
         />
         <Stack.Screen
+          name="profile"
+          options={{ title: "My Profile" }}
+        />
+        <Stack.Screen
           name="delivery/[id]"
           options={{ title: "Delivery" }}
         />

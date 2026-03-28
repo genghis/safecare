@@ -8,7 +8,9 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutIcon },
   { href: "/recipients", label: "Recipients", icon: UsersIcon },
   { href: "/drivers", label: "Drivers", icon: TruckIcon },
+  { href: "/zones", label: "Zones", icon: MapIcon },
   { href: "/dispatch", label: "Dispatch", icon: RadioIcon },
+  { href: "/distribution", label: "Distribution", icon: SplitIcon },
   { href: "/deliveries", label: "Deliveries", icon: PackageIcon },
 ];
 
@@ -40,6 +42,22 @@ function RadioIcon({ className }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" /><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" /><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4" /><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" /><circle cx="12" cy="12" r="2" />
+    </svg>
+  );
+}
+
+function MapIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m3 7 6-3 6 3 6-3v13l-6 3-6-3-6 3Z" /><path d="m9 4v13" /><path d="m15 7v13" />
+    </svg>
+  );
+}
+
+function SplitIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 3h5v5" /><path d="M8 3H3v5" /><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3" /><path d="m15 9 6-6" />
     </svg>
   );
 }

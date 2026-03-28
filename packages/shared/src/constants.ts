@@ -43,3 +43,26 @@ export const TEAM_NAMES: string[] = [
   'Hawks',
   'Otters',
 ];
+
+/** Vehicle size categories with default max delivery counts */
+export const VEHICLE_SIZES: Record<
+  string,
+  { label: string; defaultMaxDeliveries: number; description: string }
+> = {
+  sedan: { label: 'Sedan', defaultMaxDeliveries: 5, description: 'Standard car — trunk only' },
+  suv: { label: 'SUV', defaultMaxDeliveries: 8, description: 'SUV or crossover — folding rear seats' },
+  minivan: { label: 'Minivan', defaultMaxDeliveries: 12, description: 'Minivan — large cargo area' },
+  truck: { label: 'Pickup Truck', defaultMaxDeliveries: 15, description: 'Pickup with bed or cap' },
+  van: { label: 'Cargo Van', defaultMaxDeliveries: 25, description: 'Full cargo van or sprinter' },
+};
+
+/** Days of week with labels */
+export const DAYS_OF_WEEK = [
+  { value: 'mon', label: 'Monday', short: 'Mon' },
+  { value: 'tue', label: 'Tuesday', short: 'Tue' },
+  { value: 'wed', label: 'Wednesday', short: 'Wed' },
+  { value: 'thu', label: 'Thursday', short: 'Thu' },
+  { value: 'fri', label: 'Friday', short: 'Fri' },
+  { value: 'sat', label: 'Saturday', short: 'Sat' },
+  { value: 'sun', label: 'Sunday', short: 'Sun' },
+] as const;

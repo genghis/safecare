@@ -7,6 +7,7 @@ import {
   integer,
   numeric,
   date,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -28,6 +29,20 @@ export const recipients = pgTable('recipients', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+// ---------- delivery_zones (admin-defined areas drivers can pick from) ----------
+export const deliveryZones = pgTable('delivery_zones', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  name: text('name').notNull(),
+  color: text('color').default('#3B82F6'),
+  polygon: jsonb('polygon').notNull(), // Array<{lat, lng}>
+  centerLat: numeric('center_lat'),
+  centerLng: numeric('center_lng'),
+  active: boolean('active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 // ---------- drivers ----------
 export const drivers = pgTable('drivers', {
   id: uuid('id')
@@ -39,11 +54,12 @@ export const drivers = pgTable('drivers', {
   phoneHash: text('phone_hash').notNull().unique(),
   emailEnc: text('email_enc'),
   vettedStatus: text('vetted_status').default('pending'),
+  vehicleSize: text('vehicle_size').default('sedan'),
   vehicleModel: text('vehicle_model'),
-  cargoCapacity: integer('cargo_capacity'),
+  maxDeliveries: integer('max_deliveries').default(5),
   languages: text('languages').array(),
-  geoPreferences: text('geo_preferences'),
-  timeConstraints: text('time_constraints'),
+  availability: jsonb('availability').default([]),  // AvailabilitySlot[]
+  deliveryZoneIds: text('delivery_zone_ids').array().default([]),
   teamName: text('team_name'),
   createdAt: timestamp('created_at').defaultNow(),
 });
