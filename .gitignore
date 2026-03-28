@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.next/
+.expo/
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+secrets/*.key
+secrets/*.yaml
+!secrets/secrets.enc.yaml.example
+.turbo/
+coverage/
+*.log
+.DS_Store

@@ -1,0 +1,84 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: safecare-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: safecare
+      POSTGRES_PASSWORD: safecare
+      POSTGRES_DB: safecare
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "work_mem=16MB"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safecare -d safecare"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: safecare-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  backend:
+    build:
+      context: ../
+      dockerfile: packages/backend/Dockerfile
+    container_name: safecare-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgres://safecare:safecare@postgres:5432/safecare
+      REDIS_URL: redis://redis:6379
+
+  dashboard:
+    build:
+      context: ../
+      dockerfile: packages/dashboard/Dockerfile
+    container_name: safecare-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    env_file:
+      - ../.env
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:3001
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
