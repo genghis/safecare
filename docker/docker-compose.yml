@@ -74,8 +74,11 @@ services:
     environment:
       PBF_PATH: /nominatim/data.osm.pbf
       NOMINATIM_PASSWORD: safecare
-      # Enable TIGER address data for US house-number-level geocoding
-      IMPORT_TIGER_ADDRESSES: "true"
+      # TIGER address data is disabled by default -- it imports the entire
+      # state's addresses from US Census and takes hours on small hardware.
+      # OSM data already has good urban address coverage. Enable only if
+      # you need rural house-number geocoding and have 8GB+ RAM:
+      # IMPORT_TIGER_ADDRESSES: "true"
       # Low-memory settings for RPi / 8GB machines
       POSTGRES_SHARED_BUFFERS: 256MB
       POSTGRES_WORK_MEM: 16MB
