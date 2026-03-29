@@ -11,13 +11,15 @@ Last updated: 2026-03-29
 | SOPS + age key management | Done | setup.sh supports it |
 | Backend API (Fastify) | Done | Recipients, drivers, deliveries, dispatch, zones, distribution, geocoding, notifications |
 | JotForm webhook intake | Done | POST /api/webhooks/jotform |
-| Admin dashboard (Next.js) | Done | Login, recipients, drivers, deliveries, dispatch, distribution, zones |
-| Add Recipient with map-based address picker | Done | Leaflet + self-hosted Nominatim geocoding proxy |
-| Add Driver with availability scheduling | Done | Vehicle, team, day/time availability |
+| Admin dashboard (Next.js) | Done | Login, recipients, drivers, deliveries, dispatch, distribution, zones, settings |
+| Add Recipient with map-based address picker | Done | Leaflet + geocoding with public API fallback |
+| Add Driver with availability scheduling | Done | Vehicle, team, day/time availability, vetting workflow |
 | Dispatch session + route release gate | Done | Admin creates session, drivers check in, admin releases |
 | Distribution planner (auto-assign) | Done | Zone-aware, capacity-aware, nearest-neighbour routing |
 | Driver PWA (React + Vite) | Done | Login, dashboard, delivery detail, profile, offline sync |
 | Docker Compose (all services) | Done | postgres, redis, backend, dashboard, nominatim, osrm, signal |
+| Guided setup wizard | Done | 3-step first-run: account, region, provision |
+| Settings-driven map provisioning | Done | Operating region → auto-downloads correct state/regional extract |
 | scripts/setup.sh interactive installer | Done | Generates secrets, .env, starts containers |
 
 ## Phase 2: Mapping, Routing & Air-Gap -- MOSTLY DONE
