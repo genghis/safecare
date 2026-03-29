@@ -5,9 +5,11 @@ SafeCare is a secure mutual aid food delivery system. This guide walks you throu
 ## What You Need
 
 **One of these to run the server:**
-- A Raspberry Pi 4 or 5 (8GB RAM) with a USB SSD -- ~$100
-- Any home PC or laptop with 8GB+ RAM
+- A Raspberry Pi 4 or 5 (4GB or 8GB) with a USB SSD -- ~$60-100
+- Any home PC or laptop with 4GB+ RAM
 - A small VPS ($20-40/month) if you prefer not to self-host
+
+A 4GB Raspberry Pi works well for metro-area deployments. The setup wizard shows a RAM estimate as you define your operating region so you can size it appropriately.
 
 **Plus:**
 - An internet connection (for initial map data download)
@@ -77,9 +79,9 @@ This is the area where your deliveries happen and your drivers live. It determin
 SafeCare runs its own map and address search engine -- no data is sent to Google or any other company. But it needs to download the map data for your region first.
 
 - Click **Download Map Data**
-- A progress bar shows the download (typically 100-500 MB)
-- After the download, the system imports the data into its search and routing engines
-- **This takes 15-60 minutes** (or 1-3 hours on a Raspberry Pi)
+- The system downloads the state extract that covers your region (typically 100-500 MB), then trims it to just your viewport (typically 10-50 MB for a metro area)
+- After trimming, the data is imported into the search and routing engines
+- **This takes 5-30 minutes** depending on region size and hardware
 - You can close the browser and come back later -- the import continues in the background
 - The progress display shows which step it's on and how fast it's going
 

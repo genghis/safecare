@@ -26,8 +26,10 @@ Last updated: 2026-03-29
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| OSRM routing container (Midwest extract) | Done | Docker service, MLD algorithm, osrm-init.sh |
-| Self-hosted Nominatim geocoding | Done | US Midwest extract, backend proxy, no PII leakage |
+| OSRM routing container | Done | Docker service, MLD algorithm, viewport-trimmed data |
+| Self-hosted Nominatim geocoding | Done | Viewport-trimmed, TIGER house numbers, public API fallback |
+| Viewport-based map provisioning | Done | Download state extract → osmium trim to viewport → ~20MB for metro |
+| Region size estimation + RAM warnings | Done | Live estimate as you pan/zoom, color-coded by hardware fit |
 | Admin map view for zones (Leaflet/OSM) | Done | Interactive polygon drawing, click/drag |
 | Address picker with geocoding in recipient form | Done | Search + pin-drop + reverse geocode + zone overlay |
 | Offline map tiles in driver PWA | Done | Service worker CacheFirst, tile pre-caching on route download |

@@ -63,11 +63,14 @@ Open **http://localhost:3000** — a setup wizard walks you through creating you
 
 ## Hardware Requirements
 
-| Target | RAM | Storage | Cost |
-|--------|-----|---------|------|
-| Raspberry Pi 5 | 8 GB | 64 GB SSD | ~$100 one-time |
-| Home PC | 8-16 GB | SSD | Already have it |
-| VPS | 8 GB | SSD | ~$20-40/mo |
+| Target | RAM | Storage | Cost | Notes |
+|--------|-----|---------|------|-------|
+| Raspberry Pi 4/5 (4GB) | 4 GB | 32 GB SSD | ~$60 | Metro-area viewport only |
+| Raspberry Pi 4/5 (8GB) | 8 GB | 64 GB SSD | ~$100 | Any viewport size |
+| Home PC | 8-16 GB | SSD | Already have it | |
+| VPS | 4-8 GB | SSD | ~$20-40/mo | |
+
+Map data is trimmed to your operating region viewport. A metro area (~20 MB) uses ~500 MB RAM total. The setup wizard shows a live RAM estimate as you define your region.
 
 Monthly operating cost: $0 (Signal only) to ~$6/mo (Twilio SMS).
 
