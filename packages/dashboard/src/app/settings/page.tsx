@@ -423,13 +423,35 @@ export default function SettingsPage() {
 
             {provisionStatus.status === "importing" && (
               <>
-                <p className="text-sm text-muted-foreground">
-                  Map data downloaded. Nominatim and OSRM are importing the
-                  data. This typically takes 10-30 minutes.
-                </p>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-                  Importing...
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent flex-shrink-0" />
+                    <span className="font-medium">
+                      {provisionStatus.message || "Importing map data..."}
+                    </span>
+                  </div>
+                  {(provisionStatus as any).importProgress != null && (
+                    <div className="space-y-1">
+                      <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all duration-1000"
+                          style={{ width: `${(provisionStatus as any).importProgress}%` }}
+                        />
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        ~{(provisionStatus as any).importProgress}% complete
+                        {(provisionStatus as any).elapsed && ` — ${(provisionStatus as any).elapsed} elapsed`}
+                      </div>
+                    </div>
+                  )}
+                  {!(provisionStatus as any).importProgress && (provisionStatus as any).elapsed && (
+                    <p className="text-xs text-muted-foreground">
+                      {(provisionStatus as any).elapsed} elapsed
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    This typically takes 15-60 minutes, or 1-3 hours on a Raspberry Pi. Do not restart.
+                  </p>
                 </div>
               </>
             )}

@@ -334,11 +334,75 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
 
         if (!nominatimLive) {
           stored.status = 'importing';
-          stored.message = 'Map data downloaded. Geocoding engine is still importing. This can take 30-60 minutes.';
+
+          // Read Nominatim import progress from shared file
+          let progressLine = '';
+          try {
+            const { readFile } = await import('fs/promises');
+            progressLine = (await readFile('/app/map-data/import-progress.txt', 'utf-8')).trim();
+          } catch {
+            // File doesn't exist yet
+          }
+
+          // Show elapsed time
+          const downloadedAt = stored.downloadedAt || stored.completedAt;
+          let elapsed = '';
+          if (downloadedAt) {
+            const mins = Math.round((Date.now() - new Date(downloadedAt).getTime()) / 60000);
+            elapsed = mins < 1 ? 'less than 1 min' : `${mins} min`;
+          }
+
+          // Parse the progress line for structured info
+          let step = 'Importing map data...';
+          let importProgress: number | null = null;
+
+          if (progressLine === 'waiting' || progressLine === 'starting') {
+            step = 'Preparing to import...';
+          } else if (progressLine) {
+            // "Done 5584 in 11 @ 490/s - rank 20 ETA (seconds): 34.52"
+            const rankMatch = progressLine.match(/rank (\d+)/);
+            const etaMatch = progressLine.match(/ETA \(seconds\): ([\d.]+)/);
+            const rateMatch = progressLine.match(/@ ([\d.]+) per second/);
+            const processedMatch = progressLine.match(/Processed (\d+) (nodes|ways|relations)/);
+
+            if (rankMatch) {
+              const rank = parseInt(rankMatch[1]);
+              importProgress = Math.round(((rank - 4) / 26) * 100);
+              step = `Indexing addresses (rank ${rank}/30, ~${importProgress}% overall)`;
+              if (rateMatch) step += ` — ${Math.round(parseFloat(rateMatch[1]))}/sec`;
+              if (etaMatch) {
+                const secs = parseFloat(etaMatch[1]);
+                step += secs > 60 ? `, ~${Math.round(secs / 60)} min left for this rank` : `, ~${Math.round(secs)}s left`;
+              }
+            } else if (processedMatch) {
+              step = `Processed ${processedMatch[1]} ${processedMatch[2]}`;
+            } else if (progressLine.includes('Clustering')) {
+              step = 'Clustering geographic data...';
+              importProgress = 10;
+            } else if (progressLine.includes('TIGER')) {
+              step = 'Importing US house number data (TIGER)...';
+              importProgress = 95;
+            } else if (progressLine.includes('Loading')) {
+              step = 'Loading data into database...';
+              importProgress = 5;
+            } else if (progressLine.includes('Creating')) {
+              step = 'Creating database indexes...';
+              importProgress = 8;
+            } else if (progressLine.includes('Starting Apache')) {
+              step = 'Almost ready — starting web server...';
+              importProgress = 99;
+            } else {
+              step = progressLine.length > 100 ? progressLine.substring(0, 100) + '...' : progressLine;
+            }
+          }
+
+          stored.message = step;
+          stored.elapsed = elapsed;
+          stored.importProgress = importProgress;
         } else if (stored.status !== 'ready') {
           stored.status = 'ready';
           delete stored.message;
-          // Persist the corrected status
+          delete stored.importProgress;
           await redis.set(PROVISION_STATUS_KEY, JSON.stringify(stored));
         }
       }
@@ -428,6 +492,7 @@ async function downloadPbf(
         status: 'importing',
         state: stateName,
         sizeBytes: finalSizeBytes,
+        downloadedAt: new Date().toISOString(),
         message: 'Map data downloaded. Nominatim and OSRM are importing...',
       }),
     );
