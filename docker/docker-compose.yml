@@ -122,6 +122,28 @@ services:
       retries: 5
       start_period: 600s  # processing takes a while on first start
 
+  # ---------------------------------------------------------------------------
+  # Signal Messenger (signal-cli REST API)
+  #
+  # Provides Signal messaging as a notification channel alongside SMS/WhatsApp.
+  # Signal requires one-time registration with a phone number:
+  #   1. Start the container: docker compose up -d signal
+  #   2. Register: POST http://localhost:8089/v1/register/{+1234567890}
+  #   3. Verify with the code received: POST http://localhost:8089/v1/register/{+1234567890}/verify/{code}
+  #
+  # See full docs: https://github.com/bbernhard/signal-cli-rest-api
+  # ---------------------------------------------------------------------------
+  signal:
+    image: bbernhard/signal-cli-rest-api:latest
+    container_name: safecare-signal
+    restart: unless-stopped
+    ports:
+      - "8089:8080"
+    environment:
+      MODE: normal
+    volumes:
+      - signaldata:/home/.local/share/signal-cli
+
   backend:
     build:
       context: ../
@@ -142,6 +164,7 @@ services:
       REDIS_URL: redis://redis:6379
       GEOCODING_URL: http://nominatim:8080
       OSRM_URL: http://osrm:5000
+      SIGNAL_CLI_URL: http://signal:8080
 
   dashboard:
     build:
@@ -168,4 +191,6 @@ volumes:
   nominatimdata:
     driver: local
   osrmdata:
+    driver: local
+  signaldata:
     driver: local

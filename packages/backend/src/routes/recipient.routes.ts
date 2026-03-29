@@ -8,8 +8,9 @@ const createRecipientSchema = z.object({
   phone: z.string().min(10).max(15),
   lat: z.number().optional(),
   lng: z.number().optional(),
-  communicationPreference: z.enum(['sms', 'whatsapp']).optional(),
+  communicationPreference: z.enum(['sms', 'whatsapp', 'signal']).optional(),
   whatsappConsent: z.boolean().optional(),
+  language: z.string().min(2).max(5).optional(),
 });
 
 const jotformWebhookSchema = z.object({

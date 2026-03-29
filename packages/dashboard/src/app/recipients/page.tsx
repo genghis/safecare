@@ -46,6 +46,7 @@ export default function RecipientsPage() {
   const [addLat, setAddLat] = useState<number | null>(null);
   const [addLng, setAddLng] = useState<number | null>(null);
   const [addCommPref, setAddCommPref] = useState("sms");
+  const [addLanguage, setAddLanguage] = useState("en");
   const [addSaving, setAddSaving] = useState(false);
 
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function RecipientsPage() {
     setAddLat(null);
     setAddLng(null);
     setAddCommPref("sms");
+    setAddLanguage("en");
     setShowAddModal(true);
   }
 
@@ -99,6 +101,7 @@ export default function RecipientsPage() {
         lat: addLat,
         lng: addLng,
         communicationPreference: addCommPref,
+        language: addLanguage,
       }
     );
 
@@ -173,7 +176,7 @@ export default function RecipientsPage() {
                   <TableCell>
                     <StatusBadge status={recipient.verified ? "verified" : "unverified"} />
                   </TableCell>
-                  <TableCell>{recipient.communicationPreference === "sms" ? "SMS" : recipient.communicationPreference === "whatsapp" ? "WhatsApp" : recipient.communicationPreference}</TableCell>
+                  <TableCell>{recipient.communicationPreference === "sms" ? "SMS" : recipient.communicationPreference === "signal" ? "Signal" : recipient.communicationPreference === "whatsapp" ? "WhatsApp" : recipient.communicationPreference}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(recipient.createdAt).toLocaleDateString()}
                   </TableCell>
@@ -244,17 +247,35 @@ export default function RecipientsPage() {
                 </div>
               </div>
 
-              {/* Communication Preference */}
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Communication Preference</label>
-                <select
-                  value={addCommPref}
-                  onChange={(e) => setAddCommPref(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="sms">SMS</option>
-                  <option value="whatsapp">WhatsApp</option>
-                </select>
+              {/* Communication + Language row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Notification Channel</label>
+                  <select
+                    value={addCommPref}
+                    onChange={(e) => setAddCommPref(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="sms">SMS</option>
+                    <option value="signal">Signal</option>
+                    <option value="whatsapp">WhatsApp</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Language</label>
+                  <select
+                    value={addLanguage}
+                    onChange={(e) => setAddLanguage(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="ar">العربية (Arabic)</option>
+                    <option value="so">Soomaali (Somali)</option>
+                    <option value="fr">Français (French)</option>
+                    <option value="zh">中文 (Chinese)</option>
+                  </select>
+                </div>
               </div>
             </div>
 

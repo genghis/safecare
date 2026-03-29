@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS recipients (
   lng NUMERIC,
   communication_preference TEXT DEFAULT 'sms',
   whatsapp_consent BOOLEAN DEFAULT false,
+  language TEXT DEFAULT 'en',
   verified BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT now()
 );

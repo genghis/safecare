@@ -15,6 +15,7 @@ import zoneRoutes from './routes/zone.routes.js';
 import distributionRoutes from './routes/distribution.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import geocodeRoutes from './routes/geocode.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
 import { initQueues, closeQueues } from './jobs/index.js';
 
 async function main() {
@@ -53,6 +54,7 @@ async function main() {
   await fastify.register(distributionRoutes);
   await fastify.register(dashboardRoutes);
   await fastify.register(geocodeRoutes);
+  await fastify.register(notificationRoutes);
 
   // --- Health check ---
   fastify.get('/api/health', async () => {

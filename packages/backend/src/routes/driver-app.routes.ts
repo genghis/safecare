@@ -1,9 +1,15 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { eq, sql } from 'drizzle-orm';
 import { dispatchService } from '../services/dispatch.service.js';
 import { routingService } from '../services/routing.service.js';
+import { notificationService } from '../services/notification.service.js';
+import { db } from '../db/index.js';
+import { deliveries, recipients } from '../db/schema.js';
+import { config } from '../config.js';
 import { RATE_LIMIT_DRIVER_RPM } from '@safecare/shared';
 import type { DriverSyncPayload } from '@safecare/shared';
+import type { RecipientContact } from '../services/notification.service.js';
 
 const downloadRouteSchema = z.object({
   token: z.string().min(1),
@@ -192,6 +198,57 @@ export default async function driverAppRoutes(fastify: FastifyInstance) {
           };
 
           const results = await dispatchService.syncDriverUpdates(payload);
+
+          // Fire-and-forget notifications for status transitions
+          for (const update of parsed.data.updates) {
+            if (update.status === 'in_transit' || update.status === 'delivered') {
+              const messageKey =
+                update.status === 'in_transit'
+                  ? 'notification.delivery.enRoute'
+                  : 'notification.delivery.delivered';
+
+              // Async: do not await -- avoid slowing down sync response
+              (async () => {
+                try {
+                  // Look up delivery to get recipientId
+                  const [delivery] = await db
+                    .select({ recipientId: deliveries.recipientId })
+                    .from(deliveries)
+                    .where(eq(deliveries.id, update.deliveryId));
+
+                  if (!delivery?.recipientId) return;
+
+                  // Look up recipient with decrypted phone
+                  const [recipient] = await db
+                    .select({
+                      phone: sql<string>`pgp_sym_decrypt(${recipients.phoneEnc}::bytea, ${config.DEK})`,
+                      communicationPreference: recipients.communicationPreference,
+                      language: recipients.language,
+                      whatsappConsent: recipients.whatsappConsent,
+                    })
+                    .from(recipients)
+                    .where(eq(recipients.id, delivery.recipientId));
+
+                  if (!recipient?.phone) return;
+
+                  const contact: RecipientContact = {
+                    phone: recipient.phone,
+                    communicationPreference:
+                      (recipient.communicationPreference as RecipientContact['communicationPreference']) ?? 'sms',
+                    language: recipient.language ?? undefined,
+                    whatsappConsent: recipient.whatsappConsent ?? false,
+                  };
+
+                  await notificationService.send(contact, messageKey);
+                } catch (err) {
+                  fastify.log.error(
+                    { err, deliveryId: update.deliveryId, status: update.status },
+                    'Failed to send delivery notification',
+                  );
+                }
+              })();
+            }
+          }
 
           return reply.send({
             success: true,

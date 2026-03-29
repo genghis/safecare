@@ -25,6 +25,7 @@ export const recipients = pgTable('recipients', {
   lng: numeric('lng'),
   communicationPreference: text('communication_preference').default('sms'),
   whatsappConsent: boolean('whatsapp_consent').default(false),
+  language: text('language').default('en'),
   verified: boolean('verified').default(false),
   createdAt: timestamp('created_at').defaultNow(),
 });
