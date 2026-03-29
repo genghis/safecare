@@ -26,6 +26,12 @@ interface ServiceArea {
   lng: number;
   zoom: number;
   label: string;
+  bounds?: {
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+  };
 }
 
 interface OrgSettings {
@@ -78,6 +84,7 @@ export default function SettingsPage() {
   const [lng, setLng] = useState(DEFAULT_SETTINGS.serviceArea.lng);
   const [zoom, setZoom] = useState(DEFAULT_SETTINGS.serviceArea.zoom);
   const [label, setLabel] = useState(DEFAULT_SETTINGS.serviceArea.label);
+  const [bounds, setBounds] = useState<{ south: number; west: number; north: number; east: number } | undefined>(undefined);
 
   // Provision status
   const [provisionStatus, setProvisionStatus] = useState<ProvisionStatus>({
@@ -103,6 +110,9 @@ export default function SettingsPage() {
         setLng(res.data.serviceArea.lng);
         setZoom(res.data.serviceArea.zoom);
         setLabel(res.data.serviceArea.label);
+        if (res.data.serviceArea.bounds) {
+          setBounds(res.data.serviceArea.bounds);
+        }
       }
       setLoading(false);
     }
@@ -189,7 +199,7 @@ export default function SettingsPage() {
 
     const settings: OrgSettings = {
       orgName,
-      serviceArea: { lat, lng, zoom, label },
+      serviceArea: { lat, lng, zoom, label, bounds },
     };
 
     const res = await apiPut("/api/settings", settings);
@@ -253,15 +263,18 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Service Area */}
+        {/* Operating Region */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Service Area</CardTitle>
+            <CardTitle className="text-lg">Operating Region</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Set the default map center for all maps in the dashboard. Search
-              for a city or click on the map to set the center point.
+              Define where your deliveries happen and where your drivers operate.
+              Pan and zoom the map so the visible area covers your full operating
+              region. This determines the default view for all maps, which area
+              to provision for geocoding and routing, and where address search
+              results are biased.
             </p>
 
             {/* Search input */}
@@ -303,52 +316,36 @@ export default function SettingsPage() {
 
             {/* Map */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Map Center</label>
               <SettingsMap
                 lat={lat}
                 lng={lng}
                 zoom={zoom}
                 onLocationChange={handleMapClick}
+                onBoundsChange={(newBounds, newZoom) => {
+                  setBounds(newBounds);
+                  setZoom(newZoom);
+                }}
               />
             </div>
 
-            {/* Zoom */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Default Zoom Level: {zoom}
-              </label>
-              <div className="flex items-center gap-3 max-w-md">
-                <span className="text-xs text-muted-foreground">10</span>
-                <input
-                  type="range"
-                  min={10}
-                  max={16}
-                  step={1}
-                  value={zoom}
-                  onChange={(e) => setZoom(parseInt(e.target.value, 10))}
-                  className="flex-1 accent-primary"
-                />
-                <span className="text-xs text-muted-foreground">16</span>
-              </div>
-            </div>
-
-            {/* Coordinates display */}
-            <div className="rounded-md border bg-muted/50 px-4 py-3">
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Latitude:</span>{" "}
-                  <span className="font-mono">{lat.toFixed(6)}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Longitude:</span>{" "}
-                  <span className="font-mono">{lng.toFixed(6)}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Label:</span>{" "}
-                  <span>{label || "Not set"}</span>
+            {/* Region info */}
+            {bounds && (
+              <div className="rounded-md border bg-muted/50 px-4 py-3">
+                <div className="text-sm space-y-1">
+                  <div>
+                    <span className="text-muted-foreground">Center:</span>{" "}
+                    <span className="font-mono">{label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Region:</span>{" "}
+                    <span className="font-mono text-xs">
+                      {bounds.south.toFixed(3)}N to {bounds.north.toFixed(3)}N,{" "}
+                      {bounds.west.toFixed(3)}W to {bounds.east.toFixed(3)}W
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </CardContent>
           <CardFooter>
             <div className="flex items-center gap-3">

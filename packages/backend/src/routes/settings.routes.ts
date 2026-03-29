@@ -38,17 +38,95 @@ const STATE_SLUGS: Record<string, string> = {
   'District of Columbia': 'district-of-columbia',
 };
 
-const serviceAreaSchema = z.object({
+const operatingRegionSchema = z.object({
   lat: z.number(),
   lng: z.number(),
   zoom: z.number().min(1).max(20),
   label: z.string(),
+  bounds: z.object({
+    south: z.number(),
+    west: z.number(),
+    north: z.number(),
+    east: z.number(),
+  }).optional(),
 });
 
 const settingsSchema = z.object({
   orgName: z.string().min(1),
-  serviceArea: serviceAreaSchema,
+  serviceArea: operatingRegionSchema,
 });
+
+// Map state bounding boxes to determine which extracts cover a region
+// Each state has [south, west, north, east] approximate bounds
+const STATE_BOUNDS: Record<string, [number, number, number, number]> = {
+  'alabama': [30.2, -88.5, 35.0, -84.9],
+  'alaska': [51.2, -179.2, 71.4, -129.6],
+  'arizona': [31.3, -114.8, 37.0, -109.0],
+  'arkansas': [33.0, -94.6, 36.5, -89.6],
+  'california': [32.5, -124.4, 42.0, -114.1],
+  'colorado': [37.0, -109.1, 41.0, -102.0],
+  'connecticut': [41.0, -73.7, 42.1, -71.8],
+  'delaware': [38.5, -75.8, 39.8, -75.0],
+  'district-of-columbia': [38.8, -77.1, 39.0, -76.9],
+  'florida': [24.5, -87.6, 31.0, -80.0],
+  'georgia': [30.4, -85.6, 35.0, -80.8],
+  'hawaii': [18.9, -160.2, 22.2, -154.8],
+  'idaho': [42.0, -117.2, 49.0, -111.0],
+  'illinois': [37.0, -91.5, 42.5, -87.0],
+  'indiana': [37.8, -88.1, 41.8, -84.8],
+  'iowa': [40.4, -96.6, 43.5, -90.1],
+  'kansas': [37.0, -102.1, 40.0, -94.6],
+  'kentucky': [36.5, -89.6, 39.1, -82.0],
+  'louisiana': [29.0, -94.0, 33.0, -89.0],
+  'maine': [43.1, -71.1, 47.5, -66.9],
+  'maryland': [38.0, -79.5, 39.7, -75.0],
+  'massachusetts': [41.2, -73.5, 42.9, -69.9],
+  'michigan': [41.7, -90.4, 48.3, -82.4],
+  'minnesota': [43.5, -97.2, 49.4, -89.5],
+  'mississippi': [30.2, -91.7, 35.0, -88.1],
+  'missouri': [36.0, -95.8, 40.6, -89.1],
+  'montana': [44.4, -116.1, 49.0, -104.0],
+  'nebraska': [40.0, -104.1, 43.0, -95.3],
+  'nevada': [35.0, -120.0, 42.0, -114.0],
+  'new-hampshire': [42.7, -72.6, 45.3, -71.0],
+  'new-jersey': [38.9, -75.6, 41.4, -73.9],
+  'new-mexico': [31.3, -109.1, 37.0, -103.0],
+  'new-york': [40.5, -79.8, 45.0, -71.9],
+  'north-carolina': [33.8, -84.3, 36.6, -75.5],
+  'north-dakota': [45.9, -104.1, 49.0, -96.6],
+  'ohio': [38.4, -84.8, 42.0, -80.5],
+  'oklahoma': [33.6, -103.0, 37.0, -94.4],
+  'oregon': [41.9, -124.6, 46.3, -116.5],
+  'pennsylvania': [39.7, -80.5, 42.3, -75.0],
+  'rhode-island': [41.1, -71.9, 42.0, -71.1],
+  'south-carolina': [32.0, -83.4, 35.2, -78.5],
+  'south-dakota': [42.5, -104.1, 46.0, -96.4],
+  'tennessee': [35.0, -90.3, 36.7, -81.6],
+  'texas': [25.8, -106.6, 36.5, -93.5],
+  'utah': [37.0, -114.1, 42.0, -109.0],
+  'vermont': [42.7, -73.4, 45.0, -71.5],
+  'virginia': [36.5, -83.7, 39.5, -75.2],
+  'washington': [45.5, -124.8, 49.0, -116.9],
+  'west-virginia': [37.2, -82.6, 40.6, -77.7],
+  'wisconsin': [42.5, -92.9, 47.1, -86.8],
+  'wyoming': [41.0, -111.1, 45.0, -104.1],
+};
+
+/**
+ * Find the smallest set of Geofabrik state extracts that fully cover
+ * the given bounding box.
+ */
+function findCoveringExtracts(bounds: { south: number; west: number; north: number; east: number }): string[] {
+  const covering: string[] = [];
+  for (const [slug, [s, w, n, e]] of Object.entries(STATE_BOUNDS)) {
+    // Does this state overlap with the requested bounds?
+    const overlaps = !(bounds.east < w || bounds.west > e || bounds.north < s || bounds.south > n);
+    if (overlaps) {
+      covering.push(slug);
+    }
+  }
+  return covering;
+}
 
 export default async function settingsRoutes(fastify: FastifyInstance) {
   /**
@@ -119,88 +197,68 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
       }
 
       const settings = JSON.parse(raw);
-      const { lat, lng, label } = settings.serviceArea;
+      const { bounds, label } = settings.serviceArea;
 
-      // 2. Determine the US state from the label or reverse geocoding
-      let stateName = '';
-
-      // First try: parse state from the stored label
-      // Label format: "City, County, State, Country" or "City, State, Country"
-      if (label) {
-        const parts = label.split(',').map((s: string) => s.trim());
-        // Walk backwards looking for a known state name
-        for (let i = parts.length - 1; i >= 0; i--) {
-          if (STATE_SLUGS[parts[i]]) {
-            stateName = parts[i];
-            break;
-          }
-        }
-      }
-
-      // Fallback: try reverse geocoding (only works if Nominatim is running)
-      if (!stateName) {
-        try {
-          const url = new URL('/reverse', config.GEOCODING_URL);
-          url.searchParams.set('lat', String(lat));
-          url.searchParams.set('lon', String(lng));
-          url.searchParams.set('format', 'jsonv2');
-          url.searchParams.set('addressdetails', '1');
-
-          const geoResponse = await fetch(url.toString(), {
-            headers: { 'User-Agent': USER_AGENT },
-            signal: AbortSignal.timeout(5000),
-          });
-
-          if (geoResponse.ok) {
-            const geoData = (await geoResponse.json()) as any;
-            stateName = geoData.address?.state ?? '';
-            if (!stateName) {
-              const parts = (geoData.display_name ?? '').split(',').map((s: string) => s.trim());
-              stateName = parts.length >= 2 ? parts[parts.length - 2] : '';
-            }
-          }
-        } catch {
-          // Geocoding not available yet -- that's OK if we parsed from label
-        }
-      }
-
-      if (!stateName) {
+      if (!bounds) {
         return reply.code(400).send({
           success: false,
-          error: 'Could not determine state from service area label. Try re-saving your service area in Settings.',
+          error: 'No operating region bounds saved. Pan/zoom the map in Settings to define your region, then save.',
         });
       }
 
-      // 3. Map state name to Geofabrik slug
-      const slug = STATE_SLUGS[stateName];
-      if (!slug) {
+      // 2. Find which state extracts cover the operating region
+      const extracts = findCoveringExtracts(bounds);
+      if (extracts.length === 0) {
         return reply.code(400).send({
           success: false,
-          error: `Could not map "${stateName}" to a known US state. Ensure the service area is within the US.`,
+          error: 'Could not find map data for this region. Ensure the operating region is within the US.',
         });
       }
 
-      const pbfUrl = `https://download.geofabrik.de/north-america/us/${slug}-latest.osm.pbf`;
+      const regionLabel = extracts.length === 1
+        ? extracts[0].replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+        : `${extracts.length} states`;
 
-      // 4. Set initial status and kick off download in the background
+      // For now, download extracts sequentially and merge isn't supported --
+      // use the first extract if single state, or fall back to a regional extract
+      // that covers all the states
+      let pbfUrl: string;
+      let downloadLabel: string;
+
+      if (extracts.length === 1) {
+        pbfUrl = `https://download.geofabrik.de/north-america/us/${extracts[0]}-latest.osm.pbf`;
+        downloadLabel = regionLabel;
+      } else {
+        // Multiple states -- use the regional extract that covers them
+        // Determine region from first extract's location
+        const midLat = (bounds.south + bounds.north) / 2;
+        const midLng = (bounds.west + bounds.east) / 2;
+        let region = 'us-midwest';
+        if (midLng > -80) region = 'us-northeast';
+        else if (midLat < 37 && midLng > -105) region = 'us-south';
+        else if (midLng < -105) region = 'us-west';
+        pbfUrl = `https://download.geofabrik.de/north-america/${region}-latest.osm.pbf`;
+        downloadLabel = `${region.replace('us-', 'US ').replace(/\b\w/g, (c) => c.toUpperCase())} (covers ${extracts.join(', ')})`;
+      }
+
+      // 3. Set initial status and kick off download
       await redis.set(
         PROVISION_STATUS_KEY,
         JSON.stringify({
           status: 'downloading',
           progress: 0,
-          state: stateName,
-          message: `Starting download for ${stateName}...`,
+          state: downloadLabel,
+          message: `Starting download for ${downloadLabel}...`,
         }),
       );
 
-      // Reply immediately -- download happens in background
       reply.send({
         success: true,
-        data: { state: stateName, slug, url: pbfUrl },
+        data: { region: downloadLabel, extracts, url: pbfUrl },
       });
 
-      // 5. Download the PBF file with progress tracking
-      downloadPbf(pbfUrl, stateName, fastify.log).catch((err) => {
+      // 4. Download in background
+      downloadPbf(pbfUrl, downloadLabel, fastify.log).catch((err) => {
         fastify.log.error(err, 'Map provisioning download failed');
       });
     },
