@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { requestOtp, verifyOtp, setAuthToken } from "@/lib/api";
+import { requestOtp, verifyOtp, setToken, persistToken } from "@/lib/api";
 import InstallPrompt from "@/components/InstallPrompt";
 
 type Stage = "phone" | "otp";
@@ -22,7 +22,7 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      await requestOtp(phone, pin);
+      await requestOtp(phone);
       setStage("otp");
     } catch {
       setError("Could not request OTP. Check your phone number and PIN.");
@@ -40,7 +40,8 @@ export default function Login() {
     setLoading(true);
     try {
       const { token } = await verifyOtp(phone, otpCode);
-      setAuthToken(token);
+      setToken(token);
+      await persistToken(token);
       navigate("/dashboard", { replace: true });
     } catch {
       setError("Invalid or expired code. Please try again.");

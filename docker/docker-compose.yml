@@ -189,6 +189,21 @@ services:
       PORT: 3000
       HOSTNAME: "0.0.0.0"
 
+  # ---------------------------------------------------------------------------
+  # Driver PWA (Progressive Web App)
+  # Served as static files. Drivers access via phone browser.
+  # ---------------------------------------------------------------------------
+  pwa:
+    build:
+      context: ../
+      dockerfile: packages/pwa/Dockerfile
+    container_name: safecare-pwa
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:3001
+
 volumes:
   pgdata:
     driver: local

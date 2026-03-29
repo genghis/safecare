@@ -66,7 +66,7 @@ export async function deriveKey(sessionKey: string): Promise<CryptoKey> {
   // Import raw key material for HKDF
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
-    rawBytes,
+    rawBytes.buffer as ArrayBuffer,
     "HKDF",
     false,
     ["deriveKey"],

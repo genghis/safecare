@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useOnlineStatus } from "@/lib/hooks";
 import { getPendingCount } from "@/lib/sync";
 
@@ -14,7 +15,15 @@ const SESSION_LABELS: Record<string, string> = {
 
 export default function StatusBar({ sessionStatus }: StatusBarProps) {
   const isOnline = useOnlineStatus();
-  const pendingCount = getPendingCount();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    getPendingCount().then(setPendingCount);
+    const interval = setInterval(() => {
+      getPendingCount().then(setPendingCount);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="status-bar">

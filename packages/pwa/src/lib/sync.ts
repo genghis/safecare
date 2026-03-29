@@ -7,7 +7,6 @@
 
 import {
   initDB,
-  storeEncrypted,
   type StoreName,
 } from "@/lib/db";
 import { encrypt, decrypt, getCurrentKey } from "@/lib/crypto";
