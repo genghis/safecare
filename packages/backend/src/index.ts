@@ -17,6 +17,7 @@ import dashboardRoutes from './routes/dashboard.routes.js';
 import geocodeRoutes from './routes/geocode.routes.js';
 import webhookRoutes from './routes/webhook.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
 import { initQueues, closeQueues } from './jobs/index.js';
 
 async function main() {
@@ -57,6 +58,7 @@ async function main() {
   await fastify.register(geocodeRoutes);
   await fastify.register(webhookRoutes);
   await fastify.register(notificationRoutes);
+  await fastify.register(settingsRoutes);
 
   // --- Health check ---
   fastify.get('/api/health', async () => {

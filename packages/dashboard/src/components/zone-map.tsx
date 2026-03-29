@@ -36,6 +36,7 @@ export interface ZoneMapProps {
   editingColor: string;
   onAddPoint: (lat: number, lng: number) => void;
   onUpdatePoints: (points: ZonePoint[]) => void;
+  defaultCenter?: { lat: number; lng: number; zoom: number };
 }
 
 // ---------------------------------------------------------------------------
@@ -162,6 +163,7 @@ export default function ZoneMap({
   editingColor,
   onAddPoint,
   onUpdatePoints,
+  defaultCenter,
 }: ZoneMapProps) {
   function handleVertexDrag(index: number, lat: number, lng: number) {
     const updated = editingPoints.map((p, i) =>
@@ -178,8 +180,8 @@ export default function ZoneMap({
   return (
     <div className="relative w-full h-[400px] rounded-md border overflow-hidden">
       <MapContainer
-        center={[39.8283, -98.5795]}
-        zoom={4}
+        center={defaultCenter ? [defaultCenter.lat, defaultCenter.lng] : [39.8283, -98.5795]}
+        zoom={defaultCenter ? defaultCenter.zoom : 4}
         className="w-full h-full"
         style={{ width: "100%", height: "100%" }}
       >

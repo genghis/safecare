@@ -45,6 +45,7 @@ export interface AddressPickerMapProps {
   onLocationChange: (lat: number, lng: number, address: string) => void;
   onAddressChange: (address: string) => void;
   zones?: Zone[];
+  defaultCenter?: { lat: number; lng: number; zoom: number };
 }
 
 // ---------------------------------------------------------------------------
@@ -158,6 +159,7 @@ export default function AddressPickerMap({
   onLocationChange,
   onAddressChange,
   zones = [],
+  defaultCenter,
 }: AddressPickerMapProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
@@ -292,8 +294,8 @@ export default function AddressPickerMap({
       {/* Map */}
       <div className="relative w-full h-[300px] rounded-md border overflow-hidden">
         <MapContainer
-          center={[39.8283, -98.5795]}
-          zoom={4}
+          center={defaultCenter ? [defaultCenter.lat, defaultCenter.lng] : [39.8283, -98.5795]}
+          zoom={defaultCenter ? defaultCenter.zoom : 4}
           className="w-full h-full"
           style={{ width: "100%", height: "100%" }}
         >

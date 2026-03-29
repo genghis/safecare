@@ -38,6 +38,11 @@ export default function RecipientsPage() {
   // Zones for map overlay
   const [zones, setZones] = useState<any[]>([]);
 
+  // Org settings for default map center
+  const [defaultCenter, setDefaultCenter] = useState<
+    { lat: number; lng: number; zoom: number } | undefined
+  >(undefined);
+
   // Add modal state
   const [showAddModal, setShowAddModal] = useState(false);
   const [addName, setAddName] = useState("");
@@ -51,15 +56,20 @@ export default function RecipientsPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const [recipientsRes, zonesRes] = await Promise.all([
+      const [recipientsRes, zonesRes, settingsRes] = await Promise.all([
         apiGet<Recipient[]>("/api/recipients"),
         apiGet<any[]>("/api/zones"),
+        apiGet<any>("/api/settings"),
       ]);
       if (recipientsRes.ok && Array.isArray(recipientsRes.data)) {
         setRecipients(recipientsRes.data);
       }
       if (zonesRes.ok && Array.isArray(zonesRes.data)) {
         setZones(zonesRes.data);
+      }
+      if (settingsRes.ok && settingsRes.data?.serviceArea) {
+        const sa = settingsRes.data.serviceArea;
+        setDefaultCenter({ lat: sa.lat, lng: sa.lng, zoom: sa.zoom });
       }
       setLoading(false);
     }
@@ -233,6 +243,7 @@ export default function RecipientsPage() {
                   }}
                   onAddressChange={setAddAddress}
                   zones={zones}
+                  defaultCenter={defaultCenter}
                 />
                 <div className="mt-2">
                   <label className="text-xs text-muted-foreground">
