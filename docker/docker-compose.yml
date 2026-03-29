@@ -71,7 +71,9 @@ services:
     ports:
       - "8088:8080"
     environment:
-      PBF_URL: https://download.geofabrik.de/north-america/us-midwest-latest.osm.pbf
+      # To download fresh data instead of using local file, replace PBF_PATH
+      # with PBF_URL: https://download.geofabrik.de/north-america/us-midwest-latest.osm.pbf
+      PBF_PATH: /nominatim/data.osm.pbf
       REPLICATION_URL: https://download.geofabrik.de/north-america/us-midwest-updates/
       NOMINATIM_PASSWORD: safecare
       # Low-memory settings for RPi / 8GB machines
@@ -82,6 +84,7 @@ services:
       THREADS: 2
     volumes:
       - nominatimdata:/var/lib/postgresql/14/main
+      - ./nominatim-data/data.osm.pbf:/nominatim/data.osm.pbf
     shm_size: 1g
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/status"]

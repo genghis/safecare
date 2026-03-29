@@ -13,3 +13,4 @@ secrets/*.yaml
 coverage/
 *.log
 .DS_Store
+docker/nominatim-data/
