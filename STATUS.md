@@ -59,17 +59,20 @@ Last updated: 2026-03-29
 | Team gamification | Not done | |
 | Route optimization with driver constraints | Partial | Zone-aware distribution, no constraint optimization |
 
-## Phase 5: Hardening & Advanced Security -- NOT STARTED
+## Phase 5: Hardening & Advanced Security -- IN PROGRESS
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Server-side data purge (hard DELETE + VACUUM) | Not done | No scheduled purge jobs |
-| Purge confirmation loop | Not done | |
+| Server-side data purge (hard DELETE + VACUUM) | Done | Hourly sweep + VACUUM, communication session cleanup |
+| Audit log cleanup (90-day sweep) | Done | Daily cron job |
+| Twilio log scrubbing | Done | Per-session + daily 2AM sweep, Redis SID tracking |
+| Purge confirmation loop | Done | 12h window, Redis tracking, dashboard warnings |
+| Dashboard purge warnings endpoint | Done | GET /api/dashboard/purge-warnings |
+| Emergency destroy script | Done | Cross-platform (Linux + macOS), shreds secrets, wipes volumes |
 | Remote wipe via push notification | Not done | |
 | Signal integration (signal-cli) | Not done | |
 | Key rotation tooling | Not done | |
-| Emergency destroy script | Exists | scripts/destroy.sh, untested |
-| Security docs/runbook | Partial | README.md only |
+| Security docs/runbook | Partial | README.md + STATUS.md |
 | CI/CD (GitHub Actions) | Not done | |
 | Playwright dashboard tests | Not done | |
 | PostgreSQL integration tests (testcontainers) | Not done | |
@@ -78,12 +81,12 @@ Last updated: 2026-03-29
 
 | Gap | Priority | Notes |
 |-----|----------|-------|
-| **Server-side delivery data purge** | High | No hard DELETE + VACUUM jobs for expired delivery records |
 | **Recipient notifications** | High | No SMS/notification when delivery is coming or arrives |
 | **Tailscale networking** | Medium | Documented in plan but not configured |
 | **CI/CD pipeline** | Medium | No automated lint/test/build |
-| **BullMQ purge jobs** | High | Redis queue exists but no purge workers |
-| **Audit log cleanup** (90-day sweep) | Medium | audit_log table exists, no sweep job |
+| **Exclusion zones** | Medium | Draw on map, OSRM edge-weighting to avoid |
+| **Key rotation tooling** | Low | Scripted DEK re-encryption |
+| **Remote wipe** | Low | Push notification to destroy route data on driver phone |
 
 ## Services (Docker)
 
@@ -94,7 +97,7 @@ Last updated: 2026-03-29
 | PostgreSQL | safecare-postgres | 5432 | postgres:16-alpine |
 | Redis | safecare-redis | 6379 | redis:7-alpine |
 | Nominatim | safecare-nominatim | 8088 | mediagis/nominatim:4.4 |
-| OSRM | safecare-osrm | 5000 | osrm/osrm-backend:v5.27.1 |
+| OSRM | safecare-osrm | 5000 | osrm/osrm-backend:latest |
 
 ## Test Coverage
 
