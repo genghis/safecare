@@ -51,7 +51,7 @@ function TwoFactorSection() {
   async function handleStartSetup() {
     setSetupError("");
     const res = await apiPost<{ secret: string; uri: string }>(
-      "/api/auth/admin/totp/setup",
+      "/api/auth/admin/totp/setup", {},
     );
     if (res.ok && res.data) {
       setSetupSecret(res.data.secret);
