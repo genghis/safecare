@@ -205,7 +205,7 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
         // No status key -- check if PBF file exists
         try {
           const fileInfo = await stat(MAP_DATA_PATH);
-          if (fileInfo.size > 0) {
+          if (fileInfo.size > 1_000_000) { // at least 1MB to be a valid PBF
             return reply.send({
               success: true,
               data: { status: 'ready', sizeBytes: fileInfo.size },
