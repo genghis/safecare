@@ -14,3 +14,8 @@ coverage/
 *.log
 .DS_Store
 docker/nominatim-data/
+
+# Terraform
+infra/**/.terraform/
+infra/**/terraform.tfstate*
+*.tfstate*

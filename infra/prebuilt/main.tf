@@ -93,7 +93,7 @@ resource "google_project_iam_member" "builder_compute" {
 
 resource "google_compute_instance" "builder" {
   name         = "osrm-builder"
-  machine_type = "c2-standard-30" # 30 vCPUs, 120 GB RAM
+  machine_type = "c2-standard-8" # 8 vCPUs, 32 GB RAM (default quota)
   zone         = var.zone
 
   scheduling {
@@ -128,11 +128,8 @@ resource "google_compute_instance" "builder" {
 
   tags = ["osrm-builder"]
 
-  # Start stopped — trigger manually or via scheduler
-  desired_status = "TERMINATED"
-
   lifecycle {
-    ignore_changes = [desired_status]
+    ignore_changes = [metadata]
   }
 }
 

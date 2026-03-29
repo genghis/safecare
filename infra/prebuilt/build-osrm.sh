@@ -16,7 +16,7 @@ exec > >(tee -a /var/log/osrm-build.log) 2>&1
 START_TIME=$(date +%s)
 BUILD_DATE=$(date -u +%Y-%m-%d)
 WORK="/build"
-PARALLEL=6
+PARALLEL=2
 
 # Get bucket from instance metadata
 BUCKET=$(curl -sf "http://metadata.google.internal/computeMetadata/v1/instance/attributes/bucket" \
