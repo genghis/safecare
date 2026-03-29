@@ -34,9 +34,15 @@ open http://localhost:3000
 |---------|------|-------------|
 | Dashboard | 3000 | Next.js admin dashboard |
 | Backend API | 3001 | Fastify REST API |
+| Driver PWA | 5173 | Vite dev server (or served via backend in production) |
 | PostgreSQL | 5432 | Database with pgcrypto encryption |
 | Redis | 6379 | Job queues (BullMQ) |
-| Nominatim | 8080 | Self-hosted geocoding (OpenStreetMap) |
+| OSRM | 5000 | Self-hosted driving directions (OpenStreetMap) |
+| Nominatim | 8088 | Self-hosted geocoding (OpenStreetMap) |
+
+## Current Status
+
+See [STATUS.md](STATUS.md) for detailed implementation progress against the phased plan.
 
 ## Geocoding
 
@@ -105,12 +111,17 @@ backend:
 │  :3000       │     │  :3001      │     │  :5432        │
 └─────────────┘     └──────┬──────┘     └──────────────┘
                            │
-                    ┌──────┴──────┐
-                    │             │
-               ┌────▼───┐  ┌─────▼──────┐
-               │ Redis  │  │ Nominatim  │
-               │ :6379  │  │ :8080      │
-               └────────┘  └────────────┘
+┌─────────────┐     ┌──────┼──────────┐
+│  Driver PWA  │────▶│     │          │
+│  (Vite/React)│     │  ┌──┴───┐  ┌───┴────────┐
+│  offline-first│    │  │Redis │  │ Nominatim  │
+└─────────────┘     │  │:6379 │  │ :8088      │
+                    │  └──────┘  └────────────┘
+                    │
+                    │  ┌──────────┐
+                    └──│  OSRM    │
+                       │  :5000   │
+                       └──────────┘
 ```
 
 ### Data Privacy
