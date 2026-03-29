@@ -185,10 +185,14 @@ export default function AddressPickerMap({
 
       debounceRef.current = setTimeout(async () => {
         setSearching(true);
-        const res = await apiPost<GeocodingResult[]>("/api/geocode/search", {
-          query: value,
-          limit: 5,
-        });
+        // Build viewbox from defaultCenter to bias results toward service area
+        // Nominatim viewbox format: "west,south,east,north" (~0.5 degree box)
+        const searchBody: Record<string, unknown> = { query: value, limit: 5 };
+        if (defaultCenter) {
+          const pad = 0.5;
+          searchBody.viewbox = `${defaultCenter.lng - pad},${defaultCenter.lat - pad},${defaultCenter.lng + pad},${defaultCenter.lat + pad}`;
+        }
+        const res = await apiPost<GeocodingResult[]>("/api/geocode/search", searchBody);
         if (res.ok && Array.isArray(res.data)) {
           setSearchResults(res.data);
           setShowResults(true);
@@ -196,7 +200,7 @@ export default function AddressPickerMap({
         setSearching(false);
       }, 500);
     },
-    []
+    [defaultCenter]
   );
 
   // Reverse geocode on pin placement

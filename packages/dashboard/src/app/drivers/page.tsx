@@ -439,7 +439,6 @@ export default function DriversPage() {
       {editingDriver && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto py-8"
-          onClick={closeEdit}
         >
           <div
             className="w-full max-w-lg rounded-lg border bg-card p-0 shadow-lg max-h-[90vh] overflow-y-auto"
@@ -587,7 +586,6 @@ export default function DriversPage() {
       {showAddModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto py-8"
-          onClick={closeAddModal}
         >
           <div
             className="w-full max-w-lg rounded-lg border bg-card p-0 shadow-lg max-h-[90vh] overflow-y-auto"

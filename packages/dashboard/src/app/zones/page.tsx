@@ -56,6 +56,9 @@ const PRESET_COLORS = [
 export default function ZonesPage() {
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
+  const [defaultCenter, setDefaultCenter] = useState<
+    { lat: number; lng: number; zoom: number } | undefined
+  >(undefined);
 
   // Edit / create form state
   const [editingZoneId, setEditingZoneId] = useState<string | null>(null);
@@ -68,7 +71,7 @@ export default function ZonesPage() {
   const [saving, setSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // Fetch zones
+  // Fetch zones + settings
   const fetchZones = useCallback(async () => {
     const res = await apiGet<Zone[]>("/api/zones");
     if (res.ok && Array.isArray(res.data)) {
@@ -79,6 +82,13 @@ export default function ZonesPage() {
 
   useEffect(() => {
     fetchZones();
+    // Fetch org settings for default map center
+    apiGet<any>("/api/settings").then((res) => {
+      if (res.ok && res.data?.serviceArea) {
+        const sa = res.data.serviceArea;
+        setDefaultCenter({ lat: sa.lat, lng: sa.lng, zoom: sa.zoom });
+      }
+    });
   }, [fetchZones]);
 
   // ---------------------------------------------------------------------------
@@ -152,11 +162,13 @@ export default function ZonesPage() {
 
   async function handleDelete(zoneId: string) {
     const res = await apiDelete(`/api/zones/${zoneId}`);
-    if (res.ok) {
-      await fetchZones();
-      if (editingZoneId === zoneId) resetForm();
-    }
+    // Remove from local state immediately regardless of response
+    // (the backend soft-deletes, so re-fetch would also exclude it)
+    setZones((prev) => prev.filter((z) => z.id !== zoneId));
+    if (editingZoneId === zoneId) resetForm();
     setDeleteConfirmId(null);
+    // Also re-fetch to ensure consistency
+    fetchZones();
   }
 
   async function handleToggleActive(zone: Zone) {
@@ -335,6 +347,7 @@ export default function ZonesPage() {
                     editingColor={formColor}
                     onAddPoint={handleAddPoint}
                     onUpdatePoints={setFormPoints}
+                    defaultCenter={defaultCenter}
                   />
 
                   {/* Read-only points table */}
@@ -419,7 +432,7 @@ export default function ZonesPage() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleDelete(editingZoneId)}
+                          onClick={() => handleDelete(deleteConfirmId!)}
                         >
                           Confirm
                         </Button>

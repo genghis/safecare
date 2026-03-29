@@ -5,6 +5,7 @@ import { geocodeService } from '../services/geocode.service.js';
 const searchSchema = z.object({
   query: z.string().min(1).max(200),
   limit: z.number().int().min(1).max(10).optional(),
+  viewbox: z.string().optional(), // "west,south,east,north" to bias results
 });
 
 const reverseSchema = z.object({
@@ -35,6 +36,7 @@ export default async function geocodeRoutes(fastify: FastifyInstance) {
         const results = await geocodeService.search(
           parsed.data.query,
           parsed.data.limit,
+          parsed.data.viewbox,
         );
         return reply.send({ success: true, data: results });
       } catch (err) {

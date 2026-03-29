@@ -29,7 +29,7 @@ export class GeocodeService {
     this.lastRequestAt = Date.now();
   }
 
-  async search(query: string, limit = 5): Promise<GeocodingResult[]> {
+  async search(query: string, limit = 5, viewbox?: string): Promise<GeocodingResult[]> {
     await this.rateLimit();
 
     const url = new URL('/search', config.GEOCODING_URL);
@@ -37,6 +37,12 @@ export class GeocodeService {
     url.searchParams.set('format', 'jsonv2');
     url.searchParams.set('limit', String(limit));
     url.searchParams.set('addressdetails', '1');
+
+    // Bias results toward a geographic area (does not exclude results outside)
+    if (viewbox) {
+      url.searchParams.set('viewbox', viewbox);
+      url.searchParams.set('bounded', '0');
+    }
 
     const response = await fetch(url.toString(), {
       headers: { 'User-Agent': USER_AGENT },
