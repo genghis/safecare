@@ -258,7 +258,7 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
       });
 
       // 4. Download in background
-      downloadPbf(pbfUrl, downloadLabel, fastify.log).catch((err) => {
+      downloadPbf(pbfUrl, downloadLabel, bounds, fastify.log).catch((err) => {
         fastify.log.error(err, 'Map provisioning download failed');
       });
     },
@@ -421,6 +421,7 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
 async function downloadPbf(
   url: string,
   stateName: string,
+  bounds: { south: number; west: number; north: number; east: number } | null,
   log: { error: (...args: any[]) => void; info: (...args: any[]) => void },
 ): Promise<void> {
   try {
@@ -484,8 +485,60 @@ async function downloadPbf(
 
     await pipeline(readable, fileStream);
 
-    // Download complete -- set status to importing
-    const finalSizeBytes = totalBytes || downloadedBytes;
+    // Download complete -- extract to viewport bbox if bounds provided
+    let finalPath = MAP_DATA_PATH;
+    let finalSizeBytes = totalBytes || downloadedBytes;
+
+    if (bounds) {
+      await redis.set(
+        PROVISION_STATUS_KEY,
+        JSON.stringify({
+          status: 'downloading',
+          progress: 100,
+          state: stateName,
+          message: 'Trimming map data to your operating region...',
+        }),
+      );
+
+      try {
+        const { execSync } = await import('child_process');
+        const rawPath = MAP_DATA_PATH.replace('.osm.pbf', '.raw.osm.pbf');
+
+        // Rename downloaded file to .raw
+        const { rename } = await import('fs/promises');
+        await rename(MAP_DATA_PATH, rawPath);
+
+        // Extract just the viewport bbox
+        const bbox = `${bounds.west},${bounds.south},${bounds.east},${bounds.north}`;
+        log.info(`Extracting bbox ${bbox} from ${stateName} PBF...`);
+
+        execSync(
+          `osmium extract -b ${bbox} "${rawPath}" -o "${MAP_DATA_PATH}" --overwrite`,
+          { timeout: 300000 }, // 5 min max
+        );
+
+        // Get trimmed file size
+        const trimmedInfo = await stat(MAP_DATA_PATH);
+        finalSizeBytes = trimmedInfo.size;
+
+        // Remove the raw file to save disk
+        const { unlink } = await import('fs/promises');
+        await unlink(rawPath).catch(() => {});
+
+        log.info(
+          `Trimmed PBF from ${Math.round((totalBytes || downloadedBytes) / 1024 / 1024)}MB to ${Math.round(finalSizeBytes / 1024 / 1024)}MB`,
+        );
+      } catch (err) {
+        log.error(err, 'Failed to extract bbox -- using full download instead');
+        // Fall through with the full file (it was already renamed, rename it back if needed)
+        try {
+          const rawPath = MAP_DATA_PATH.replace('.osm.pbf', '.raw.osm.pbf');
+          const { rename } = await import('fs/promises');
+          await rename(rawPath, MAP_DATA_PATH);
+        } catch { /* original file may still be at MAP_DATA_PATH */ }
+      }
+    }
+
     await redis.set(
       PROVISION_STATUS_KEY,
       JSON.stringify({
@@ -493,12 +546,12 @@ async function downloadPbf(
         state: stateName,
         sizeBytes: finalSizeBytes,
         downloadedAt: new Date().toISOString(),
-        message: 'Map data downloaded. Nominatim and OSRM are importing...',
+        message: 'Map data ready. Geocoding and routing engines are importing...',
       }),
     );
 
     log.info(
-      `Map provisioning: downloaded ${stateName} PBF (${(finalSizeBytes / 1024 / 1024).toFixed(0)} MB)`,
+      `Map provisioning: ${stateName} PBF ready (${Math.round(finalSizeBytes / 1024 / 1024)} MB)`,
     );
 
     // After import completes (detected by containers), they will become healthy.

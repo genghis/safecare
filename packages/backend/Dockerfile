@@ -22,9 +22,12 @@ RUN pnpm --filter @safecare/shared build 2>/dev/null || true
 RUN pnpm --filter @safecare/backend build
 
 # ---- Stage 2: Production ----
-FROM --platform=$BUILDPLATFORM node:20-alpine AS production
+FROM --platform=$BUILDPLATFORM node:20-slim AS production
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Install osmium-tool for PBF bounding box extraction during map provisioning
+RUN apt-get update && apt-get install -y --no-install-recommends osmium-tool && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
