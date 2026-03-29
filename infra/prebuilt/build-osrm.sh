@@ -181,6 +181,14 @@ process_state() {
 
   local size_mb=$(echo "scale=1; $(stat -c%s "$archive") / 1048576" | bc)
   echo "  [$state] done: ${size_mb} MB"
+
+  # Upload immediately so data is available before the full build finishes
+  gsutil -q cp "$archive" "gs://$BUCKET/us/${state}-osrm.tar.gz" 2>/dev/null &
+  local pbf_dest="$WORK/output/us/${state}-nominatim.pbf"
+  if [ ! -f "$pbf_dest" ]; then
+    cp "$WORK/states/${state}.osm.pbf" "$pbf_dest"
+  fi
+  gsutil -q cp "$pbf_dest" "gs://$BUCKET/us/${state}-nominatim.pbf" 2>/dev/null &
 }
 
 for state in "${!STATES[@]}"; do
@@ -267,6 +275,9 @@ for m in metros:
 
     local size_mb=$(echo "scale=1; $(stat -c%s "$archive") / 1048576" | bc)
     echo "  [metro:$metro_id] done: ${size_mb} MB"
+
+    # Upload immediately
+    gsutil -q cp "$archive" "gs://$BUCKET/us/metro-${metro_id}-osrm.tar.gz" 2>/dev/null &
   }
 
   # Get metro IDs from JSON
@@ -313,6 +324,49 @@ for state in "${!STATES[@]}"; do
     cp "$pbf" "$dest"
   fi
 done
+
+# ---------------------------------------------------------------------------
+# Intermediate upload — OSRM + PBFs are ready, publish manifest now
+# TIGER will be added in a second pass
+# ---------------------------------------------------------------------------
+
+echo "[5a/6] Publishing intermediate manifest (OSRM + PBFs ready, TIGER pending)..."
+# Generate and upload manifest without TIGER — deployments can start now
+WORK="$WORK" BUCKET="$BUCKET" BUILD_DATE="$BUILD_DATE" python3 << 'PYEOF_INTERIM'
+import os, json
+work = os.environ["WORK"]
+bucket = os.environ["BUCKET"]
+build_date = os.environ["BUILD_DATE"]
+# Quick manifest with just OSRM + PBF (no TIGER yet)
+regions = []
+for f in sorted(os.listdir(f"{work}/output/us")):
+    if f.endswith("-osrm.tar.gz"):
+        rid = f.replace("-osrm.tar.gz", "")
+        osrm_size = os.path.getsize(f"{work}/output/us/{f}")
+        pbf_f = f"{rid}-nominatim.pbf"
+        pbf_size = os.path.getsize(f"{work}/output/us/{pbf_f}") if os.path.exists(f"{work}/output/us/{pbf_f}") else 0
+        name = rid.replace("metro-", "").replace("-", " ").title()
+        if rid.startswith("metro-"):
+            name = name + " Metro"
+        regions.append({
+            "id": rid, "name": name,
+            "type": "metro" if rid.startswith("metro-") else "state",
+            "bounds": {"south": 0, "west": 0, "north": 0, "east": 0},
+            "osrmUrl": f"/us/{f}", "osrmSize": osrm_size,
+            "pbfUrl": f"/us/{pbf_f}" if pbf_size > 0 else "",
+            "pbfSize": pbf_size, "pbfDate": build_date,
+        })
+manifest = {"version": 2, "updated": build_date,
+    "baseUrl": f"https://storage.googleapis.com/{bucket}",
+    "description": "Pre-built OSRM + PBFs (TIGER pending)",
+    "regions": sorted(regions, key=lambda r: r["name"])}
+with open(f"{work}/output/manifest.json", "w") as fh:
+    json.dump(manifest, fh, indent=2)
+print(f"Interim manifest: {len(regions)} regions")
+PYEOF_INTERIM
+
+gsutil -q cp "$WORK/output/manifest.json" "gs://$BUCKET/manifest.json"
+echo "  Manifest published. Deployments can start downloading OSRM + PBFs."
 
 # ---------------------------------------------------------------------------
 # Pre-process TIGER address data
