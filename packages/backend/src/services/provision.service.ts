@@ -114,19 +114,39 @@ export class ProvisionService {
     const manifest = await this.getManifest();
     if (!manifest) return null;
 
-    // Find regions that fully contain the viewport
+    // Find regions that overlap the viewport significantly
     const covering = manifest.regions.filter((r) => {
-      return (
+      // Check if this region fully contains the viewport
+      const contains =
         r.bounds.south <= bounds.south &&
         r.bounds.west <= bounds.west &&
         r.bounds.north >= bounds.north &&
-        r.bounds.east >= bounds.east
+        r.bounds.east >= bounds.east;
+      if (contains) return true;
+
+      // Also accept regions that contain the viewport center
+      // (for metro areas that may not fully enclose a large viewport)
+      const centerLat = (bounds.south + bounds.north) / 2;
+      const centerLng = (bounds.west + bounds.east) / 2;
+      return (
+        r.bounds.south <= centerLat &&
+        r.bounds.north >= centerLat &&
+        r.bounds.west <= centerLng &&
+        r.bounds.east >= centerLng
       );
     });
 
     if (covering.length === 0) return null;
 
-    // Return the smallest covering region (by OSRM size)
+    // Prefer metros over states (smaller download, cross-border routing)
+    const metros = covering.filter((r) => (r as any).type === 'metro' || r.id.startsWith('metro-'));
+    if (metros.length > 0) {
+      // Return the smallest metro that covers the viewport
+      metros.sort((a, b) => (a.osrmSize || 0) - (b.osrmSize || 0));
+      return metros[0];
+    }
+
+    // Fall back to smallest state
     covering.sort((a, b) => (a.osrmSize || a.archiveSize || 0) - (b.osrmSize || b.archiveSize || 0));
     return covering[0];
   }

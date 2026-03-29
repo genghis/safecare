@@ -195,6 +195,111 @@ wait
 echo "  All states processed."
 
 # ---------------------------------------------------------------------------
+# Process metro areas (cross-border routing)
+# ---------------------------------------------------------------------------
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+METROS_FILE="${SCRIPT_DIR}/metros.json"
+
+if [ -f "$METROS_FILE" ] && command -v python3 &>/dev/null; then
+  echo "[4b/6] Processing metro area OSRM data..."
+  mkdir -p "$WORK/metros"
+
+  # Extract metro PBFs from the full US PBF
+  python3 -c "
+import json, subprocess, os
+
+with open('$METROS_FILE') as f:
+    metros = json.load(f)['metros']
+
+for m in metros:
+    metro_id = m['id']
+    south, west, north, east = m['bounds']
+    pbf = f'$WORK/metros/{metro_id}.osm.pbf'
+
+    if os.path.exists(pbf):
+        continue
+
+    print(f'  Extracting {metro_id}...')
+    subprocess.run([
+        'osmium', 'extract', '-b', f'{west},{south},{east},{north}',
+        '$US_PBF', '-o', pbf, '--overwrite'
+    ], check=True, capture_output=True)
+"
+
+  # Build OSRM for each metro
+  process_metro() {
+    local metro_id="$1"
+    local pbf="$WORK/metros/${metro_id}.osm.pbf"
+    local osrm_dir="$WORK/osrm-metro-${metro_id}"
+    local archive="$WORK/output/us/metro-${metro_id}-osrm.tar.gz"
+
+    if [ -f "$archive" ]; then
+      echo "  [metro:$metro_id] exists, skipping"
+      return
+    fi
+
+    if [ ! -f "$pbf" ]; then
+      echo "  [metro:$metro_id] no PBF, skipping"
+      return
+    fi
+
+    mkdir -p "$osrm_dir"
+    cp "$pbf" "$osrm_dir/data.osm.pbf"
+
+    echo "  [metro:$metro_id] extracting..."
+    docker run --rm -v "$osrm_dir:/data" osrm/osrm-backend:latest \
+      osrm-extract -p /opt/car.lua /data/data.osm.pbf -t 4 2>/dev/null
+
+    echo "  [metro:$metro_id] partitioning..."
+    docker run --rm -v "$osrm_dir:/data" osrm/osrm-backend:latest \
+      osrm-partition /data/data.osrm 2>/dev/null
+
+    echo "  [metro:$metro_id] customizing..."
+    docker run --rm -v "$osrm_dir:/data" osrm/osrm-backend:latest \
+      osrm-customize /data/data.osrm 2>/dev/null
+
+    rm -f "$osrm_dir/data.osm.pbf"
+
+    echo "  [metro:$metro_id] packaging..."
+    tar -czf "$archive" -C "$osrm_dir" .
+    rm -rf "$osrm_dir"
+
+    local size_mb=$(echo "scale=1; $(stat -c%s "$archive") / 1048576" | bc)
+    echo "  [metro:$metro_id] done: ${size_mb} MB"
+  }
+
+  # Get metro IDs from JSON
+  METRO_IDS=$(python3 -c "
+import json
+with open('$METROS_FILE') as f:
+    for m in json.load(f)['metros']:
+        print(m['id'])
+")
+
+  for metro_id in $METRO_IDS; do
+    process_metro "$metro_id" &
+    if (( $(jobs -r | wc -l) >= PARALLEL )); then
+      wait -n
+    fi
+  done
+  wait
+
+  # Also store metro PBFs for local Nominatim import
+  for metro_id in $METRO_IDS; do
+    pbf="$WORK/metros/${metro_id}.osm.pbf"
+    dest="$WORK/output/us/metro-${metro_id}-nominatim.pbf"
+    if [ -f "$pbf" ] && [ ! -f "$dest" ]; then
+      cp "$pbf" "$dest"
+    fi
+  done
+
+  echo "  All metros processed."
+else
+  echo "[4b/6] Skipping metros (metros.json not found or python3 not available)"
+fi
+
+# ---------------------------------------------------------------------------
 # Also store per-state PBFs (for Nominatim local import)
 # ---------------------------------------------------------------------------
 
@@ -300,11 +405,49 @@ for line in states_raw.strip().split("\n"):
         "pbfDate": build_date,
     })
 
+# Add metro areas
+metros_file = os.path.join(os.path.dirname(os.path.abspath("$0")), "metros.json")
+# Try multiple paths for metros.json
+for mpath in ["$SCRIPT_DIR/metros.json", "/build/metros.json", "metros.json"]:
+    if os.path.exists(mpath):
+        metros_file = mpath
+        break
+
+metros = []
+if os.path.exists(metros_file):
+    with open(metros_file) as f:
+        metros = json.load(f).get("metros", [])
+
+for m in metros:
+    metro_id = m["id"]
+    south, west, north, east = m["bounds"]
+
+    osrm_path = f"{work}/output/us/metro-{metro_id}-osrm.tar.gz"
+    pbf_path = f"{work}/output/us/metro-{metro_id}-nominatim.pbf"
+
+    if not os.path.exists(osrm_path):
+        continue
+
+    osrm_size = os.path.getsize(osrm_path)
+    pbf_size = os.path.getsize(pbf_path) if os.path.exists(pbf_path) else 0
+
+    regions.append({
+        "id": f"metro-{metro_id}",
+        "name": m["name"],
+        "type": "metro",
+        "bounds": {"south": south, "west": west, "north": north, "east": east},
+        "osrmUrl": f"/us/metro-{metro_id}-osrm.tar.gz",
+        "osrmSize": osrm_size,
+        "pbfUrl": f"/us/metro-{metro_id}-nominatim.pbf",
+        "pbfSize": pbf_size,
+        "pbfDate": build_date,
+    })
+
 manifest = {
     "version": 2,
     "updated": build_date,
     "baseUrl": f"https://storage.googleapis.com/{bucket}",
-    "description": "Pre-built OSRM routing data + Nominatim PBF for all US states",
+    "description": "Pre-built OSRM routing + Nominatim PBFs for US states and metro areas",
     "regions": sorted(regions, key=lambda r: r["name"]),
 }
 
@@ -312,9 +455,11 @@ out_path = f"{work}/output/manifest.json"
 with open(out_path, "w") as f:
     json.dump(manifest, f, indent=2)
 
+state_regions = [r for r in regions if r.get("type") != "metro"]
+metro_regions = [r for r in regions if r.get("type") == "metro"]
 total_osrm = sum(r["osrmSize"] for r in regions) / 1024 / 1024 / 1024
 total_pbf = sum(r["pbfSize"] for r in regions) / 1024 / 1024 / 1024
-print(f"Manifest: {len(regions)} states")
+print(f"Manifest: {len(state_regions)} states + {len(metro_regions)} metros")
 print(f"Total OSRM: {total_osrm:.1f} GB")
 print(f"Total PBF:  {total_pbf:.1f} GB")
 PYEOF
