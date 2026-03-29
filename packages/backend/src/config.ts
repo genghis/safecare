@@ -27,4 +27,5 @@ export const config = {
   NODE_ENV: process.env.NODE_ENV ?? 'development',
   GEOCODING_URL: process.env.GEOCODING_URL ?? 'https://nominatim.openstreetmap.org',
   OSRM_URL: process.env.OSRM_URL ?? 'http://localhost:5000',
+  PROVISION_SERVICE_URL: process.env.PROVISION_SERVICE_URL ?? 'https://provision.safecare.dev',
 } as const;

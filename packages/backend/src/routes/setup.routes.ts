@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { authService } from '../services/auth.service.js';
+import { provisionService } from '../services/provision.service.js';
 import Redis from 'ioredis';
 import { config } from '../config.js';
 
@@ -41,6 +42,12 @@ export default async function setupRoutes(fastify: FastifyInstance) {
         }
       }
 
+      // Check cloud provisioning availability (non-blocking, cached briefly)
+      let cloudAvailable = false;
+      try {
+        cloudAvailable = await provisionService.isCloudAvailable();
+      } catch { /* ignore */ }
+
       const setupComplete = adminExists && hasOperatingRegion && provisionStatus === 'ready';
 
       // Read import progress if importing
@@ -65,6 +72,7 @@ export default async function setupRoutes(fastify: FastifyInstance) {
             mapsProvisioned: provisionStatus === 'ready',
             mapsStatus: provisionStatus,
             importMessage: importMessage || undefined,
+            cloudAvailable,
           },
         },
       });

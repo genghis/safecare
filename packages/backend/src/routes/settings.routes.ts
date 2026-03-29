@@ -246,26 +246,133 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
       const downloadLabel = primaryState.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
       const pbfUrl = `https://download.geofabrik.de/north-america/us/${primaryState}-latest.osm.pbf`;
 
-      // 3. Set initial status and kick off download
-      await redis.set(
-        PROVISION_STATUS_KEY,
-        JSON.stringify({
-          status: 'downloading',
-          progress: 0,
-          state: downloadLabel,
-          message: `Starting download for ${downloadLabel}...`,
-        }),
-      );
+      // 3. Check if cloud provisioning is available
+      let useCloud = false;
+      try {
+        const { provisionService } = await import('../services/provision.service.js');
+        useCloud = await provisionService.isCloudAvailable();
+      } catch { /* cloud not available */ }
 
-      reply.send({
-        success: true,
-        data: { region: downloadLabel, extracts, url: pbfUrl },
-      });
+      if (useCloud) {
+        // Cloud path: download PBF, upload to cloud service, poll for result
+        await redis.set(
+          PROVISION_STATUS_KEY,
+          JSON.stringify({
+            status: 'downloading',
+            progress: 0,
+            state: downloadLabel,
+            method: 'cloud',
+            message: `Downloading ${downloadLabel} for cloud processing (~5 min)...`,
+          }),
+        );
 
-      // 4. Download in background
-      downloadPbf(pbfUrl, downloadLabel, bounds, fastify.log).catch((err) => {
-        fastify.log.error(err, 'Map provisioning download failed');
-      });
+        reply.send({
+          success: true,
+          data: { region: downloadLabel, method: 'cloud', url: pbfUrl },
+        });
+
+        // Background: download → upload to cloud → poll → download result
+        (async () => {
+          try {
+            const { provisionService: ps } = await import('../services/provision.service.js');
+
+            // Download the PBF first
+            await downloadPbf(pbfUrl, downloadLabel, bounds, fastify.log);
+
+            // Upload to cloud
+            await redis.set(PROVISION_STATUS_KEY, JSON.stringify({
+              status: 'downloading',
+              progress: 80,
+              state: downloadLabel,
+              method: 'cloud',
+              message: 'Uploading to cloud processing service...',
+            }));
+
+            const jobId = await ps.submitCloudJob(MAP_DATA_PATH);
+
+            await redis.set(PROVISION_STATUS_KEY, JSON.stringify({
+              status: 'importing',
+              state: downloadLabel,
+              method: 'cloud',
+              cloudJobId: jobId,
+              message: 'Processing in the cloud (~3-5 min)...',
+            }));
+
+            // Poll until ready
+            let attempts = 0;
+            while (attempts < 120) { // 10 min max
+              await new Promise((r) => setTimeout(r, 5000));
+              const jobStatus = await ps.getCloudJobStatus(jobId);
+
+              if (jobStatus.status === 'ready' && jobStatus.downloadUrl) {
+                await redis.set(PROVISION_STATUS_KEY, JSON.stringify({
+                  status: 'downloading',
+                  progress: 95,
+                  state: downloadLabel,
+                  method: 'cloud',
+                  message: 'Downloading processed indexes...',
+                }));
+
+                const mapDataDir = MAP_DATA_PATH.replace('/data.osm.pbf', '');
+                await ps.downloadCloudResult(jobStatus.downloadUrl, mapDataDir);
+
+                await redis.set(PROVISION_STATUS_KEY, JSON.stringify({
+                  status: 'ready',
+                  state: downloadLabel,
+                  method: 'cloud',
+                  message: 'Cloud processing complete!',
+                }));
+                return;
+              }
+
+              if (jobStatus.status === 'error') {
+                throw new Error(jobStatus.error || 'Cloud processing failed');
+              }
+
+              await redis.set(PROVISION_STATUS_KEY, JSON.stringify({
+                status: 'importing',
+                state: downloadLabel,
+                method: 'cloud',
+                message: jobStatus.message || 'Processing in the cloud...',
+                importProgress: jobStatus.progress,
+              }));
+
+              attempts++;
+            }
+            throw new Error('Cloud processing timed out');
+          } catch (err) {
+            fastify.log.error(err, 'Cloud provisioning failed, falling back to local');
+            // Fall back to local processing -- the PBF is already downloaded
+            await redis.set(PROVISION_STATUS_KEY, JSON.stringify({
+              status: 'importing',
+              state: downloadLabel,
+              method: 'local',
+              message: 'Cloud unavailable, processing locally...',
+            }));
+          }
+        })();
+      } else {
+        // Local path: download and process on-device
+        await redis.set(
+          PROVISION_STATUS_KEY,
+          JSON.stringify({
+            status: 'downloading',
+            progress: 0,
+            state: downloadLabel,
+            method: 'local',
+            message: `Downloading ${downloadLabel}...`,
+          }),
+        );
+
+        reply.send({
+          success: true,
+          data: { region: downloadLabel, method: 'local', url: pbfUrl },
+        });
+
+        downloadPbf(pbfUrl, downloadLabel, bounds, fastify.log).catch((err) => {
+          fastify.log.error(err, 'Map provisioning download failed');
+        });
+      }
     },
   );
 

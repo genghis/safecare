@@ -505,9 +505,11 @@ export default function SetupPage() {
               </CardTitle>
               {provisionStatus.status !== "ready" && (
                 <p className="text-sm text-muted-foreground">
-                  SafeCare needs to download OpenStreetMap data for your region.
-                  This enables address search, driving directions, and offline
-                  maps for drivers. The download happens once.
+                  SafeCare needs map data for your region to enable address
+                  search, driving directions, and offline maps for drivers.
+                  {(provisionStatus as any).method === "cloud"
+                    ? " Processing in the cloud for speed."
+                    : " This is a one-time download."}
                 </p>
               )}
             </CardHeader>
