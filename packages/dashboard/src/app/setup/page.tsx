@@ -507,9 +507,11 @@ export default function SetupPage() {
                 <p className="text-sm text-muted-foreground">
                   SafeCare needs map data for your region to enable address
                   search, driving directions, and offline maps for drivers.
-                  {(provisionStatus as any).method === "cloud"
-                    ? " Processing in the cloud for speed."
-                    : " This is a one-time download."}
+                  {(provisionStatus as any).method === "prebuilt"
+                    ? " Pre-built maps are available — this will only take a moment."
+                    : (provisionStatus as any).method === "cloud"
+                    ? " Processing in the cloud for speed (~5 min)."
+                    : " This is a one-time setup."}
                 </p>
               )}
             </CardHeader>

@@ -1,6 +1,14 @@
-# Cloud Map Provisioning Service
+# Map Provisioning Architecture
 
-SafeCare can optionally offload map data processing to a cloud service. This dramatically reduces setup time from 30-60 minutes (local) to ~5 minutes (cloud).
+SafeCare uses a three-tier approach to get map data onto each deployment as fast as possible:
+
+| Tier | Method | Speed | Cost |
+|------|--------|-------|------|
+| 1. Pre-built | Download pre-computed archives from CDN | ~30 seconds | ~$1/mo storage |
+| 2. Cloud | Upload PBF to a processing service | ~5 minutes | ~$0.02/job |
+| 3. Local | Process on-device | 30-60 min (hours on Pi) | Free |
+
+The system automatically uses the fastest available tier and falls back gracefully.
 
 ## How It Works
 
@@ -73,7 +81,33 @@ PROVISION_SERVICE_URL=https://provision.safecare.dev
 
 If not set or the service is unreachable, SafeCare processes locally. No configuration needed for the fallback.
 
-## Building the Service
+## Tier 1: Pre-Built Archives
+
+A monthly build job processes all 50 US states into ready-to-use archives:
+
+```bash
+# Build all states (run on a beefy server or Cloud Run)
+./tools/build-prebuilt.sh ./prebuilt
+
+# Build specific states
+./tools/build-prebuilt.sh ./prebuilt minnesota illinois california
+
+# Upload to cloud storage
+gsutil -m rsync -r ./prebuilt gs://safecare-maps/
+# or
+aws s3 sync ./prebuilt s3://safecare-maps/
+```
+
+Each archive contains:
+- `osrm/` -- Pre-processed OSRM routing files
+- `nominatim/data.osm.pbf` -- State PBF for Nominatim import
+
+A `manifest.json` index lists all available regions with bounds and sizes.
+Each SafeCare deployment downloads just the archive covering its viewport.
+
+**Cost:** ~50 GB storage × $0.015/GB = ~$0.75/month for all 50 states.
+
+## Building the Cloud Processing Service (Tier 2)
 
 The cloud provisioning service is a separate project (TODO). It needs:
 - Docker image with: Nominatim, OSRM, osmium-tool, PostgreSQL

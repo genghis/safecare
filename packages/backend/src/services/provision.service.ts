@@ -1,26 +1,44 @@
 /**
- * Map provisioning service.
+ * Map provisioning service — three tiers:
  *
- * Supports two paths:
- * 1. Cloud: upload PBF to a remote provisioning service, download pre-built
- *    Nominatim + OSRM indexes. Fast (~5 min) but requires internet + the
- *    service to be available.
- * 2. Local: process the PBF on-device. Slow (15-60 min on laptop, 1-3 hours
- *    on Pi) but always works.
+ * 1. PRE-BUILT: Download pre-computed indexes from a CDN. Instant (~30 sec).
+ *    A monthly build job processes every US state into Nominatim + OSRM
+ *    archives hosted on cloud storage. Each deployment downloads just what
+ *    it needs based on the viewport.
  *
- * The provisioning service contract:
- *   GET  /api/health         → { ok: true }
- *   POST /api/provision      → { jobId: string }  (multipart PBF upload)
- *   GET  /api/provision/:id  → { status, progress?, downloadUrl?, error? }
+ * 2. CLOUD: Upload PBF to a processing service. Fast (~5 min).
+ *    Falls back here if no pre-built archive covers the viewport.
  *
- * No private data is sent -- only OpenStreetMap map data (public).
+ * 3. LOCAL: Process on-device. Slow (30-60 min, hours on Pi).
+ *    Always-available fallback when internet is unavailable.
+ *
+ * No private data is ever sent — only public OpenStreetMap map data.
  */
 
 import { config } from '../config.js';
-import { createReadStream } from 'fs';
 import { stat } from 'fs/promises';
 
 const USER_AGENT = 'SafeCare/1.0';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface PrebuiltRegion {
+  id: string;
+  name: string;
+  bounds: { south: number; west: number; north: number; east: number };
+  archiveUrl: string;
+  archiveSize: number; // bytes
+  pbfDate: string;
+}
+
+export interface PrebuiltManifest {
+  version: number;
+  updated: string;
+  baseUrl: string;
+  regions: PrebuiltRegion[];
+}
 
 export interface CloudProvisionStatus {
   status: 'queued' | 'processing' | 'ready' | 'error';
@@ -30,64 +48,177 @@ export interface CloudProvisionStatus {
   error?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Manifest URL — points to the index of pre-built archives
+// ---------------------------------------------------------------------------
+
+const MANIFEST_URL =
+  config.PROVISION_SERVICE_URL
+    ? `${config.PROVISION_SERVICE_URL}/manifest.json`
+    : 'https://maps.safecare.dev/manifest.json';
+
+// ---------------------------------------------------------------------------
+// Service
+// ---------------------------------------------------------------------------
+
 export class ProvisionService {
+  private manifestCache: PrebuiltManifest | null = null;
+  private manifestFetchedAt = 0;
+  private readonly MANIFEST_TTL = 60 * 60 * 1000; // 1 hour cache
+
+  // -----------------------------------------------------------------------
+  // Tier 1: Pre-built archives
+  // -----------------------------------------------------------------------
+
   /**
-   * Check if the cloud provisioning service is available.
+   * Fetch the manifest of pre-built regions.
+   * Cached for 1 hour.
    */
+  async getManifest(): Promise<PrebuiltManifest | null> {
+    if (
+      this.manifestCache &&
+      Date.now() - this.manifestFetchedAt < this.MANIFEST_TTL
+    ) {
+      return this.manifestCache;
+    }
+
+    try {
+      const res = await fetch(MANIFEST_URL, {
+        headers: { 'User-Agent': USER_AGENT },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (res.ok) {
+        this.manifestCache = (await res.json()) as PrebuiltManifest;
+        this.manifestFetchedAt = Date.now();
+        return this.manifestCache;
+      }
+    } catch {
+      // Manifest not available
+    }
+    return null;
+  }
+
+  /**
+   * Find pre-built regions that cover the given viewport.
+   * Returns the smallest region that fully contains the viewport,
+   * or null if no pre-built region covers it.
+   */
+  async findPrebuiltRegion(
+    bounds: { south: number; west: number; north: number; east: number },
+  ): Promise<PrebuiltRegion | null> {
+    const manifest = await this.getManifest();
+    if (!manifest) return null;
+
+    // Find regions that fully contain the viewport
+    const covering = manifest.regions.filter((r) => {
+      return (
+        r.bounds.south <= bounds.south &&
+        r.bounds.west <= bounds.west &&
+        r.bounds.north >= bounds.north &&
+        r.bounds.east >= bounds.east
+      );
+    });
+
+    if (covering.length === 0) return null;
+
+    // Return the smallest covering region (by archive size)
+    covering.sort((a, b) => a.archiveSize - b.archiveSize);
+    return covering[0];
+  }
+
+  /**
+   * Download and extract a pre-built archive.
+   */
+  async downloadPrebuilt(
+    region: PrebuiltRegion,
+    destDir: string,
+    onProgress?: (downloaded: number, total: number) => void,
+  ): Promise<void> {
+    const archiveUrl = region.archiveUrl.startsWith('http')
+      ? region.archiveUrl
+      : `${(await this.getManifest())?.baseUrl ?? ''}${region.archiveUrl}`;
+
+    const res = await fetch(archiveUrl, {
+      headers: { 'User-Agent': USER_AGENT },
+    });
+
+    if (!res.ok || !res.body) {
+      throw new Error(`Download failed: ${res.status}`);
+    }
+
+    const totalBytes = parseInt(res.headers.get('content-length') || '0');
+    const archivePath = `${destDir}/prebuilt.tar.gz`;
+
+    // Stream to disk with progress
+    const { createWriteStream } = await import('fs');
+    const { Readable } = await import('stream');
+    const { pipeline } = await import('stream/promises');
+
+    let downloadedBytes = 0;
+    const reader = res.body.getReader();
+    const readable = new Readable({
+      async read() {
+        const { done, value } = await reader.read();
+        if (done) {
+          this.push(null);
+          return;
+        }
+        downloadedBytes += value.byteLength;
+        if (onProgress) onProgress(downloadedBytes, totalBytes);
+        this.push(Buffer.from(value));
+      },
+    });
+
+    const fileStream = createWriteStream(archivePath);
+    await pipeline(readable, fileStream);
+
+    // Extract
+    const { execSync } = await import('child_process');
+    execSync(`tar -xzf "${archivePath}" -C "${destDir}"`, { timeout: 300000 });
+
+    // Cleanup
+    const { unlink } = await import('fs/promises');
+    await unlink(archivePath).catch(() => {});
+  }
+
+  // -----------------------------------------------------------------------
+  // Tier 2: Cloud processing
+  // -----------------------------------------------------------------------
+
   async isCloudAvailable(): Promise<boolean> {
     if (!config.PROVISION_SERVICE_URL) return false;
-
     try {
       const res = await fetch(`${config.PROVISION_SERVICE_URL}/api/health`, {
         headers: { 'User-Agent': USER_AGENT },
         signal: AbortSignal.timeout(5000),
       });
-      if (res.ok) {
-        const data = (await res.json()) as any;
-        return data.ok === true;
-      }
+      return res.ok && ((await res.json()) as any).ok === true;
     } catch {
-      // Service not reachable
+      return false;
     }
-    return false;
   }
 
-  /**
-   * Upload a PBF file to the cloud provisioning service.
-   * Returns a job ID for polling.
-   */
   async submitCloudJob(pbfPath: string): Promise<string> {
-    const fileInfo = await stat(pbfPath);
-    const fileStream = createReadStream(pbfPath);
-
-    // Read file into buffer for fetch body
     const chunks: Buffer[] = [];
-    for await (const chunk of fileStream) {
+    const { createReadStream } = await import('fs');
+    for await (const chunk of createReadStream(pbfPath)) {
       chunks.push(chunk as Buffer);
     }
-    const fileBuffer = Buffer.concat(chunks);
 
     const formData = new FormData();
-    formData.append('pbf', new Blob([fileBuffer]), 'data.osm.pbf');
+    formData.append('pbf', new Blob([Buffer.concat(chunks)]), 'data.osm.pbf');
 
     const res = await fetch(`${config.PROVISION_SERVICE_URL}/api/provision`, {
       method: 'POST',
       headers: { 'User-Agent': USER_AGENT },
       body: formData,
-      signal: AbortSignal.timeout(120000), // 2 min upload timeout
+      signal: AbortSignal.timeout(120000),
     });
 
-    if (!res.ok) {
-      throw new Error(`Cloud provision submit failed: ${res.status}`);
-    }
-
-    const data = (await res.json()) as any;
-    return data.jobId;
+    if (!res.ok) throw new Error(`Cloud submit failed: ${res.status}`);
+    return ((await res.json()) as any).jobId;
   }
 
-  /**
-   * Poll the cloud provisioning service for job status.
-   */
   async getCloudJobStatus(jobId: string): Promise<CloudProvisionStatus> {
     const res = await fetch(
       `${config.PROVISION_SERVICE_URL}/api/provision/${jobId}`,
@@ -96,46 +227,54 @@ export class ProvisionService {
         signal: AbortSignal.timeout(10000),
       },
     );
-
-    if (!res.ok) {
-      throw new Error(`Cloud provision status failed: ${res.status}`);
-    }
-
+    if (!res.ok) throw new Error(`Cloud status failed: ${res.status}`);
     return (await res.json()) as CloudProvisionStatus;
   }
 
-  /**
-   * Download the processed indexes from the cloud service.
-   * Returns the path to the downloaded archive.
-   */
-  async downloadCloudResult(
-    downloadUrl: string,
-    destDir: string,
-  ): Promise<void> {
-    const { pipeline } = await import('stream/promises');
+  async downloadCloudResult(downloadUrl: string, destDir: string): Promise<void> {
+    const res = await fetch(downloadUrl, { headers: { 'User-Agent': USER_AGENT } });
+    if (!res.ok || !res.body) throw new Error(`Cloud download failed: ${res.status}`);
+
     const { createWriteStream } = await import('fs');
     const { Readable } = await import('stream');
-
-    const res = await fetch(downloadUrl, {
-      headers: { 'User-Agent': USER_AGENT },
-    });
-
-    if (!res.ok || !res.body) {
-      throw new Error(`Cloud download failed: ${res.status}`);
-    }
+    const { pipeline } = await import('stream/promises');
 
     const archivePath = `${destDir}/cloud-indexes.tar.gz`;
-    const fileStream = createWriteStream(archivePath);
     const readable = Readable.fromWeb(res.body as any);
-    await pipeline(readable, fileStream);
+    await pipeline(readable, createWriteStream(archivePath));
 
-    // Extract the archive
     const { execSync } = await import('child_process');
     execSync(`tar -xzf "${archivePath}" -C "${destDir}"`, { timeout: 300000 });
 
-    // Clean up archive
     const { unlink } = await import('fs/promises');
     await unlink(archivePath).catch(() => {});
+  }
+
+  // -----------------------------------------------------------------------
+  // Tier selection
+  // -----------------------------------------------------------------------
+
+  /**
+   * Determine the best provisioning method for the given viewport.
+   * Returns: 'prebuilt' | 'cloud' | 'local'
+   */
+  async getBestMethod(
+    bounds: { south: number; west: number; north: number; east: number },
+  ): Promise<{ method: 'prebuilt' | 'cloud' | 'local'; region?: PrebuiltRegion }> {
+    // Tier 1: check for pre-built archive
+    const prebuilt = await this.findPrebuiltRegion(bounds);
+    if (prebuilt) {
+      return { method: 'prebuilt', region: prebuilt };
+    }
+
+    // Tier 2: check for cloud processing
+    const cloud = await this.isCloudAvailable();
+    if (cloud) {
+      return { method: 'cloud' };
+    }
+
+    // Tier 3: local
+    return { method: 'local' };
   }
 }
 

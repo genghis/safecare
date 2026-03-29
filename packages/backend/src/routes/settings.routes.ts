@@ -246,12 +246,70 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
       const downloadLabel = primaryState.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
       const pbfUrl = `https://download.geofabrik.de/north-america/us/${primaryState}-latest.osm.pbf`;
 
-      // 3. Check if cloud provisioning is available
-      let useCloud = false;
-      try {
-        const { provisionService } = await import('../services/provision.service.js');
-        useCloud = await provisionService.isCloudAvailable();
-      } catch { /* cloud not available */ }
+      // 3. Determine best provisioning method: prebuilt > cloud > local
+      const { provisionService } = await import('../services/provision.service.js');
+      const best = await provisionService.getBestMethod(bounds);
+
+      if (best.method === 'prebuilt' && best.region) {
+        // Tier 1: Download pre-built archive (fastest — ~30 sec)
+        const region = best.region;
+        const sizeMB = Math.round(region.archiveSize / 1024 / 1024);
+
+        await redis.set(PROVISION_STATUS_KEY, JSON.stringify({
+          status: 'downloading',
+          progress: 0,
+          state: region.name,
+          method: 'prebuilt',
+          message: `Downloading pre-built maps for ${region.name} (~${sizeMB} MB)...`,
+        }));
+
+        reply.send({
+          success: true,
+          data: { region: region.name, method: 'prebuilt' },
+        });
+
+        // Background download + extract
+        (async () => {
+          try {
+            const mapDataDir = MAP_DATA_PATH.replace('/data.osm.pbf', '');
+            await provisionService.downloadPrebuilt(
+              region,
+              mapDataDir,
+              async (downloaded, total) => {
+                const pct = total > 0 ? Math.round((downloaded / total) * 100) : 0;
+                await redis.set(PROVISION_STATUS_KEY, JSON.stringify({
+                  status: 'downloading',
+                  progress: pct,
+                  state: region.name,
+                  method: 'prebuilt',
+                  downloadedBytes: downloaded,
+                  sizeBytes: total,
+                  message: `Downloading ${region.name} (${Math.round(downloaded / 1024 / 1024)} / ${Math.round(total / 1024 / 1024)} MB)...`,
+                }));
+              },
+            );
+
+            await redis.set(PROVISION_STATUS_KEY, JSON.stringify({
+              status: 'ready',
+              state: region.name,
+              method: 'prebuilt',
+              sizeBytes: region.archiveSize,
+            }));
+
+            fastify.log.info(`Pre-built maps for ${region.name} installed successfully`);
+          } catch (err) {
+            fastify.log.error(err, 'Pre-built download failed, falling back to local');
+            // Fall through to local processing
+            downloadPbf(pbfUrl, downloadLabel, bounds, fastify.log).catch((e) => {
+              fastify.log.error(e, 'Local fallback also failed');
+            });
+          }
+        })();
+
+        return;
+      }
+
+      let useCloud = best.method === 'cloud';
 
       if (useCloud) {
         // Cloud path: download PBF, upload to cloud service, poll for result
