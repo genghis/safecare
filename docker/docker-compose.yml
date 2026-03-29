@@ -112,7 +112,7 @@ services:
       - "5000:5000"
     volumes:
       - osrmdata:/data
-      - ./nominatim-data/data.osm.pbf:/osm/data.osm.pbf:ro
+      - ./nominatim-data:/osm
       - ./osrm-init.sh:/osrm-init.sh:ro
     entrypoint: ["/bin/bash", "/osrm-init.sh"]
     shm_size: 512m
