@@ -330,24 +330,37 @@ export default function SettingsPage() {
               />
             </div>
 
-            {/* Region info */}
-            {bounds && (
-              <div className="rounded-md border bg-muted/50 px-4 py-3">
-                <div className="text-sm space-y-1">
-                  <div>
-                    <span className="text-muted-foreground">Center:</span>{" "}
-                    <span className="font-mono">{label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}</span>
+            {/* Region info + size estimate */}
+            {bounds && (() => {
+              const areaSqDeg = (bounds.north - bounds.south) * (bounds.east - bounds.west);
+              const estMB = Math.round(areaSqDeg * 40);
+              const estRAM = Math.round(areaSqDeg * 80);
+              const isLarge = estRAM > 1500;
+              const isVeryLarge = estRAM > 3000;
+
+              return (
+                <div className="rounded-md border bg-muted/50 px-4 py-3 space-y-2">
+                  <div className="text-sm space-y-1">
+                    <div>
+                      <span className="text-muted-foreground">Center:</span>{" "}
+                      <span className="font-mono">{label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Estimated size:</span>
+                      <span className={`font-medium ${isVeryLarge ? "text-destructive" : isLarge ? "text-amber-500" : "text-emerald-600"}`}>
+                        ~{estMB < 1 ? '<1' : estMB} MB download, ~{estRAM < 100 ? '<100' : estRAM} MB RAM
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Region:</span>{" "}
-                    <span className="font-mono text-xs">
-                      {bounds.south.toFixed(3)}N to {bounds.north.toFixed(3)}N,{" "}
-                      {bounds.west.toFixed(3)}W to {bounds.east.toFixed(3)}W
-                    </span>
-                  </div>
+                  {isVeryLarge && (
+                    <p className="text-xs text-destructive">This region may require 4+ GB RAM. Zoom in for smaller hardware.</p>
+                  )}
+                  {isLarge && !isVeryLarge && (
+                    <p className="text-xs text-amber-500">Fine for 8GB, tight for 4GB hardware.</p>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </CardContent>
           <CardFooter>
             <div className="flex items-center gap-3">

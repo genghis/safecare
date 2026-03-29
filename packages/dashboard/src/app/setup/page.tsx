@@ -437,6 +437,49 @@ export default function SetupPage() {
                   setLng(center.lng);
                 }}
               />
+
+              {/* Size estimate based on viewport */}
+              {bounds && (() => {
+                const latSpan = bounds.north - bounds.south;
+                const lngSpan = bounds.east - bounds.west;
+                const areaSqDeg = latSpan * lngSpan;
+                // Rough estimates based on US urban density
+                const estMB = Math.round(areaSqDeg * 40); // ~40 MB per sq degree
+                const estRAM = Math.round(areaSqDeg * 80); // ~80 MB RAM per sq degree
+
+                let sizeColor = "text-emerald-600";
+                let sizeLabel = "Small";
+                let warning = "";
+
+                if (estRAM > 3000) {
+                  sizeColor = "text-destructive";
+                  sizeLabel = "Very large";
+                  warning = "This region may require 4+ GB of RAM. Consider zooming in to a smaller area if running on a Raspberry Pi.";
+                } else if (estRAM > 1500) {
+                  sizeColor = "text-amber-500";
+                  sizeLabel = "Large";
+                  warning = "This region will need about 2-3 GB of RAM. Fine for 8GB hardware, tight for 4GB.";
+                } else if (estRAM > 500) {
+                  sizeColor = "text-amber-500";
+                  sizeLabel = "Medium";
+                } else {
+                  sizeLabel = "Small";
+                }
+
+                return (
+                  <div className="rounded-md border bg-muted/50 px-4 py-3 mt-3 space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Estimated region size:</span>
+                      <span className={`font-medium ${sizeColor}`}>
+                        {sizeLabel} (~{estMB < 1 ? '<1' : estMB} MB download, ~{estRAM < 100 ? '<100' : estRAM} MB RAM)
+                      </span>
+                    </div>
+                    {warning && (
+                      <p className="text-xs text-amber-500">{warning}</p>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
             <CardFooter>
               <Button
