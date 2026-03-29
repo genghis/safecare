@@ -37,21 +37,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const [statsRes, settingsRes, provisionRes] = await Promise.all([
-        apiGet<DashboardStats>("/api/dashboard/stats"),
-        apiGet<OrgSettings | null>("/api/settings"),
-        apiGet<ProvisionStatus>("/api/settings/provision-status"),
-      ]);
+      // Check if initial setup is needed
+      const setupRes = await apiGet<any>("/api/setup/status");
+      if (setupRes.ok && !setupRes.data?.setupComplete) {
+        router.push("/setup");
+        return;
+      }
 
+      const statsRes = await apiGet<DashboardStats>("/api/dashboard/stats");
       if (statsRes.ok) {
         setStats(statsRes.data);
       }
 
-      // Show setup banner if no service area or maps not provisioned
-      const noServiceArea = !settingsRes.ok || !settingsRes.data?.serviceArea?.label;
-      const noMaps = !provisionRes.ok || provisionRes.data?.status === "not_started";
-      setShowSetupBanner(noServiceArea || noMaps);
-
+      setShowSetupBanner(false);
       setLoading(false);
     }
     fetchData();

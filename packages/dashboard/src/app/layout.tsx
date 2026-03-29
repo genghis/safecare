@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Sidebar } from "@/components/sidebar";
+import { LayoutShell } from "@/components/layout-shell";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -18,10 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={inter.className}>
-        <Sidebar />
-        <main className="pl-64">
-          <div className="min-h-screen p-8">{children}</div>
-        </main>
+        <LayoutShell>{children}</LayoutShell>
       </body>
     </html>
   );
