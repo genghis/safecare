@@ -114,41 +114,25 @@ export class ProvisionService {
     const manifest = await this.getManifest();
     if (!manifest) return null;
 
-    // Find regions that overlap the viewport significantly
-    const covering = manifest.regions.filter((r) => {
-      // Check if this region fully contains the viewport
-      const contains =
-        r.bounds.south <= bounds.south &&
-        r.bounds.west <= bounds.west &&
-        r.bounds.north >= bounds.north &&
-        r.bounds.east >= bounds.east;
-      if (contains) return true;
+    // Only consider regions that FULLY contain the viewport.
+    // If a metro doesn't fully cover it, the driver could be routed
+    // to an address outside the OSRM data and get no directions.
+    const fullyContaining = manifest.regions.filter((r) =>
+      r.bounds.south <= bounds.south &&
+      r.bounds.west <= bounds.west &&
+      r.bounds.north >= bounds.north &&
+      r.bounds.east >= bounds.east
+    );
 
-      // Also accept regions that contain the viewport center
-      // (for metro areas that may not fully enclose a large viewport)
-      const centerLat = (bounds.south + bounds.north) / 2;
-      const centerLng = (bounds.west + bounds.east) / 2;
-      return (
-        r.bounds.south <= centerLat &&
-        r.bounds.north >= centerLat &&
-        r.bounds.west <= centerLng &&
-        r.bounds.east >= centerLng
-      );
-    });
+    if (fullyContaining.length === 0) return null;
 
-    if (covering.length === 0) return null;
-
-    // Prefer metros over states (smaller download, cross-border routing)
-    const metros = covering.filter((r) => (r as any).type === 'metro' || r.id.startsWith('metro-'));
-    if (metros.length > 0) {
-      // Return the smallest metro that covers the viewport
-      metros.sort((a, b) => (a.osrmSize || 0) - (b.osrmSize || 0));
-      return metros[0];
-    }
-
-    // Fall back to smallest state
-    covering.sort((a, b) => (a.osrmSize || a.archiveSize || 0) - (b.osrmSize || b.archiveSize || 0));
-    return covering[0];
+    // Prefer the smallest region that fully contains the viewport.
+    // A metro that fits is better than a whole state (smaller download,
+    // and metros include cross-border routing).
+    fullyContaining.sort((a, b) =>
+      (a.osrmSize || a.archiveSize || 0) - (b.osrmSize || b.archiveSize || 0)
+    );
+    return fullyContaining[0];
   }
 
   /**
