@@ -93,6 +93,35 @@ services:
       retries: 5
       start_period: 300s  # import takes a while on first start
 
+  # ---------------------------------------------------------------------------
+  # Self-hosted routing (OSRM — Open Source Routing Machine)
+  #
+  # Shares the same Midwest PBF file as Nominatim. Pre-processes it on first
+  # start into an optimized routing graph (~1GB RAM after processing).
+  #
+  # First start takes 10-30 min to process the road network. After that,
+  # starts in seconds. If you change the PBF region, delete the osrm volume:
+  #   docker volume rm docker_osrmdata && docker compose up -d osrm
+  # ---------------------------------------------------------------------------
+  osrm:
+    image: osrm/osrm-backend:v5.27.1
+    container_name: safecare-osrm
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - osrmdata:/data
+      - ./nominatim-data/data.osm.pbf:/osm/data.osm.pbf
+      - ./osrm-init.sh:/osrm-init.sh:ro
+    entrypoint: ["/bin/bash", "/osrm-init.sh"]
+    shm_size: 512m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/nearest/v1/driving/-87.6298,41.8781"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 600s  # processing takes a while on first start
+
   backend:
     build:
       context: ../
@@ -112,6 +141,7 @@ services:
       DATABASE_URL: postgres://safecare:safecare@postgres:5432/safecare
       REDIS_URL: redis://redis:6379
       GEOCODING_URL: http://nominatim:8080
+      OSRM_URL: http://osrm:5000
 
   dashboard:
     build:
@@ -136,4 +166,6 @@ volumes:
   redisdata:
     driver: local
   nominatimdata:
+    driver: local
+  osrmdata:
     driver: local

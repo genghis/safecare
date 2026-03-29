@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { dispatchService } from '../services/dispatch.service.js';
+import { routingService } from '../services/routing.service.js';
 import { RATE_LIMIT_DRIVER_RPM } from '@safecare/shared';
 import type { DriverSyncPayload } from '@safecare/shared';
 
@@ -142,6 +143,24 @@ export default async function driverAppRoutes(fastify: FastifyInstance) {
               error: 'Token does not belong to this driver',
             });
           }
+
+          // Enhance route packet with OSRM geometry and offline tile URLs
+          const stops = routePacket.stops.map((s) => ({
+            lat: s.lat,
+            lng: s.lng,
+          }));
+
+          const osrmRoute = await routingService.getRoute(stops);
+
+          if (osrmRoute) {
+            routePacket.routeGeometry = osrmRoute.geometry;
+            routePacket.routeDistance = osrmRoute.distance;
+            routePacket.routeDuration = osrmRoute.duration;
+          }
+
+          const tileBounds = routingService.getTileBounds(stops);
+          routePacket.tileBounds = tileBounds;
+          routePacket.tileUrls = routingService.getTileUrls(tileBounds);
 
           return reply.send({
             success: true,

@@ -161,6 +161,20 @@ export interface AdminUser {
   createdAt: Date;
 }
 
+// --- Geometry types ---
+
+export interface RouteGeometry {
+  type: 'LineString';
+  coordinates: [number, number][]; // [lng, lat] pairs
+}
+
+export interface TileBounds {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+}
+
 // --- Data transfer types ---
 
 export interface RoutePacket {
@@ -176,6 +190,11 @@ export interface RoutePacket {
     sequence: number;
   }>;
   expiresAt: Date;
+  routeGeometry?: RouteGeometry;
+  tileBounds?: TileBounds;
+  tileUrls?: string[];
+  routeDistance?: number; // meters
+  routeDuration?: number; // seconds
 }
 
 export interface DriverSyncPayload {

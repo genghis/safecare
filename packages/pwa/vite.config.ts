@@ -12,6 +12,17 @@ export default defineConfig({
       workbox: {
         runtimeCaching: [
           {
+            urlPattern: /^https:\/\/[abc]\.tile\.openstreetmap\.org\//,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "safecare-tiles-v1",
+              expiration: {
+                maxEntries: 5000,
+                maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+              },
+            },
+          },
+          {
             urlPattern: /\/api\/.*/,
             handler: "NetworkFirst",
             options: {

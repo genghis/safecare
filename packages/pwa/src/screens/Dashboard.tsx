@@ -1,13 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import StatusBar from "@/components/StatusBar";
 import DeliveryCard from "@/components/DeliveryCard";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import RouteMap from "@/components/RouteMap";
+import AirplaneModeReminder from "@/components/AirplaneModeReminder";
 import { checkIn, pollStatus, downloadRoute } from "@/lib/api";
 import { storeEncrypted, readEncrypted, purgeAll } from "@/lib/db";
-import { enqueueUpdate, flushQueue } from "@/lib/sync";
+import { flushQueue } from "@/lib/sync";
 import { useAutoSync, usePurgeCheck } from "@/lib/hooks";
 import { confirmPurge } from "@/lib/api";
+import { cacheTiles, clearTileCache } from "@/lib/tile-cache";
 
 export type Delivery = {
   id: string;
@@ -16,6 +19,19 @@ export type Delivery = {
   notes: string;
   status: "pending" | "in_transit" | "delivered";
 };
+
+type StopWithGeo = {
+  deliveryId: string;
+  address: string;
+  lat: number;
+  lng: number;
+  recipientName: string;
+  sequence: number;
+  status?: string;
+};
+
+type RouteGeo = { type: "LineString"; coordinates: [number, number][] };
+type TileBounds = { south: number; west: number; north: number; east: number };
 
 type SessionStatus = "idle" | "checked_in" | "routes_released" | "shift_ended";
 
@@ -29,21 +45,88 @@ export default function Dashboard() {
   const [showEndShift, setShowEndShift] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
 
+  // Map-related state
+  const [stops, setStops] = useState<StopWithGeo[]>([]);
+  const [routeGeometry, setRouteGeometry] = useState<RouteGeo | undefined>();
+  const [tileBounds, setTileBounds] = useState<TileBounds | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [tileCacheProgress, setTileCacheProgress] = useState<{
+    cached: number;
+    total: number;
+  } | null>(null);
+  const [tilesCached, setTilesCached] = useState(false);
+  const [showMapCachedNotice, setShowMapCachedNotice] = useState(false);
+
+  const geoWatchRef = useRef<number | null>(null);
+
   // Background auto-sync and TTL purge check
   useAutoSync();
   usePurgeCheck();
 
+  // ---------------------------------------------------------------------------
+  // Geolocation tracking for the map
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (sessionStatus !== "routes_released") return;
+    if (!("geolocation" in navigator)) return;
+
+    geoWatchRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        setCurrentLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      () => {
+        // Non-fatal; driver may not have granted permission
+      },
+      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 15_000 },
+    );
+
+    return () => {
+      if (geoWatchRef.current !== null) {
+        navigator.geolocation.clearWatch(geoWatchRef.current);
+        geoWatchRef.current = null;
+      }
+    };
+  }, [sessionStatus]);
+
+  // ---------------------------------------------------------------------------
   // Load cached route data on mount
+  // ---------------------------------------------------------------------------
   const loadCachedRoute = useCallback(async () => {
     try {
       const cached = (await readEncrypted("routes", "currentRoute")) as {
         deliveries: Delivery[];
         sessionId: string;
+        stops?: StopWithGeo[];
+        routeGeometry?: RouteGeo;
+        tileBounds?: TileBounds;
+        tilesCached?: boolean;
       } | null;
       if (cached?.deliveries?.length) {
         setDeliveries(cached.deliveries);
         setSessionId(cached.sessionId ?? null);
         setSessionStatus("routes_released");
+
+        if (cached.stops) {
+          // Merge current delivery statuses into stop data
+          const statusMap = new Map(
+            cached.deliveries.map((d) => [d.id, d.status]),
+          );
+          setStops(
+            cached.stops.map((s) => ({
+              ...s,
+              status: statusMap.get(s.deliveryId) ?? s.status,
+            })),
+          );
+        }
+        if (cached.routeGeometry) setRouteGeometry(cached.routeGeometry);
+        if (cached.tileBounds) setTileBounds(cached.tileBounds);
+        if (cached.tilesCached) setTilesCached(true);
       }
     } catch {
       // No cached data or decryption failed
@@ -54,6 +137,9 @@ export default function Dashboard() {
     loadCachedRoute();
   }, [loadCachedRoute]);
 
+  // ---------------------------------------------------------------------------
+  // Check-in
+  // ---------------------------------------------------------------------------
   const handleCheckIn = async () => {
     setError("");
     setLoading(true);
@@ -68,6 +154,9 @@ export default function Dashboard() {
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // Poll + download route
+  // ---------------------------------------------------------------------------
   const handlePollAndDownload = async () => {
     setError("");
     setRefreshing(true);
@@ -82,16 +171,66 @@ export default function Dashboard() {
           notes: s.notes ?? "",
           status: "pending" as const,
         }));
+
+        // Build stop geo data for the map
+        const geoStops: StopWithGeo[] = route.stops.map((s, i) => ({
+          deliveryId: s.deliveryId,
+          address: s.address,
+          lat: s.lat,
+          lng: s.lng,
+          recipientName: s.recipientName,
+          sequence: s.sequence ?? i + 1,
+          status: "pending",
+        }));
+
         setDeliveries(items);
         setSessionId(route.sessionId);
         setSessionStatus("routes_released");
+        setStops(geoStops);
 
-        // Cache encrypted
+        if (route.routeGeometry) setRouteGeometry(route.routeGeometry);
+        if (route.tileBounds) setTileBounds(route.tileBounds);
+
+        // Cache encrypted (including geo data for offline restore)
         await storeEncrypted("routes", "currentRoute", {
           deliveries: items,
           sessionId: route.sessionId,
           expiresAt: route.expiresAt,
+          stops: geoStops,
+          routeGeometry: route.routeGeometry,
+          tileBounds: route.tileBounds,
+          tilesCached: false,
         });
+
+        // Pre-cache tiles for offline map use
+        if (route.tileUrls?.length) {
+          setTileCacheProgress({ cached: 0, total: route.tileUrls.length });
+          try {
+            await cacheTiles(route.tileUrls, (cached, total) => {
+              setTileCacheProgress({ cached, total });
+            });
+            setTilesCached(true);
+            setShowMapCachedNotice(true);
+
+            // Update cached data to record tile caching complete
+            await storeEncrypted("routes", "currentRoute", {
+              deliveries: items,
+              sessionId: route.sessionId,
+              expiresAt: route.expiresAt,
+              stops: geoStops,
+              routeGeometry: route.routeGeometry,
+              tileBounds: route.tileBounds,
+              tilesCached: true,
+            });
+
+            // Auto-hide the notice after 4 seconds
+            setTimeout(() => setShowMapCachedNotice(false), 4000);
+          } catch {
+            // Tile caching is best-effort; don't block the flow
+          } finally {
+            setTileCacheProgress(null);
+          }
+        }
       } else {
         setError("Routes have not been released yet. Try again shortly.");
       }
@@ -102,6 +241,9 @@ export default function Dashboard() {
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // Refresh
+  // ---------------------------------------------------------------------------
   const handleRefresh = async () => {
     if (sessionStatus === "routes_released") {
       // Re-read cached data to pick up status changes from DeliveryDetail
@@ -111,12 +253,16 @@ export default function Dashboard() {
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // End shift
+  // ---------------------------------------------------------------------------
   const handleEndShift = async () => {
     setShowEndShift(false);
     setLoading(true);
     try {
       await flushQueue();
       await purgeAll();
+      await clearTileCache();
       if (sessionId) {
         try {
           await confirmPurge(sessionId);
@@ -125,6 +271,11 @@ export default function Dashboard() {
         }
       }
       setDeliveries([]);
+      setStops([]);
+      setRouteGeometry(undefined);
+      setTileBounds(null);
+      setTilesCached(false);
+      setCurrentLocation(null);
       setSessionStatus("shift_ended");
       navigate("/", { replace: true });
     } catch {
@@ -135,11 +286,18 @@ export default function Dashboard() {
   };
 
   const pendingCount = deliveries.filter((d) => d.status !== "delivered").length;
-  const completedCount = deliveries.filter((d) => d.status === "delivered").length;
+  const completedCount = deliveries.filter(
+    (d) => d.status === "delivered",
+  ).length;
 
   return (
     <div className="screen">
       <StatusBar sessionStatus={sessionStatus} />
+
+      {/* Airplane mode reminder */}
+      {sessionStatus === "routes_released" && (
+        <AirplaneModeReminder deliveryZoneBounds={tileBounds} />
+      )}
 
       {/* Top nav bar */}
       <div
@@ -171,6 +329,82 @@ export default function Dashboard() {
           My Profile
         </button>
       </div>
+
+      {/* Tile caching progress bar */}
+      {tileCacheProgress && (
+        <div
+          style={{
+            padding: "10px 16px",
+            backgroundColor: "var(--color-card)",
+            borderBottom: "1px solid var(--color-border)",
+            flexShrink: 0,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 6,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--color-text-secondary)",
+              }}
+            >
+              Caching maps for offline use...
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                color: "var(--color-text-muted)",
+                fontWeight: 600,
+              }}
+            >
+              {tileCacheProgress.cached}/{tileCacheProgress.total}
+            </span>
+          </div>
+          <div
+            style={{
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: "var(--color-border)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                borderRadius: 3,
+                backgroundColor: "var(--color-primary)",
+                width: `${(tileCacheProgress.cached / tileCacheProgress.total) * 100}%`,
+                transition: "width 0.3s ease",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Map cached success notice */}
+      {showMapCachedNotice && (
+        <div
+          style={{
+            padding: "10px 16px",
+            backgroundColor: "var(--color-primary-light)",
+            color: "var(--color-primary)",
+            fontSize: 14,
+            fontWeight: 600,
+            textAlign: "center",
+            flexShrink: 0,
+            animation: "slide-up 0.2s ease",
+          }}
+        >
+          Maps cached! You can navigate offline.
+        </div>
+      )}
 
       {/* Error banner */}
       {error && (
@@ -344,6 +578,46 @@ export default function Dashboard() {
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
           </div>
+
+          {/* Route map */}
+          {stops.length > 0 && (
+            <div style={{ padding: "0 12px 12px 12px", flexShrink: 0 }}>
+              <RouteMap
+                stops={stops.map((s) => ({
+                  ...s,
+                  status:
+                    deliveries.find((d) => d.id === s.deliveryId)?.status ??
+                    s.status,
+                }))}
+                routeGeometry={routeGeometry}
+                currentLocation={currentLocation}
+                onStopClick={(deliveryId) =>
+                  navigate(`/delivery/${deliveryId}`)
+                }
+              />
+              {tilesCached && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 4,
+                    marginTop: 6,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: "var(--color-primary)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Available offline
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Delivery list */}
           <div

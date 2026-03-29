@@ -159,6 +159,11 @@ export function downloadRoute(token: string) {
       sequence: number;
     }>;
     expiresAt: string;
+    routeGeometry?: { type: "LineString"; coordinates: [number, number][] };
+    tileBounds?: { south: number; west: number; north: number; east: number };
+    tileUrls?: string[];
+    routeDistance?: number;
+    routeDuration?: number;
   }>("/driver/route", {
     method: "POST",
     body: { token },
