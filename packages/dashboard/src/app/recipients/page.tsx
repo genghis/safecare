@@ -127,6 +127,8 @@ export default function RecipientsPage() {
       };
       setRecipients((prev) => [...prev, newRecipient]);
       closeAddModal();
+    } else {
+      alert(res.error || "Failed to add recipient. Please try again.");
     }
     setAddSaving(false);
   }

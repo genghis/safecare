@@ -147,15 +147,15 @@ export default function DistributionPage() {
   // Sort drivers by load percentage if toggled
   const sortedDrivers = sortByLoad
     ? [...drivers].sort((a, b) => {
-        const pctA = loadPercent(a.assignedDeliveries.length, a.maxDeliveries);
-        const pctB = loadPercent(b.assignedDeliveries.length, b.maxDeliveries);
+        const pctA = loadPercent((a.assignedDeliveries || []).length, a.maxDeliveries || 0);
+        const pctB = loadPercent((b.assignedDeliveries || []).length, b.maxDeliveries || 0);
         return pctB - pctA;
       })
     : drivers;
 
   // Stats
   const totalAssigned = drivers.reduce(
-    (sum, d) => sum + d.assignedDeliveries.length,
+    (sum, d) => sum + (d.assignedDeliveries || []).length,
     0
   );
   const totalUnassigned = unassigned.length;
@@ -319,8 +319,8 @@ export default function DistributionPage() {
           )}
 
           {sortedDrivers.map((driver) => {
-            const count = driver.assignedDeliveries.length;
-            const max = driver.maxDeliveries;
+            const count = (driver.assignedDeliveries || []).length;
+            const max = driver.maxDeliveries || 0;
             const pct = loadPercent(count, max);
 
             return (
@@ -389,7 +389,7 @@ export default function DistributionPage() {
                   {/* Assigned delivery chips */}
                   {count > 0 && (
                     <div className="flex flex-wrap gap-1.5">
-                      {driver.assignedDeliveries.map((del) => (
+                      {(driver.assignedDeliveries || []).map((del) => (
                         <span
                           key={del.id}
                           className="inline-flex items-center gap-1 rounded-md border bg-accent/50 px-2 py-0.5 text-xs"
