@@ -222,24 +222,29 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
       // For now, download extracts sequentially and merge isn't supported --
       // use the first extract if single state, or fall back to a regional extract
       // that covers all the states
-      let pbfUrl: string;
-      let downloadLabel: string;
+      // Download the smallest extract that covers the viewport center.
+      // Since we trim to the viewport bbox with osmium afterwards, we only
+      // need the state that contains the center point. Even if the viewport
+      // clips neighboring states, the trimmed PBF will just have slightly
+      // less coverage at the edges -- acceptable for a metro-area deployment.
+      // This avoids downloading a 2+ GB regional extract when a 300 MB state
+      // extract would do.
 
-      if (extracts.length === 1) {
-        pbfUrl = `https://download.geofabrik.de/north-america/us/${extracts[0]}-latest.osm.pbf`;
-        downloadLabel = regionLabel;
-      } else {
-        // Multiple states -- use the regional extract that covers them
-        // Determine region from first extract's location
-        const midLat = (bounds.south + bounds.north) / 2;
-        const midLng = (bounds.west + bounds.east) / 2;
-        let region = 'us-midwest';
-        if (midLng > -80) region = 'us-northeast';
-        else if (midLat < 37 && midLng > -105) region = 'us-south';
-        else if (midLng < -105) region = 'us-west';
-        pbfUrl = `https://download.geofabrik.de/north-america/${region}-latest.osm.pbf`;
-        downloadLabel = `${region.replace('us-', 'US ').replace(/\b\w/g, (c) => c.toUpperCase())} (covers ${extracts.join(', ')})`;
+      // Find which state contains the viewport center
+      const centerLat = (bounds.south + bounds.north) / 2;
+      const centerLng = (bounds.west + bounds.east) / 2;
+      let primaryState = extracts[0]; // fallback to first match
+
+      for (const slug of extracts) {
+        const [s, w, n, e] = STATE_BOUNDS[slug];
+        if (centerLat >= s && centerLat <= n && centerLng >= w && centerLng <= e) {
+          primaryState = slug;
+          break;
+        }
       }
+
+      const downloadLabel = primaryState.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      const pbfUrl = `https://download.geofabrik.de/north-america/us/${primaryState}-latest.osm.pbf`;
 
       // 3. Set initial status and kick off download
       await redis.set(
