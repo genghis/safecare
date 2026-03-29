@@ -1,7 +1,6 @@
 #!/bin/bash
 # Nominatim entrypoint wrapper
-# Waits for the PBF file, then starts Nominatim and tails progress
-# to a shared file that the backend can read.
+# Waits for the PBF file, then starts Nominatim and tracks progress.
 
 PBF_FILE="/nominatim/data.osm.pbf"
 PROGRESS_FILE="/nominatim/import-progress.txt"
@@ -12,17 +11,21 @@ while [ ! -f "$PBF_FILE" ] || [ ! -s "$PBF_FILE" ]; do
   sleep 30
 done
 
-echo "PBF file found: $(ls -lh "$PBF_FILE" | awk '{print $5}'). Starting Nominatim import..."
-echo "starting" > "$PROGRESS_FILE"
+PBF_SIZE=$(ls -lh "$PBF_FILE" | awk '{print $5}')
+echo "PBF file found: $PBF_SIZE. Starting Nominatim import..."
+echo "starting import ($PBF_SIZE)" > "$PROGRESS_FILE"
+START_TIME=$(date +%s)
 
-# Start the official entrypoint and tail its output to the progress file
-# The last meaningful log line is kept in the progress file for the backend to read
-exec /app/start.sh 2>&1 | while IFS= read -r line; do
+# Run the official entrypoint and capture output line by line
+# Use stdbuf to force line buffering so progress updates appear immediately
+stdbuf -oL /app/start.sh 2>&1 | while IFS= read -r line; do
   echo "$line"
-  # Write progress lines to the shared file
+  # Update progress file with meaningful lines
   case "$line" in
-    *"rank "*|*"Done "*|*"Clustering"*|*"Creating"*|*"Importing"*|*"Loading"*|*"TIGER"*|*"Starting Apache"*|*"osm2pgsql"*|*"Processed"*)
-      echo "$line" > "$PROGRESS_FILE"
+    *"rank "*|*"Done "*|*"Clustering"*|*"Creating"*|*"Importing"*|*"Loading"*|*"TIGER"*|*"Starting Apache"*|*"Recompute"*|*"Setup website"*|*"Processed"*|*"osm2pgsql"*|*"Create "*|*"Starting rank"*)
+      ELAPSED=$(( $(date +%s) - START_TIME ))
+      MINS=$(( ELAPSED / 60 ))
+      echo "${line} [${MINS}m elapsed]" > "$PROGRESS_FILE"
       ;;
   esac
 done
