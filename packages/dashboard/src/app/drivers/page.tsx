@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/status-badge";
-import { apiGet, apiPost, apiPut } from "@/lib/api";
+import { apiGet, apiPost, apiPut, apiPatch } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -424,6 +424,14 @@ export default function DriversPage() {
           driver={filtered.find((d) => d.id === expandedId) || null}
           onClose={() => setExpandedId(null)}
           onEdit={(d) => openEdit(d)}
+          onStatusChange={async (driverId, status) => {
+            const res = await apiPatch(`/api/drivers/${driverId}/status`, { status });
+            if (res.ok) {
+              setDrivers((prev) =>
+                prev.map((d) => d.id === driverId ? { ...d, status } : d)
+              );
+            }
+          }}
         />
       )}
 
@@ -750,11 +758,14 @@ function DriverDetailPanel({
   driver,
   onClose,
   onEdit,
+  onStatusChange,
 }: {
   driver: Driver | null;
   onClose: () => void;
   onEdit: (driver: Driver) => void;
+  onStatusChange: (driverId: string, status: string) => void;
 }) {
+  const [confirmSuspend, setConfirmSuspend] = useState(false);
   if (!driver) return null;
 
   const vehicleInfo = VEHICLE_SIZE_LABELS[driver.vehicleSize];
@@ -856,6 +867,76 @@ function DriverDetailPanel({
                   {zone}
                 </Badge>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Vetting workflow */}
+        <div className="mt-6">
+          <h3 className="text-sm font-medium mb-3">Vetting Status</h3>
+          <div className="flex items-center gap-3">
+            <StatusBadge status={driver.status === "vetted" ? "vetted" : driver.status === "suspended" ? "suspended" : "not_vetted"} />
+            <div className="flex gap-2">
+              {(driver.status === "pending" || !driver.status) && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={() => onStatusChange(driver.id, "vetted")}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    Approve (Vet)
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setConfirmSuspend(true)}
+                  >
+                    Suspend
+                  </Button>
+                </>
+              )}
+              {driver.status === "vetted" && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => setConfirmSuspend(true)}
+                >
+                  Suspend
+                </Button>
+              )}
+              {driver.status === "suspended" && (
+                <Button
+                  size="sm"
+                  onClick={() => onStatusChange(driver.id, "vetted")}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  Reinstate
+                </Button>
+              )}
+            </div>
+          </div>
+          {confirmSuspend && (
+            <div className="mt-3 flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3">
+              <span className="text-sm text-destructive">
+                Suspend this driver? They will not receive routes.
+              </span>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => {
+                  onStatusChange(driver.id, "suspended");
+                  setConfirmSuspend(false);
+                }}
+              >
+                Confirm
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setConfirmSuspend(false)}
+              >
+                Cancel
+              </Button>
             </div>
           )}
         </div>

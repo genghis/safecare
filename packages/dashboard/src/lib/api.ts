@@ -103,5 +103,16 @@ export const apiPut = <T = unknown>(
     ...opts,
   });
 
+export const apiPatch = <T = unknown>(
+  path: string,
+  body?: unknown,
+  opts?: ApiOptions
+) =>
+  api<T>(path, {
+    method: "PATCH",
+    body: body ? JSON.stringify(body) : undefined,
+    ...opts,
+  });
+
 export const apiDelete = <T = unknown>(path: string, opts?: ApiOptions) =>
   api<T>(path, { method: "DELETE", ...opts });

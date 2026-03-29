@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { eq, and, sql, gte, lt, isNull, isNotNull } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { recipients, drivers, deliveries, driverCheckIns } from '../db/schema.js';
+import { config } from '../config.js';
 import { DEFAULT_PURGE_CONFIRMATION_WINDOW_HOURS } from '@safecare/shared';
 
 export default async function dashboardRoutes(fastify: FastifyInstance) {
@@ -99,6 +100,58 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
             dispatchSessionId: row.dispatchSessionId,
             routeReleasedAt: row.routeReleasedAt,
             checkedInAt: row.checkedInAt,
+          })),
+        },
+      });
+    },
+  );
+
+  /**
+   * GET /api/dashboard/orphaned-alerts
+   * Returns deliveries that were marked delivered but not acknowledged
+   * within the ORPHANED_FOOD_ALERT_MINUTES window.
+   */
+  fastify.get(
+    '/api/dashboard/orphaned-alerts',
+    { preHandler: [fastify.requireAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { ORPHANED_FOOD_ALERT_MINUTES } = await import('@safecare/shared');
+      const cutoff = new Date(
+        Date.now() - ORPHANED_FOOD_ALERT_MINUTES * 60 * 1000,
+      );
+
+      const orphaned = await db
+        .select({
+          id: deliveries.id,
+          recipientName: sql<string>`pgp_sym_decrypt(${recipients.nameEnc}::bytea, ${config.DEK})`,
+          address: sql<string>`pgp_sym_decrypt(${deliveries.addressEnc}::bytea, ${config.DEK})`,
+          driverId: deliveries.driverId,
+          deliveredAt: deliveries.deliveredAt,
+        })
+        .from(deliveries)
+        .leftJoin(recipients, eq(deliveries.recipientId, recipients.id))
+        .where(
+          and(
+            eq(deliveries.status, 'delivered'),
+            isNull(deliveries.acknowledgedAt),
+            lt(deliveries.deliveredAt, cutoff),
+          ),
+        );
+
+      return reply.send({
+        success: true,
+        data: {
+          alertMinutes: ORPHANED_FOOD_ALERT_MINUTES,
+          count: orphaned.length,
+          alerts: orphaned.map((d) => ({
+            deliveryId: d.id,
+            recipientName: d.recipientName,
+            address: d.address,
+            driverId: d.driverId,
+            deliveredAt: d.deliveredAt,
+            minutesSinceDelivery: d.deliveredAt
+              ? Math.round((Date.now() - new Date(d.deliveredAt).getTime()) / 60000)
+              : null,
           })),
         },
       });
