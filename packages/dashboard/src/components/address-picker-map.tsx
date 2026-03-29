@@ -258,8 +258,8 @@ export default function AddressPickerMap({
 
   return (
     <div className="space-y-2">
-      {/* Search input */}
-      <div className="relative" ref={resultsRef}>
+      {/* Search input — z-index must beat Leaflet's internal z-indices */}
+      <div className="relative z-[10000]" ref={resultsRef}>
         <input
           type="text"
           value={searchQuery}
@@ -274,15 +274,15 @@ export default function AddressPickerMap({
 
         {/* Results dropdown */}
         {showResults && searchResults.length > 0 && (
-          <div className="absolute z-[2000] mt-1 w-full rounded-md border bg-popover shadow-lg max-h-60 overflow-y-auto">
+          <div className="absolute z-[10001] mt-1 w-full rounded-md border bg-card text-card-foreground shadow-xl max-h-60 overflow-y-auto">
             {searchResults.map((result, i) => (
               <button
                 key={i}
                 onClick={() => handleSelectResult(result)}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors border-b last:border-0"
+                className="w-full text-left px-3 py-2.5 text-sm hover:bg-accent transition-colors border-b last:border-0"
               >
-                <p className="font-medium truncate">{result.displayName}</p>
-                <p className="text-xs text-muted-foreground">{result.type}</p>
+                <p className="font-medium leading-snug">{result.displayName}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{result.type}</p>
               </button>
             ))}
           </div>

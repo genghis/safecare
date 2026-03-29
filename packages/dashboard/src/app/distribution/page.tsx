@@ -654,7 +654,7 @@ export default function DistributionPage() {
                         <path d="M12 17h.01" />
                       </svg>
                       <p className="text-sm text-amber-800 dark:text-amber-200">
-                        {w.message}
+                        {typeof w === "string" ? w : w.message}
                       </p>
                     </div>
                   ))}
