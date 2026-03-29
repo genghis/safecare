@@ -138,9 +138,13 @@ export default function SettingsPage() {
     };
   }, []);
 
-  // Provision maps handler
+  // Provision maps handler -- immediate feedback on click
   async function handleProvision() {
     setProvisioning(true);
+    setProvisionStatus({
+      status: "downloading",
+      message: "Connecting to download server...",
+    });
     const res = await apiPost("/api/settings/provision-maps", {});
     if (!res.ok) {
       setProvisionStatus({

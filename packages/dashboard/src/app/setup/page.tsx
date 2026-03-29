@@ -210,10 +210,20 @@ export default function SetupPage() {
     setStep(3);
   }
 
-  // Step 3: Provision
+  // Step 3: Provision -- show immediate feedback
   async function handleProvision() {
     setProvisioning(true);
-    await apiPost("/api/settings/provision-maps", {});
+    setProvisionStatus({
+      status: "downloading",
+      message: "Connecting to download server...",
+    });
+    const res = await apiPost("/api/settings/provision-maps", {});
+    if (!res.ok) {
+      setProvisionStatus({
+        status: "error",
+        message: res.error || "Failed to start download.",
+      });
+    }
     setProvisioning(false);
   }
 
