@@ -319,6 +319,9 @@ export default function SettingsPage() {
                   setZoom(newZoom);
                   setLat(center.lat);
                   setLng(center.lng);
+                  if (!label || label.match(/^-?\d/)) {
+                    setLabel(`${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`);
+                  }
                 }}
               />
             </div>
@@ -346,7 +349,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <Button
                 onClick={handleSave}
-                disabled={saving || !orgName.trim()}
+                disabled={saving}
               >
                 {saving ? "Saving..." : "Save Settings"}
               </Button>
@@ -385,7 +388,7 @@ export default function SettingsPage() {
                 </p>
                 <Button
                   onClick={handleProvision}
-                  disabled={provisioning || !label}
+                  disabled={provisioning || !bounds}
                 >
                   {provisioning ? "Starting..." : "Provision Maps"}
                 </Button>

@@ -32,29 +32,46 @@ export class GeocodeService {
   async search(query: string, limit = 5, viewbox?: string): Promise<GeocodingResult[]> {
     await this.rateLimit();
 
-    const url = new URL('/search', config.GEOCODING_URL);
-    url.searchParams.set('q', query);
-    url.searchParams.set('format', 'jsonv2');
-    url.searchParams.set('limit', String(limit));
-    url.searchParams.set('addressdetails', '1');
-    url.searchParams.set('countrycodes', 'us');
-
-    // Bias results toward a geographic area (does not exclude results outside)
-    if (viewbox) {
-      url.searchParams.set('viewbox', viewbox);
-      url.searchParams.set('bounded', '0');
+    // Try local Nominatim first, fall back to public if unavailable
+    const baseUrls = [config.GEOCODING_URL];
+    if (config.GEOCODING_URL !== 'https://nominatim.openstreetmap.org') {
+      baseUrls.push('https://nominatim.openstreetmap.org');
     }
 
-    const response = await fetch(url.toString(), {
-      headers: { 'User-Agent': USER_AGENT },
-      signal: AbortSignal.timeout(5000),
-    });
+    let data: any[] | null = null;
 
-    if (!response.ok) {
-      throw new Error(`Geocoding search failed: ${response.status}`);
+    for (const baseUrl of baseUrls) {
+      try {
+        const url = new URL('/search', baseUrl);
+        url.searchParams.set('q', query);
+        url.searchParams.set('format', 'jsonv2');
+        url.searchParams.set('limit', String(limit));
+        url.searchParams.set('addressdetails', '1');
+        url.searchParams.set('countrycodes', 'us');
+
+        if (viewbox) {
+          url.searchParams.set('viewbox', viewbox);
+          url.searchParams.set('bounded', '0');
+        }
+
+        const response = await fetch(url.toString(), {
+          headers: { 'User-Agent': USER_AGENT },
+          signal: AbortSignal.timeout(5000),
+        });
+
+        if (response.ok) {
+          data = (await response.json()) as any[];
+          break;
+        }
+      } catch {
+        // Try next URL
+        continue;
+      }
     }
 
-    const data = (await response.json()) as any[];
+    if (!data) {
+      throw new Error('Geocoding search failed: all providers unavailable');
+    }
 
     return data.map((item) => ({
       displayName: item.display_name ?? '',

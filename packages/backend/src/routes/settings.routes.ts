@@ -52,7 +52,7 @@ const operatingRegionSchema = z.object({
 });
 
 const settingsSchema = z.object({
-  orgName: z.string().min(1),
+  orgName: z.string().optional().default(''),
   serviceArea: operatingRegionSchema,
 });
 
