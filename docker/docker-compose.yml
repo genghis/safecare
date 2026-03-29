@@ -70,12 +70,12 @@ services:
     restart: unless-stopped
     ports:
       - "8088:8080"
+    entrypoint: ["/bin/bash", "/nominatim-wait.sh"]
     environment:
-      # To download fresh data instead of using local file, replace PBF_PATH
-      # with PBF_URL: https://download.geofabrik.de/north-america/us-midwest-latest.osm.pbf
       PBF_PATH: /nominatim/data.osm.pbf
-      REPLICATION_URL: https://download.geofabrik.de/north-america/us-midwest-updates/
       NOMINATIM_PASSWORD: safecare
+      # Enable TIGER address data for US house-number-level geocoding
+      IMPORT_TIGER_ADDRESSES: "true"
       # Low-memory settings for RPi / 8GB machines
       POSTGRES_SHARED_BUFFERS: 256MB
       POSTGRES_WORK_MEM: 16MB
@@ -84,14 +84,15 @@ services:
       THREADS: 2
     volumes:
       - nominatimdata:/var/lib/postgresql/14/main
-      - ./nominatim-data/data.osm.pbf:/nominatim/data.osm.pbf
+      - ./nominatim-data:/nominatim
+      - ./nominatim-wait.sh:/nominatim-wait.sh:ro
     shm_size: 1g
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/status"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 300s  # import takes a while on first start
+      start_period: 600s  # TIGER import adds time
 
   # ---------------------------------------------------------------------------
   # Self-hosted routing (OSRM — Open Source Routing Machine)
@@ -111,7 +112,7 @@ services:
       - "5000:5000"
     volumes:
       - osrmdata:/data
-      - ./nominatim-data/data.osm.pbf:/osm/data.osm.pbf
+      - ./nominatim-data/data.osm.pbf:/osm/data.osm.pbf:ro
       - ./osrm-init.sh:/osrm-init.sh:ro
     entrypoint: ["/bin/bash", "/osrm-init.sh"]
     shm_size: 512m
@@ -159,6 +160,8 @@ services:
         condition: service_healthy
     env_file:
       - ../.env
+    volumes:
+      - ./nominatim-data:/app/map-data
     environment:
       DATABASE_URL: postgres://safecare:safecare@postgres:5432/safecare
       REDIS_URL: redis://redis:6379

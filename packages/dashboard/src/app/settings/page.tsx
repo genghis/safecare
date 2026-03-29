@@ -41,6 +41,15 @@ interface GeocodingResult {
   importance: number;
 }
 
+interface ProvisionStatus {
+  status: "not_started" | "downloading" | "importing" | "ready" | "error";
+  progress?: number;
+  state?: string;
+  sizeBytes?: number;
+  downloadedBytes?: number;
+  message?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Defaults
 // ---------------------------------------------------------------------------
@@ -70,6 +79,12 @@ export default function SettingsPage() {
   const [zoom, setZoom] = useState(DEFAULT_SETTINGS.serviceArea.zoom);
   const [label, setLabel] = useState(DEFAULT_SETTINGS.serviceArea.label);
 
+  // Provision status
+  const [provisionStatus, setProvisionStatus] = useState<ProvisionStatus>({
+    status: "not_started",
+  });
+  const [provisioning, setProvisioning] = useState(false);
+
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
@@ -93,6 +108,38 @@ export default function SettingsPage() {
     }
     fetchSettings();
   }, []);
+
+  // Poll provision status on mount and every 5 seconds
+  useEffect(() => {
+    let active = true;
+
+    async function fetchStatus() {
+      const res = await apiGet<ProvisionStatus>("/api/settings/provision-status");
+      if (res.ok && active) {
+        setProvisionStatus(res.data);
+      }
+    }
+
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 5000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Provision maps handler
+  async function handleProvision() {
+    setProvisioning(true);
+    const res = await apiPost("/api/settings/provision-maps");
+    if (!res.ok) {
+      setProvisionStatus({
+        status: "error",
+        message: res.error || "Failed to start provisioning.",
+      });
+    }
+    setProvisioning(false);
+  }
 
   // Debounced geocode search
   const handleSearchInput = useCallback((value: string) => {
@@ -318,6 +365,123 @@ export default function SettingsPage() {
               )}
             </div>
           </CardFooter>
+        </Card>
+
+        {/* Map Data Provisioning */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Map Data
+              {provisionStatus.status === "ready" && (
+                <span className="text-emerald-600 text-sm font-normal">
+                  &#10003; Ready
+                </span>
+              )}
+              {provisionStatus.status === "error" && (
+                <span className="text-destructive text-sm font-normal">
+                  &#10007; Error
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {provisionStatus.status === "not_started" && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  No map data provisioned yet. Set your service area above, then
+                  provision maps to enable address search and offline routing.
+                </p>
+                <Button
+                  onClick={handleProvision}
+                  disabled={provisioning || !label}
+                >
+                  {provisioning ? "Starting..." : "Provision Maps"}
+                </Button>
+              </>
+            )}
+
+            {provisionStatus.status === "downloading" && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {provisionStatus.message ||
+                    `Downloading map data for ${provisionStatus.state}...`}
+                </p>
+                <div className="space-y-2">
+                  <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{
+                        width: `${provisionStatus.progress ?? 0}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{provisionStatus.progress ?? 0}%</span>
+                    {provisionStatus.sizeBytes ? (
+                      <span>
+                        {((provisionStatus.downloadedBytes ?? 0) / 1024 / 1024).toFixed(0)} MB
+                        {" / "}
+                        {(provisionStatus.sizeBytes / 1024 / 1024).toFixed(0)} MB
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {provisionStatus.status === "importing" && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Map data downloaded. Nominatim and OSRM are importing the
+                  data. This typically takes 10-30 minutes.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                  Importing...
+                </div>
+              </>
+            )}
+
+            {provisionStatus.status === "ready" && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Maps are provisioned and ready. Address search and routing are
+                  available.
+                </p>
+                {provisionStatus.state && (
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">State:</span>{" "}
+                    {provisionStatus.state}
+                    {provisionStatus.sizeBytes
+                      ? ` (${(provisionStatus.sizeBytes / 1024 / 1024).toFixed(0)} MB)`
+                      : ""}
+                  </p>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={handleProvision}
+                  disabled={provisioning}
+                >
+                  {provisioning ? "Starting..." : "Re-provision"}
+                </Button>
+              </>
+            )}
+
+            {provisionStatus.status === "error" && (
+              <>
+                <p className="text-sm text-destructive">
+                  {provisionStatus.message || "An unknown error occurred."}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={handleProvision}
+                  disabled={provisioning}
+                >
+                  {provisioning ? "Starting..." : "Retry"}
+                </Button>
+              </>
+            )}
+          </CardContent>
         </Card>
       </div>
     </div>

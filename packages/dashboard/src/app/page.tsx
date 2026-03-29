@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { apiGet } from "@/lib/api";
 
 interface DashboardStats {
@@ -9,6 +11,15 @@ interface DashboardStats {
   activeDrivers: number;
   todaysDeliveries: number;
   pendingOrders: number;
+}
+
+interface OrgSettings {
+  orgName: string;
+  serviceArea: { lat: number; lng: number; zoom: number; label: string };
+}
+
+interface ProvisionStatus {
+  status: "not_started" | "downloading" | "importing" | "ready" | "error";
 }
 
 const defaultStats: DashboardStats = {
@@ -19,18 +30,31 @@ const defaultStats: DashboardStats = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>(defaultStats);
   const [loading, setLoading] = useState(true);
+  const [showSetupBanner, setShowSetupBanner] = useState(false);
 
   useEffect(() => {
-    async function fetchStats() {
-      const res = await apiGet<DashboardStats>("/api/dashboard/stats");
-      if (res.ok) {
-        setStats(res.data);
+    async function fetchData() {
+      const [statsRes, settingsRes, provisionRes] = await Promise.all([
+        apiGet<DashboardStats>("/api/dashboard/stats"),
+        apiGet<OrgSettings | null>("/api/settings"),
+        apiGet<ProvisionStatus>("/api/settings/provision-status"),
+      ]);
+
+      if (statsRes.ok) {
+        setStats(statsRes.data);
       }
+
+      // Show setup banner if no service area or maps not provisioned
+      const noServiceArea = !settingsRes.ok || !settingsRes.data?.serviceArea?.label;
+      const noMaps = !provisionRes.ok || provisionRes.data?.status === "not_started";
+      setShowSetupBanner(noServiceArea || noMaps);
+
       setLoading(false);
     }
-    fetchStats();
+    fetchData();
   }, []);
 
   const cards = [
@@ -84,6 +108,21 @@ export default function DashboardPage() {
           Overview of today&apos;s mutual aid delivery operations.
         </p>
       </div>
+
+      {showSetupBanner && (
+        <Card className="mb-6 border-primary/50 bg-primary/5">
+          <CardContent className="pt-6">
+            <h3 className="font-semibold">Welcome to SafeCare</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Set up your service area in Settings to enable address search,
+              maps, and offline routing.
+            </p>
+            <Button className="mt-3" onClick={() => router.push("/settings")}>
+              Go to Settings
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (

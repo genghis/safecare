@@ -2,18 +2,21 @@
 set -e
 
 # OSRM initialization script
-# Pre-processes the OSM PBF file if not already done.
+# Waits for the OSM PBF file, then pre-processes it for routing.
 # Uses MLD (Multi-Level Dijkstra) algorithm for fast queries.
 
 DATA_DIR="/data"
 PBF_FILE="/osm/data.osm.pbf"
 OSRM_FILE="$DATA_DIR/data.osrm"
 
-if [ ! -f "$PBF_FILE" ]; then
-  echo "ERROR: No PBF file found at $PBF_FILE"
-  echo "Make sure the Midwest OSM extract is downloaded to docker/nominatim-data/data.osm.pbf"
-  exit 1
-fi
+# Wait for the PBF file to appear (provisioned via Settings page)
+while [ ! -f "$PBF_FILE" ] || [ ! -s "$PBF_FILE" ]; do
+  echo "$(date): Waiting for map data at $PBF_FILE..."
+  echo "  Set your service area in the Settings page to provision maps."
+  sleep 30
+done
+
+echo "PBF file found: $(ls -lh "$PBF_FILE" | awk '{print $5}')"
 
 # Check if already processed
 if [ -f "$OSRM_FILE.cell_metrics" ]; then

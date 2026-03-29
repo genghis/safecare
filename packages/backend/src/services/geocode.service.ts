@@ -37,6 +37,7 @@ export class GeocodeService {
     url.searchParams.set('format', 'jsonv2');
     url.searchParams.set('limit', String(limit));
     url.searchParams.set('addressdetails', '1');
+    url.searchParams.set('countrycodes', 'us');
 
     // Bias results toward a geographic area (does not exclude results outside)
     if (viewbox) {
