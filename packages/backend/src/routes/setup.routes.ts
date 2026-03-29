@@ -43,6 +43,18 @@ export default async function setupRoutes(fastify: FastifyInstance) {
 
       const setupComplete = adminExists && hasOperatingRegion && provisionStatus === 'ready';
 
+      // Read import progress if importing
+      let importMessage = '';
+      if (provisionStatus === 'importing') {
+        try {
+          const { readFile } = await import('fs/promises');
+          const line = (await readFile('/app/map-data/import-progress.txt', 'utf-8')).trim();
+          if (line && line !== 'waiting' && line !== 'starting') {
+            importMessage = line.length > 120 ? line.substring(0, 120) + '...' : line;
+          }
+        } catch { /* no progress file yet */ }
+      }
+
       return reply.send({
         success: true,
         data: {
@@ -52,6 +64,7 @@ export default async function setupRoutes(fastify: FastifyInstance) {
             operatingRegionSet: hasOperatingRegion,
             mapsProvisioned: provisionStatus === 'ready',
             mapsStatus: provisionStatus,
+            importMessage: importMessage || undefined,
           },
         },
       });

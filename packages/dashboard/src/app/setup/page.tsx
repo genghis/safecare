@@ -79,33 +79,57 @@ export default function SetupPage() {
   });
   const [provisioning, setProvisioning] = useState(false);
 
-  // Check if setup is already complete
+  // Check if setup is already complete or partially done
   useEffect(() => {
     apiGet<any>("/api/setup/status").then((res) => {
       if (res.ok && res.data?.setupComplete) {
         router.push("/");
       } else if (res.ok && res.data?.steps) {
         const s = res.data.steps;
-        if (s.adminCreated && s.operatingRegionSet) setStep(3);
-        else if (s.adminCreated) setStep(2);
+        if (s.adminCreated && s.operatingRegionSet) {
+          setStep(3);
+          // Set initial provision status from setup check
+          setProvisionStatus({
+            status: s.mapsStatus || "not_started",
+            message: s.mapsStatus === "importing"
+              ? "Map data is being imported..."
+              : undefined,
+          });
+        } else if (s.adminCreated) {
+          setStep(2);
+        }
       }
     });
   }, [router]);
 
-  // Poll provision status in step 3
+  // Poll provision status in step 3 using unauthenticated setup endpoint
   useEffect(() => {
     if (step !== 3) return;
     let active = true;
 
     async function poll() {
-      const res = await apiGet<ProvisionStatus>(
-        "/api/settings/provision-status"
-      );
-      if (res.ok && active) {
-        setProvisionStatus(res.data);
-        if (res.data.status === "ready") {
-          // Setup complete!
+      // Try authenticated endpoint first (more detail), fall back to setup status
+      let status: ProvisionStatus | null = null;
+
+      const authRes = await apiGet<ProvisionStatus>("/api/settings/provision-status");
+      if (authRes.ok && active) {
+        status = authRes.data;
+      } else {
+        // Not logged in -- use unauthenticated setup status
+        const setupRes = await apiGet<any>("/api/setup/status");
+        if (setupRes.ok && active) {
+          const s = setupRes.data.steps;
+          status = {
+            status: s.mapsProvisioned ? "ready" : (s.mapsStatus || "not_started"),
+            message: s.mapsStatus === "importing"
+              ? "Map data is being imported. This can take 15-60 minutes."
+              : undefined,
+          };
         }
+      }
+
+      if (status && active) {
+        setProvisionStatus(status);
       }
     }
 
