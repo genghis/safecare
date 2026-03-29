@@ -9,7 +9,7 @@ Last updated: 2026-03-29
 | Monorepo scaffolding (Turborepo, pnpm, shared) | Done | |
 | PostgreSQL + pgcrypto + Drizzle encrypted columns | Done | Field-level encryption with DEK |
 | SOPS + age key management | Done | setup.sh supports it |
-| Backend API (Fastify) | Done | Recipients, drivers, deliveries, dispatch, zones, distribution, geocoding |
+| Backend API (Fastify) | Done | Recipients, drivers, deliveries, dispatch, zones, distribution, geocoding, notifications |
 | JotForm webhook intake | Done | POST /api/webhooks/jotform |
 | Admin dashboard (Next.js) | Done | Login, recipients, drivers, deliveries, dispatch, distribution, zones |
 | Add Recipient with map-based address picker | Done | Leaflet + self-hosted Nominatim geocoding proxy |
@@ -17,7 +17,7 @@ Last updated: 2026-03-29
 | Dispatch session + route release gate | Done | Admin creates session, drivers check in, admin releases |
 | Distribution planner (auto-assign) | Done | Zone-aware, capacity-aware, nearest-neighbour routing |
 | Driver PWA (React + Vite) | Done | Login, dashboard, delivery detail, profile, offline sync |
-| Docker Compose (all services) | Done | postgres, redis, backend, dashboard, nominatim, osrm |
+| Docker Compose (all services) | Done | postgres, redis, backend, dashboard, nominatim, osrm, signal |
 | scripts/setup.sh interactive installer | Done | Generates secrets, .env, starts containers |
 
 ## Phase 2: Mapping, Routing & Air-Gap -- MOSTLY DONE
@@ -37,18 +37,22 @@ Last updated: 2026-03-29
 | **Route variation between delivery cycles** | **Not done** | Same route every time currently |
 | **Full client-side data purge (SQLCipher/keychain)** | **Partial** | PWA clears IndexedDB + tile cache; no hardware-backed key expiry |
 
-## Phase 3: Blind Communication + Acknowledgment -- NOT STARTED
+## Phase 3: Blind Communication + Acknowledgment -- IN PROGRESS
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Recipient notifications ("on the way" / "delivered") | Not done | Core UX requirement, no SMS sending yet |
-| Twilio SMS send/receive | Not done | Config exists, no implementation |
-| Communication proxy (blind number pool) | Not done | Schema exists, no logic |
-| Twilio log auto-deletion | Not done | |
-| Number rotation cron | Not done | |
+| Unified notification service | Done | Channel-agnostic: SMS, WhatsApp, Signal with fallback |
+| Recipient notifications ("on the way" / "delivered") | Done | Fired async on driver sync status updates |
+| i18n / localized messages | Done | 6 languages: en, es, ar, so, fr, zh |
+| Twilio SMS send/receive | Done | REST API integration with SID tracking |
+| WhatsApp via Twilio | Done | Sends when recipient opts in, falls back to SMS otherwise |
+| Signal via signal-cli | Done | Self-hosted container, E2E encrypted, free |
+| Notification test endpoint | Done | POST /api/notifications/test for admin verification |
+| Twilio log auto-deletion | Done | Per-session scrub + daily 2AM sweep (Phase 5 hardening) |
+| Communication proxy (blind number pool) | Not done | Schema exists, no proxy logic |
+| Number rotation cron | Not done | Constant defined (14 days), no job |
 | Recipient "GOT IT" ack flow | Not done | |
-| WhatsApp Business API | Not done | |
-| Orphaned food alert (15-min timeout) | Not done | |
+| Orphaned food alert (15-min timeout) | Not done | Constant defined, no implementation |
 
 ## Phase 4: Volunteer Management -- PARTIAL
 
@@ -70,7 +74,6 @@ Last updated: 2026-03-29
 | Dashboard purge warnings endpoint | Done | GET /api/dashboard/purge-warnings |
 | Emergency destroy script | Done | Cross-platform (Linux + macOS), shreds secrets, wipes volumes |
 | Remote wipe via push notification | Not done | |
-| Signal integration (signal-cli) | Not done | |
 | Key rotation tooling | Not done | |
 | Security docs/runbook | Partial | README.md + STATUS.md |
 | CI/CD (GitHub Actions) | Not done | |
@@ -81,10 +84,11 @@ Last updated: 2026-03-29
 
 | Gap | Priority | Notes |
 |-----|----------|-------|
-| **Recipient notifications** | High | No SMS/notification when delivery is coming or arrives |
+| **Communication proxy** (blind number pool) | Medium | Twilio proxy numbers for driver-recipient messaging |
 | **Tailscale networking** | Medium | Documented in plan but not configured |
 | **CI/CD pipeline** | Medium | No automated lint/test/build |
 | **Exclusion zones** | Medium | Draw on map, OSRM edge-weighting to avoid |
+| **Recipient ack flow** | Medium | "Reply GOT IT" + orphaned food alert |
 | **Key rotation tooling** | Low | Scripted DEK re-encryption |
 | **Remote wipe** | Low | Push notification to destroy route data on driver phone |
 
@@ -94,10 +98,27 @@ Last updated: 2026-03-29
 |---------|-----------|------|-------|
 | Dashboard | safecare-dashboard | 3000 | Next.js standalone |
 | Backend API | safecare-backend | 3001 | Fastify + Node 20 |
+| Driver PWA | (served via backend or Vite) | 5173 | React + Vite |
 | PostgreSQL | safecare-postgres | 5432 | postgres:16-alpine |
 | Redis | safecare-redis | 6379 | redis:7-alpine |
 | Nominatim | safecare-nominatim | 8088 | mediagis/nominatim:4.4 |
 | OSRM | safecare-osrm | 5000 | osrm/osrm-backend:latest |
+| Signal | safecare-signal | 8089 | bbernhard/signal-cli-rest-api:latest |
+
+## i18n Coverage
+
+All user-facing strings are keyed in `packages/shared/src/i18n.ts`.
+
+| Locale | Language | Status |
+|--------|----------|--------|
+| en | English | Complete |
+| es | Español | Complete |
+| ar | العربية (Arabic) | Complete |
+| so | Soomaali (Somali) | Complete |
+| fr | Français (French) | Complete |
+| zh | 中文 (Chinese) | Complete |
+
+String categories: notification messages, driver app UI, dashboard navigation, communication preferences. Adding a new language requires only adding translations to the string table.
 
 ## Test Coverage
 
