@@ -13,6 +13,280 @@ import {
 } from "@/components/ui/card";
 import { apiGet, apiPut, apiPost } from "@/lib/api";
 
+// ---------------------------------------------------------------------------
+// Two-Factor Authentication Section
+// ---------------------------------------------------------------------------
+
+function TwoFactorSection() {
+  const [totpEnabled, setTotpEnabled] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Setup flow state
+  const [setupSecret, setSetupSecret] = useState("");
+  const [setupUri, setSetupUri] = useState("");
+  const [showSetup, setShowSetup] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [enabling, setEnabling] = useState(false);
+  const [setupError, setSetupError] = useState("");
+
+  // Disable flow state
+  const [showDisable, setShowDisable] = useState(false);
+  const [disablePassword, setDisablePassword] = useState("");
+  const [disabling, setDisabling] = useState(false);
+  const [disableError, setDisableError] = useState("");
+
+  useEffect(() => {
+    async function fetchStatus() {
+      const res = await apiGet<{ enabled: boolean }>(
+        "/api/auth/admin/totp/status",
+      );
+      if (res.ok) {
+        setTotpEnabled(res.data.enabled);
+      }
+      setLoading(false);
+    }
+    fetchStatus();
+  }, []);
+
+  async function handleStartSetup() {
+    setSetupError("");
+    const res = await apiPost<{ secret: string; uri: string }>(
+      "/api/auth/admin/totp/setup",
+    );
+    if (res.ok && res.data) {
+      setSetupSecret(res.data.secret);
+      setSetupUri(res.data.uri);
+      setShowSetup(true);
+    } else {
+      setSetupError(res.error || "Failed to generate TOTP secret.");
+    }
+  }
+
+  async function handleVerifyAndEnable(e: React.FormEvent) {
+    e.preventDefault();
+    setSetupError("");
+    setEnabling(true);
+
+    const res = await apiPost<{ enabled: boolean }>(
+      "/api/auth/admin/totp/enable",
+      { secret: setupSecret, token: verifyCode },
+    );
+
+    if (res.ok && res.data?.enabled) {
+      setTotpEnabled(true);
+      setShowSetup(false);
+      setVerifyCode("");
+      setSetupSecret("");
+      setSetupUri("");
+    } else {
+      setSetupError(res.error || "Invalid code. Please try again.");
+    }
+
+    setEnabling(false);
+  }
+
+  async function handleDisable(e: React.FormEvent) {
+    e.preventDefault();
+    setDisableError("");
+    setDisabling(true);
+
+    const res = await apiPost<{ enabled: boolean }>(
+      "/api/auth/admin/totp/disable",
+      { password: disablePassword },
+    );
+
+    if (res.ok) {
+      setTotpEnabled(false);
+      setShowDisable(false);
+      setDisablePassword("");
+    } else {
+      setDisableError(res.error || "Invalid password.");
+    }
+
+    setDisabling(false);
+  }
+
+  if (loading || totpEnabled === null) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Two-Factor Authentication</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          Two-Factor Authentication
+          {totpEnabled && (
+            <span className="text-emerald-600 text-sm font-normal">
+              &#10003; Enabled
+            </span>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Two-factor authentication is strongly recommended to protect recipient
+          data.
+        </p>
+
+        {!totpEnabled && !showSetup && (
+          <>
+            {setupError && (
+              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                {setupError}
+              </div>
+            )}
+            <Button onClick={handleStartSetup}>Enable 2FA</Button>
+          </>
+        )}
+
+        {!totpEnabled && showSetup && (
+          <div className="space-y-4 rounded-md border p-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                1. Scan this URI in your authenticator app, or enter the secret
+                manually:
+              </p>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-xs text-muted-foreground">
+                    OTPAuth URI (paste into authenticator)
+                  </label>
+                  <div className="mt-1 rounded-md bg-muted p-2 text-xs font-mono break-all select-all">
+                    {setupUri}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">
+                    Secret (for manual entry)
+                  </label>
+                  <div className="mt-1 rounded-md bg-muted p-2 text-sm font-mono tracking-wider select-all">
+                    {setupSecret}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleVerifyAndEnable} className="space-y-3">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">
+                  2. Enter the 6-digit code from your authenticator to verify:
+                </p>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={verifyCode}
+                  onChange={(e) =>
+                    setVerifyCode(
+                      e.target.value.replace(/\D/g, "").slice(0, 6),
+                    )
+                  }
+                  className="max-w-[200px] text-center text-lg tracking-widest font-mono"
+                />
+              </div>
+
+              {setupError && (
+                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                  {setupError}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="submit"
+                  disabled={enabling || verifyCode.length !== 6}
+                >
+                  {enabling ? "Verifying..." : "Verify & Enable"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowSetup(false);
+                    setVerifyCode("");
+                    setSetupError("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {totpEnabled && !showDisable && (
+          <div className="space-y-3">
+            <p className="text-sm">
+              Your account is protected with two-factor authentication.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => setShowDisable(true)}
+            >
+              Disable 2FA
+            </Button>
+          </div>
+        )}
+
+        {totpEnabled && showDisable && (
+          <form onSubmit={handleDisable} className="space-y-3">
+            <p className="text-sm">
+              Enter your password to confirm disabling two-factor
+              authentication.
+            </p>
+            <Input
+              type="password"
+              placeholder="Enter your password"
+              value={disablePassword}
+              onChange={(e) => setDisablePassword(e.target.value)}
+              className="max-w-md"
+              required
+            />
+
+            {disableError && (
+              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                {disableError}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={disabling || !disablePassword}
+              >
+                {disabling ? "Disabling..." : "Disable 2FA"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setShowDisable(false);
+                  setDisablePassword("");
+                  setDisableError("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 const SettingsMap = dynamic(() => import("@/components/settings-map"), {
   ssr: false,
 });
@@ -517,6 +791,9 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Two-Factor Authentication */}
+        <TwoFactorSection />
       </div>
     </div>
   );

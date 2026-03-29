@@ -108,7 +108,7 @@ US_PBF="$WORK/us-latest.osm.pbf"
 
 echo "[2/6] Downloading US OSM extract..."
 if [ ! -f "$US_PBF" ]; then
-  curl -L --progress-bar -o "$US_PBF" \
+  curl -L -s -o "$US_PBF" \
     "https://download.geofabrik.de/north-america/us-latest.osm.pbf"
 fi
 echo "  Size: $(du -h "$US_PBF" | cut -f1)"

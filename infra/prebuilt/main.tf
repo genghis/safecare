@@ -122,8 +122,7 @@ resource "google_compute_instance" "builder" {
   }
 
   metadata = {
-    bucket     = google_storage_bucket.osrm.name
-    startup-script = file("${path.module}/build-osrm.sh")
+    bucket = google_storage_bucket.osrm.name
   }
 
   tags = ["osrm-builder"]

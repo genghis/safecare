@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>(defaultStats);
   const [loading, setLoading] = useState(true);
   const [showSetupBanner, setShowSetupBanner] = useState(false);
+  const [show2faBanner, setShow2faBanner] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -47,6 +48,12 @@ export default function DashboardPage() {
       const statsRes = await apiGet<DashboardStats>("/api/dashboard/stats");
       if (statsRes.ok) {
         setStats(statsRes.data);
+      }
+
+      // Check 2FA status to show nudge
+      const totpRes = await apiGet<{ enabled: boolean }>("/api/auth/admin/totp/status");
+      if (totpRes.ok && !totpRes.data?.enabled) {
+        setShow2faBanner(true);
       }
 
       setShowSetupBanner(false);
@@ -120,6 +127,29 @@ export default function DashboardPage() {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {show2faBanner && (
+        <div className="mb-6 flex items-center justify-between rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30 px-4 py-3">
+          <p className="text-sm">
+            Protect your account with two-factor authentication.{" "}
+            <button
+              onClick={() => router.push("/settings")}
+              className="font-medium underline underline-offset-2 hover:no-underline"
+            >
+              Set it up in Settings.
+            </button>
+          </p>
+          <button
+            onClick={() => setShow2faBanner(false)}
+            className="ml-4 text-muted-foreground hover:text-foreground flex-shrink-0"
+            aria-label="Dismiss"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
