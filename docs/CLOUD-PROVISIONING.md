@@ -1,116 +1,113 @@
 # Map Provisioning Architecture
 
-SafeCare uses a three-tier approach to get map data onto each deployment as fast as possible:
+## Overview
 
-| Tier | Method | Speed | Cost |
-|------|--------|-------|------|
-| 1. Pre-built | Download pre-computed archives from CDN | ~30 seconds | ~$1/mo storage |
-| 2. Cloud | Upload PBF to a processing service | ~5 minutes | ~$0.02/job |
-| 3. Local | Process on-device | 30-60 min (hours on Pi) | Free |
+SafeCare needs two types of map data for each deployment:
 
-The system automatically uses the fastest available tier and falls back gracefully.
+1. **OSRM routing files** — pre-computed driving directions. Downloaded from cloud (instant).
+2. **Nominatim search index** — address geocoding. Built locally from a PBF file (takes time but keeps address queries private).
 
 ## How It Works
 
-1. Admin defines their operating region in the setup wizard
-2. SafeCare downloads the relevant state OSM extract and trims it to the viewport
-3. If a cloud provisioning service is available, the trimmed PBF is uploaded to it
-4. The cloud service builds the Nominatim and OSRM indexes on fast hardware
-5. The pre-built indexes are downloaded back to the local machine
-6. Nominatim and OSRM start immediately with the pre-built data
+### OSRM (Pre-built, ~30 seconds)
 
-If the cloud service is unavailable, SafeCare falls back to local processing automatically.
+A quarterly build job processes all 50 US states into OSRM routing archives hosted on GCS, served via Firebase Hosting. Each SafeCare deployment downloads just the state covering its viewport.
+
+- **Build:** Spot VM (c2-standard-30, 30 cores) downloads the full US OSM extract, slices per state with osmium, builds OSRM in parallel
+- **Cost:** ~$2 per quarterly build, ~$1/month storage
+- **Download:** 50-500 MB per state, takes ~30 seconds
+
+### Nominatim (Local, 15-60 min background)
+
+Each deployment imports a viewport-trimmed PBF into its local Nominatim instance. This runs in the background — the system is usable immediately (public Nominatim API fallback for geocoding while local import runs).
+
+This must be local because geocoding queries contain recipient addresses (PII).
+
+**Estimated Nominatim import times (viewport-trimmed PBF):**
+
+| Region size | PBF size | Laptop (M2) | RPi 5 (8GB) | RPi 4 (4GB) |
+|-------------|----------|-------------|-------------|-------------|
+| Metro area | 10-20 MB | ~20 min | ~45 min | ~60 min |
+| Large metro | 20-50 MB | ~30 min | ~60 min | ~90 min |
+| Full state | 100-500 MB | ~60 min | ~2-3 hours | Not recommended |
+
+## Infrastructure
+
+### GCP Resources (Terraform)
+
+```
+infra/prebuilt/
+├── main.tf              # GCS bucket, service account, spot VM
+├── build-osrm.sh        # VM startup script (builds all states)
+├── trigger-build.sh     # CLI to start/monitor builds
+└── hosting/
+    ├── firebase.json    # Firebase Hosting config (CDN)
+    └── public/
+        └── index.html
+```
+
+### Quarterly Build Process
+
+```bash
+# One-time setup
+cd infra/prebuilt
+terraform init && terraform apply
+
+# Trigger a build (~2-3 hours, ~$2 on spot pricing)
+./trigger-build.sh
+
+# Monitor
+./trigger-build.sh --status
+./trigger-build.sh --logs
+```
+
+The VM:
+1. Downloads the full US OSM extract (~10 GB)
+2. Slices into 50 state PBFs with osmium (parallel)
+3. Builds OSRM routing data for each state (6 states in parallel, 4 cores each)
+4. Uploads OSRM archives + state PBFs to GCS
+5. Generates manifest.json
+6. Shuts itself down
+
+### What Gets Stored
+
+```
+gs://safecare-maps-osrm/
+├── manifest.json                 # Index of all regions
+├── us/
+│   ├── minnesota-osrm.tar.gz   # Pre-built OSRM (~200 MB)
+│   ├── minnesota-nominatim.pbf  # State PBF for local import (~300 MB)
+│   ├── california-osrm.tar.gz
+│   ├── california-nominatim.pbf
+│   └── ...
+```
+
+### Costs
+
+| Item | Cost |
+|------|------|
+| Quarterly build (spot VM, ~3 hours) | ~$2 |
+| GCS storage (~25 GB OSRM + ~15 GB PBFs) | ~$1/month |
+| Firebase Hosting (free tier) | $0 |
+| Bandwidth (~10 downloads/month × 500 MB) | ~$0.60/month |
+| **Total** | **~$4/quarter** |
+
+## SafeCare Deployment Flow
+
+When an admin clicks "Provision Maps":
+
+1. Check manifest for pre-built OSRM covering the viewport → download (~30 sec)
+2. Download the state PBF for Nominatim (~30 sec)
+3. OSRM starts immediately with pre-built data (routing works instantly)
+4. Nominatim imports the PBF in the background (15-60 min)
+5. Geocoding uses public Nominatim API fallback until local import finishes
+6. Once local Nominatim is ready, it takes over (all queries stay local)
 
 ## Privacy
 
-**No private data is sent to the cloud.** The only data uploaded is an OpenStreetMap extract -- public map data (roads, buildings, addresses from US Census). No recipient information, delivery data, or any PII ever leaves the local machine.
+- **OSRM files**: public road network data. No PII.
+- **PBF files**: public OpenStreetMap data. No PII.
+- **Geocoding queries**: contain recipient addresses. Always processed locally.
+- **Route queries**: contain delivery coordinates. Always processed locally.
 
-## API Contract
-
-The cloud provisioning service exposes three endpoints:
-
-### `GET /api/health`
-Returns `{ "ok": true }` if the service is running.
-
-### `POST /api/provision`
-Accepts a multipart form upload with a `pbf` file field.
-Returns `{ "jobId": "uuid" }`.
-
-### `GET /api/provision/:jobId`
-Returns job status:
-```json
-{
-  "status": "queued | processing | ready | error",
-  "progress": 45,
-  "message": "Building search indexes...",
-  "downloadUrl": "https://...",
-  "error": "..."
-}
-```
-
-When `status` is `"ready"`, `downloadUrl` contains a link to a tar.gz archive with:
-- `nominatim/` -- PostgreSQL data directory for Nominatim
-- `osrm/` -- Processed OSRM routing files
-
-## Deployment Options
-
-### Cloud Run (Google Cloud)
-- Dockerfile with Nominatim + OSRM + osmium
-- Triggered by HTTP request, scales to zero
-- ~$0.01-0.02 per provisioning job
-- 4 vCPUs, 8GB RAM, processes in ~3-5 minutes
-
-### AWS Lambda + EFS
-- Similar approach with Lambda for compute and EFS for temp storage
-- ~$0.01 per job
-
-### Dedicated VPS
-- A single $20/mo VPS can serve hundreds of SafeCare deployments
-- Good for organizations that want to run the service for their network
-
-### Self-hosted
-- Run the same Docker image on any server with 4+ cores
-- Point `PROVISION_SERVICE_URL` to it
-
-## Configuration
-
-Set the environment variable on the SafeCare backend:
-```
-PROVISION_SERVICE_URL=https://provision.safecare.dev
-```
-
-If not set or the service is unreachable, SafeCare processes locally. No configuration needed for the fallback.
-
-## Tier 1: Pre-Built Archives
-
-A monthly build job processes all 50 US states into ready-to-use archives:
-
-```bash
-# Build all states (run on a beefy server or Cloud Run)
-./tools/build-prebuilt.sh ./prebuilt
-
-# Build specific states
-./tools/build-prebuilt.sh ./prebuilt minnesota illinois california
-
-# Upload to cloud storage
-gsutil -m rsync -r ./prebuilt gs://safecare-maps/
-# or
-aws s3 sync ./prebuilt s3://safecare-maps/
-```
-
-Each archive contains:
-- `osrm/` -- Pre-processed OSRM routing files
-- `nominatim/data.osm.pbf` -- State PBF for Nominatim import
-
-A `manifest.json` index lists all available regions with bounds and sizes.
-Each SafeCare deployment downloads just the archive covering its viewport.
-
-**Cost:** ~50 GB storage × $0.015/GB = ~$0.75/month for all 50 states.
-
-## Building the Cloud Processing Service (Tier 2)
-
-The cloud provisioning service is a separate project (TODO). It needs:
-- Docker image with: Nominatim, OSRM, osmium-tool, PostgreSQL
-- HTTP API (Express/Fastify) implementing the three endpoints above
-- Object storage (GCS/S3/R2) for temporary result archives
-- Cleanup job to delete archives after 24 hours
+Nothing private ever leaves the deployment.

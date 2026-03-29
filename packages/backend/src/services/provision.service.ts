@@ -28,9 +28,14 @@ export interface PrebuiltRegion {
   id: string;
   name: string;
   bounds: { south: number; west: number; north: number; east: number };
-  archiveUrl: string;
-  archiveSize: number; // bytes
+  osrmUrl: string;       // pre-built OSRM routing files
+  osrmSize: number;      // bytes
+  pbfUrl: string;        // state PBF for local Nominatim import
+  pbfSize: number;       // bytes
   pbfDate: string;
+  // Legacy single-archive format
+  archiveUrl?: string;
+  archiveSize?: number;
 }
 
 export interface PrebuiltManifest {
@@ -121,35 +126,67 @@ export class ProvisionService {
 
     if (covering.length === 0) return null;
 
-    // Return the smallest covering region (by archive size)
-    covering.sort((a, b) => a.archiveSize - b.archiveSize);
+    // Return the smallest covering region (by OSRM size)
+    covering.sort((a, b) => (a.osrmSize || a.archiveSize || 0) - (b.osrmSize || b.archiveSize || 0));
     return covering[0];
   }
 
   /**
-   * Download and extract a pre-built archive.
+   * Download pre-built OSRM files and state PBF (for local Nominatim import).
    */
   async downloadPrebuilt(
     region: PrebuiltRegion,
     destDir: string,
+    onProgress?: (phase: string, downloaded: number, total: number) => void,
+  ): Promise<void> {
+    const baseUrl = (await this.getManifest())?.baseUrl ?? '';
+
+    // 1. Download OSRM routing files (pre-built, instant routing)
+    const osrmUrl = (region.osrmUrl || region.archiveUrl || '').startsWith('http')
+      ? (region.osrmUrl || region.archiveUrl || '')
+      : `${baseUrl}${region.osrmUrl || region.archiveUrl}`;
+
+    await this.streamDownload(
+      osrmUrl,
+      `${destDir}/osrm.tar.gz`,
+      (dl, total) => onProgress?.('osrm', dl, total),
+    );
+
+    // Extract OSRM into the OSRM data directory
+    const { execSync } = await import('child_process');
+    const { mkdir } = await import('fs/promises');
+    const osrmDir = `${destDir}/osrm`;
+    await mkdir(osrmDir, { recursive: true });
+    execSync(`tar -xzf "${destDir}/osrm.tar.gz" -C "${osrmDir}"`, { timeout: 300000 });
+    const { unlink } = await import('fs/promises');
+    await unlink(`${destDir}/osrm.tar.gz`).catch(() => {});
+
+    // 2. Download state PBF for local Nominatim import
+    if (region.pbfUrl) {
+      const pbfUrl = region.pbfUrl.startsWith('http')
+        ? region.pbfUrl
+        : `${baseUrl}${region.pbfUrl}`;
+
+      await this.streamDownload(
+        pbfUrl,
+        `${destDir}/data.osm.pbf`,
+        (dl, total) => onProgress?.('nominatim', dl, total),
+      );
+    }
+  }
+
+  /**
+   * Stream a URL to a local file with progress callback.
+   */
+  private async streamDownload(
+    url: string,
+    destPath: string,
     onProgress?: (downloaded: number, total: number) => void,
   ): Promise<void> {
-    const archiveUrl = region.archiveUrl.startsWith('http')
-      ? region.archiveUrl
-      : `${(await this.getManifest())?.baseUrl ?? ''}${region.archiveUrl}`;
-
-    const res = await fetch(archiveUrl, {
-      headers: { 'User-Agent': USER_AGENT },
-    });
-
-    if (!res.ok || !res.body) {
-      throw new Error(`Download failed: ${res.status}`);
-    }
+    const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+    if (!res.ok || !res.body) throw new Error(`Download failed: ${res.status} ${url}`);
 
     const totalBytes = parseInt(res.headers.get('content-length') || '0');
-    const archivePath = `${destDir}/prebuilt.tar.gz`;
-
-    // Stream to disk with progress
     const { createWriteStream } = await import('fs');
     const { Readable } = await import('stream');
     const { pipeline } = await import('stream/promises');
@@ -159,26 +196,14 @@ export class ProvisionService {
     const readable = new Readable({
       async read() {
         const { done, value } = await reader.read();
-        if (done) {
-          this.push(null);
-          return;
-        }
+        if (done) { this.push(null); return; }
         downloadedBytes += value.byteLength;
-        if (onProgress) onProgress(downloadedBytes, totalBytes);
+        onProgress?.(downloadedBytes, totalBytes);
         this.push(Buffer.from(value));
       },
     });
 
-    const fileStream = createWriteStream(archivePath);
-    await pipeline(readable, fileStream);
-
-    // Extract
-    const { execSync } = await import('child_process');
-    execSync(`tar -xzf "${archivePath}" -C "${destDir}"`, { timeout: 300000 });
-
-    // Cleanup
-    const { unlink } = await import('fs/promises');
-    await unlink(archivePath).catch(() => {});
+    await pipeline(readable, createWriteStream(destPath));
   }
 
   // -----------------------------------------------------------------------

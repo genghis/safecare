@@ -253,7 +253,8 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
       if (best.method === 'prebuilt' && best.region) {
         // Tier 1: Download pre-built archive (fastest — ~30 sec)
         const region = best.region;
-        const sizeMB = Math.round(region.archiveSize / 1024 / 1024);
+        const totalSize = (region.osrmSize || 0) + (region.pbfSize || 0);
+        const sizeMB = Math.round(totalSize / 1024 / 1024);
 
         await redis.set(PROVISION_STATUS_KEY, JSON.stringify({
           status: 'downloading',
@@ -275,8 +276,9 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
             await provisionService.downloadPrebuilt(
               region,
               mapDataDir,
-              async (downloaded, total) => {
+              async (phase: string, downloaded: number, total: number) => {
                 const pct = total > 0 ? Math.round((downloaded / total) * 100) : 0;
+                const label = phase === 'osrm' ? 'routing data' : 'address data';
                 await redis.set(PROVISION_STATUS_KEY, JSON.stringify({
                   status: 'downloading',
                   progress: pct,
@@ -284,7 +286,7 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
                   method: 'prebuilt',
                   downloadedBytes: downloaded,
                   sizeBytes: total,
-                  message: `Downloading ${region.name} (${Math.round(downloaded / 1024 / 1024)} / ${Math.round(total / 1024 / 1024)} MB)...`,
+                  message: `Downloading ${label} for ${region.name} (${Math.round(downloaded / 1024 / 1024)} / ${Math.round(total / 1024 / 1024)} MB)...`,
                 }));
               },
             );
@@ -293,7 +295,7 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
               status: 'ready',
               state: region.name,
               method: 'prebuilt',
-              sizeBytes: region.archiveSize,
+              sizeBytes: totalSize,
             }));
 
             fastify.log.info(`Pre-built maps for ${region.name} installed successfully`);

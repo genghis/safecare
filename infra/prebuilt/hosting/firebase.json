@@ -1,0 +1,36 @@
+{
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*"],
+    "rewrites": [
+      {
+        "source": "/us/**",
+        "run": {
+          "serviceId": "default",
+          "region": "us-central1"
+        }
+      }
+    ],
+    "redirects": [
+      {
+        "source": "/us/:file",
+        "destination": "https://storage.googleapis.com/safecare-maps-osrm/us/:file",
+        "type": 302
+      },
+      {
+        "source": "/manifest.json",
+        "destination": "https://storage.googleapis.com/safecare-maps-osrm/manifest.json",
+        "type": 302
+      }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "Access-Control-Allow-Origin", "value": "*" },
+          { "key": "Cache-Control", "value": "public, max-age=86400" }
+        ]
+      }
+    ]
+  }
+}
