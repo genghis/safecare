@@ -119,40 +119,55 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
       }
 
       const settings = JSON.parse(raw);
-      const { lat, lng } = settings.serviceArea;
+      const { lat, lng, label } = settings.serviceArea;
 
-      // 2. Reverse geocode to determine the US state
-      let stateName: string;
-      try {
-        const url = new URL('/reverse', config.GEOCODING_URL);
-        url.searchParams.set('lat', String(lat));
-        url.searchParams.set('lon', String(lng));
-        url.searchParams.set('format', 'jsonv2');
-        url.searchParams.set('addressdetails', '1');
+      // 2. Determine the US state from the label or reverse geocoding
+      let stateName = '';
 
-        const geoResponse = await fetch(url.toString(), {
-          headers: { 'User-Agent': USER_AGENT },
-          signal: AbortSignal.timeout(10000),
-        });
-
-        if (!geoResponse.ok) {
-          throw new Error(`Reverse geocoding failed: ${geoResponse.status}`);
+      // First try: parse state from the stored label
+      // Label format: "City, County, State, Country" or "City, State, Country"
+      if (label) {
+        const parts = label.split(',').map((s: string) => s.trim());
+        // Walk backwards looking for a known state name
+        for (let i = parts.length - 1; i >= 0; i--) {
+          if (STATE_SLUGS[parts[i]]) {
+            stateName = parts[i];
+            break;
+          }
         }
+      }
 
-        const geoData = (await geoResponse.json()) as any;
-        stateName = geoData.address?.state;
+      // Fallback: try reverse geocoding (only works if Nominatim is running)
+      if (!stateName) {
+        try {
+          const url = new URL('/reverse', config.GEOCODING_URL);
+          url.searchParams.set('lat', String(lat));
+          url.searchParams.set('lon', String(lng));
+          url.searchParams.set('format', 'jsonv2');
+          url.searchParams.set('addressdetails', '1');
 
-        if (!stateName) {
-          // Fallback: parse from display_name ("City, County, State, Country")
-          const parts = (geoData.display_name ?? '').split(',').map((s: string) => s.trim());
-          // State is typically the second-to-last part (before "United States")
-          stateName = parts.length >= 2 ? parts[parts.length - 2] : '';
+          const geoResponse = await fetch(url.toString(), {
+            headers: { 'User-Agent': USER_AGENT },
+            signal: AbortSignal.timeout(5000),
+          });
+
+          if (geoResponse.ok) {
+            const geoData = (await geoResponse.json()) as any;
+            stateName = geoData.address?.state ?? '';
+            if (!stateName) {
+              const parts = (geoData.display_name ?? '').split(',').map((s: string) => s.trim());
+              stateName = parts.length >= 2 ? parts[parts.length - 2] : '';
+            }
+          }
+        } catch {
+          // Geocoding not available yet -- that's OK if we parsed from label
         }
-      } catch (err) {
-        fastify.log.error(err, 'Reverse geocoding failed during map provisioning');
-        return reply.code(502).send({
+      }
+
+      if (!stateName) {
+        return reply.code(400).send({
           success: false,
-          error: 'Could not determine state from service area. Is the geocoding service running?',
+          error: 'Could not determine state from service area label. Try re-saving your service area in Settings.',
         });
       }
 

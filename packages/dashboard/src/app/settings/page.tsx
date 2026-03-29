@@ -131,7 +131,7 @@ export default function SettingsPage() {
   // Provision maps handler
   async function handleProvision() {
     setProvisioning(true);
-    const res = await apiPost("/api/settings/provision-maps");
+    const res = await apiPost("/api/settings/provision-maps", {});
     if (!res.ok) {
       setProvisionStatus({
         status: "error",
