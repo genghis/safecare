@@ -1,9 +1,12 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { and, eq, lt, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { deliveries, auditLog } from '../db/schema.js';
+import { deliveries, auditLog, communicationSessions } from '../db/schema.js';
 import { config } from '../config.js';
-import { MAX_DELIVERY_RETENTION_HOURS } from '@safecare/shared';
+import {
+  MAX_DELIVERY_RETENTION_HOURS,
+  AUDIT_LOG_RETENTION_DAYS,
+} from '@safecare/shared';
 
 const QUEUE_NAME = 'purge';
 
@@ -21,15 +24,16 @@ export function createPurgeQueue(): Queue {
 }
 
 /**
- * Schedule the recurring hourly purge job.
+ * Schedule all recurring purge jobs (hourly purge + daily audit cleanup).
  */
-export async function scheduleHourlyPurge(queue: Queue): Promise<void> {
+export async function scheduleRecurringPurgeJobs(queue: Queue): Promise<void> {
   // Remove existing repeatable jobs to avoid duplicates on restart
   const existing = await queue.getRepeatableJobs();
   for (const job of existing) {
     await queue.removeRepeatableByKey(job.key);
   }
 
+  // Hourly purge of expired deliveries and communication sessions
   await queue.add(
     'hourly-purge',
     {},
@@ -39,7 +43,23 @@ export async function scheduleHourlyPurge(queue: Queue): Promise<void> {
       removeOnFail: { count: 48 },
     },
   );
+
+  // Daily audit log cleanup (every 24 hours)
+  await queue.add(
+    'audit-cleanup',
+    {},
+    {
+      repeat: { every: 24 * 60 * 60 * 1000 }, // every 24 hours
+      removeOnComplete: { count: 7 },
+      removeOnFail: { count: 14 },
+    },
+  );
 }
+
+/**
+ * @deprecated Use scheduleRecurringPurgeJobs instead.
+ */
+export const scheduleHourlyPurge = scheduleRecurringPurgeJobs;
 
 /**
  * Queue an immediate purge for a specific delivery after acknowledgment.
@@ -69,6 +89,8 @@ export function createPurgeWorker(): Worker {
         await processHourlyPurge();
       } else if (job.name === 'immediate-purge') {
         await processImmediatePurge(job.data.deliveryId);
+      } else if (job.name === 'audit-cleanup') {
+        await processAuditCleanup();
       }
     },
     {
@@ -154,9 +176,25 @@ async function processHourlyPurge(): Promise<void> {
     await db.delete(deliveries).where(eq(deliveries.id, id));
   }
 
+  // VACUUM to reclaim disk space and overwrite deleted tuples (prevents forensic recovery)
+  await db.execute(sql`VACUUM deliveries`);
+
   console.log(
     `Hourly purge: deleted ${ids.length} deliveries older than ${MAX_DELIVERY_RETENTION_HOURS}h`,
   );
+
+  // Purge expired communication sessions
+  const expiredSessions = await db
+    .delete(communicationSessions)
+    .where(lt(communicationSessions.expiresAt, new Date()))
+    .returning({ id: communicationSessions.id });
+
+  if (expiredSessions.length > 0) {
+    await db.execute(sql`VACUUM communication_sessions`);
+    console.log(
+      `Hourly purge: deleted ${expiredSessions.length} expired communication sessions`,
+    );
+  }
 }
 
 /**
@@ -198,4 +236,22 @@ async function processImmediatePurge(deliveryId: string): Promise<void> {
   await db.delete(deliveries).where(eq(deliveries.id, deliveryId));
 
   console.log(`Immediate purge: deleted delivery ${deliveryId}`);
+}
+
+/**
+ * Audit cleanup: delete audit_log entries older than 90 days.
+ */
+async function processAuditCleanup(): Promise<void> {
+  const cutoff = new Date(
+    Date.now() - AUDIT_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+  );
+
+  const deleted = await db
+    .delete(auditLog)
+    .where(lt(auditLog.createdAt, cutoff))
+    .returning({ id: auditLog.id });
+
+  console.log(
+    `Audit cleanup: deleted ${deleted.length} audit log entries older than ${AUDIT_LOG_RETENTION_DAYS} days`,
+  );
 }

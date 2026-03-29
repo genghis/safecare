@@ -13,6 +13,9 @@ export const ORPHANED_FOOD_ALERT_MINUTES = 15;
 /** Maximum retention time for delivery PII, in hours */
 export const MAX_DELIVERY_RETENTION_HOURS = 24;
 
+/** Audit log retention period, in days */
+export const AUDIT_LOG_RETENTION_DAYS = 90;
+
 /** Twilio number rotation interval, in days */
 export const NUMBER_ROTATION_DAYS = 14;
 

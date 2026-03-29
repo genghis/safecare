@@ -1,7 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { eq, and, sql, gte, lt } from 'drizzle-orm';
+import { eq, and, sql, gte, lt, isNull, isNotNull } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { recipients, drivers, deliveries } from '../db/schema.js';
+import { recipients, drivers, deliveries, driverCheckIns } from '../db/schema.js';
+import { DEFAULT_PURGE_CONFIRMATION_WINDOW_HOURS } from '@safecare/shared';
 
 export default async function dashboardRoutes(fastify: FastifyInstance) {
   /**
@@ -52,6 +53,53 @@ export default async function dashboardRoutes(fastify: FastifyInstance) {
           activeDrivers: activeDriverCount[0].count,
           todaysDeliveries: todaysDeliveryCount[0].count,
           pendingOrders: pendingCount[0].count,
+        },
+      });
+    },
+  );
+
+  /**
+   * GET /api/dashboard/purge-warnings
+   * Returns drivers who haven't confirmed route data purge within the window.
+   */
+  fastify.get(
+    '/api/dashboard/purge-warnings',
+    { preHandler: [fastify.requireAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const cutoff = new Date(
+        Date.now() -
+          DEFAULT_PURGE_CONFIRMATION_WINDOW_HOURS * 60 * 60 * 1000,
+      );
+
+      const unconfirmed = await db
+        .select({
+          checkInId: driverCheckIns.id,
+          driverId: driverCheckIns.driverId,
+          dispatchSessionId: driverCheckIns.dispatchSessionId,
+          routeReleasedAt: driverCheckIns.routeReleasedAt,
+          checkedInAt: driverCheckIns.checkedInAt,
+        })
+        .from(driverCheckIns)
+        .where(
+          and(
+            isNotNull(driverCheckIns.routeReleasedAt),
+            isNull(driverCheckIns.purgeConfirmedAt),
+            lt(driverCheckIns.routeReleasedAt, cutoff),
+          ),
+        );
+
+      return reply.send({
+        success: true,
+        data: {
+          windowHours: DEFAULT_PURGE_CONFIRMATION_WINDOW_HOURS,
+          count: unconfirmed.length,
+          warnings: unconfirmed.map((row) => ({
+            checkInId: row.checkInId,
+            driverId: row.driverId,
+            dispatchSessionId: row.dispatchSessionId,
+            routeReleasedAt: row.routeReleasedAt,
+            checkedInAt: row.checkedInAt,
+          })),
         },
       });
     },

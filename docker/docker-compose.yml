@@ -104,7 +104,7 @@ services:
   #   docker volume rm docker_osrmdata && docker compose up -d osrm
   # ---------------------------------------------------------------------------
   osrm:
-    image: osrm/osrm-backend:v5.27.1
+    image: osrm/osrm-backend:latest
     container_name: safecare-osrm
     restart: unless-stopped
     ports:
