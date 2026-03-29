@@ -275,27 +275,77 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
       const raw = await redis.get(PROVISION_STATUS_KEY);
 
       if (!raw) {
-        // No status key -- check if PBF file exists
+        // No status key -- check if PBF file exists AND Nominatim is responding
+        let fileExists = false;
+        let fileSize = 0;
         try {
           const fileInfo = await stat(MAP_DATA_PATH);
-          if (fileInfo.size > 1_000_000) { // at least 1MB to be a valid PBF
-            return reply.send({
-              success: true,
-              data: { status: 'ready', sizeBytes: fileInfo.size },
-            });
-          }
+          fileExists = fileInfo.size > 1_000_000;
+          fileSize = fileInfo.size;
         } catch {
           // File doesn't exist
         }
+
+        if (!fileExists) {
+          return reply.send({
+            success: true,
+            data: { status: 'not_started' },
+          });
+        }
+
+        // File exists -- check if Nominatim is actually serving
+        try {
+          const res = await fetch(`${config.GEOCODING_URL}/status`, {
+            signal: AbortSignal.timeout(3000),
+          });
+          if (res.ok) {
+            return reply.send({
+              success: true,
+              data: { status: 'ready', sizeBytes: fileSize },
+            });
+          }
+        } catch {
+          // Nominatim not ready yet
+        }
+
         return reply.send({
           success: true,
-          data: { status: 'not_started' },
+          data: {
+            status: 'importing',
+            sizeBytes: fileSize,
+            message: 'Map data downloaded. Geocoding and routing engines are still importing. This can take 30-60 minutes.',
+          },
         });
+      }
+
+      const stored = JSON.parse(raw);
+
+      // If Redis says "ready" or "importing", verify Nominatim is actually live
+      if (stored.status === 'ready' || stored.status === 'importing') {
+        let nominatimLive = false;
+        try {
+          const check = await fetch(`${config.GEOCODING_URL}/status`, {
+            signal: AbortSignal.timeout(3000),
+          });
+          nominatimLive = check.ok;
+        } catch {
+          // not responding yet
+        }
+
+        if (!nominatimLive) {
+          stored.status = 'importing';
+          stored.message = 'Map data downloaded. Geocoding engine is still importing. This can take 30-60 minutes.';
+        } else if (stored.status !== 'ready') {
+          stored.status = 'ready';
+          delete stored.message;
+          // Persist the corrected status
+          await redis.set(PROVISION_STATUS_KEY, JSON.stringify(stored));
+        }
       }
 
       return reply.send({
         success: true,
-        data: JSON.parse(raw),
+        data: stored,
       });
     },
   );
