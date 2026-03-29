@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
 import L from "leaflet";
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, useMapEvents, useMap } from "react-leaflet";
 import { useEffect } from "react";
 import "leaflet/dist/leaflet.css";
 
@@ -30,56 +29,22 @@ interface SettingsMapProps {
   lat: number;
   lng: number;
   zoom: number;
-  onLocationChange: (lat: number, lng: number) => void;
-  onBoundsChange: (bounds: SettingsMapBounds, zoom: number) => void;
+  onBoundsChange: (bounds: SettingsMapBounds, zoom: number, center: { lat: number; lng: number }) => void;
 }
 
-function makeCenterIcon() {
-  return L.divIcon({
-    className: "",
-    html: `<div style="
-      width:24px;height:24px;border-radius:50%;
-      background:#3b82f6;border:3px solid #fff;
-      box-shadow:0 0 8px rgba(0,0,0,.4);
-    "></div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-  });
-}
-
-function MapEvents({
-  onMapClick,
+function BoundsTracker({
   onBoundsChange,
 }: {
-  onMapClick: (lat: number, lng: number) => void;
-  onBoundsChange: (bounds: SettingsMapBounds, zoom: number) => void;
+  onBoundsChange: (bounds: SettingsMapBounds, zoom: number, center: { lat: number; lng: number }) => void;
 }) {
   const map = useMapEvents({
-    click(e) {
-      onMapClick(e.latlng.lat, e.latlng.lng);
-    },
     moveend() {
       const b = map.getBounds();
+      const c = map.getCenter();
       onBoundsChange(
-        {
-          south: b.getSouth(),
-          west: b.getWest(),
-          north: b.getNorth(),
-          east: b.getEast(),
-        },
-        map.getZoom()
-      );
-    },
-    zoomend() {
-      const b = map.getBounds();
-      onBoundsChange(
-        {
-          south: b.getSouth(),
-          west: b.getWest(),
-          north: b.getNorth(),
-          east: b.getEast(),
-        },
-        map.getZoom()
+        { south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() },
+        map.getZoom(),
+        { lat: c.lat, lng: c.lng },
       );
     },
   });
@@ -108,13 +73,10 @@ export default function SettingsMap({
   lat,
   lng,
   zoom,
-  onLocationChange,
   onBoundsChange,
 }: SettingsMapProps) {
-  const icon = useMemo(() => makeCenterIcon(), []);
-
   return (
-    <div className="relative w-full h-[400px] rounded-md border overflow-hidden">
+    <div className="relative w-full h-[400px] rounded-md overflow-hidden">
       <MapContainer
         center={[lat, lng]}
         zoom={zoom}
@@ -125,21 +87,15 @@ export default function SettingsMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapEvents
-          onMapClick={(clickLat, clickLng) =>
-            onLocationChange(clickLat, clickLng)
-          }
-          onBoundsChange={onBoundsChange}
-        />
+        <BoundsTracker onBoundsChange={onBoundsChange} />
         <RecenterMap lat={lat} lng={lng} zoom={zoom} />
-        <Marker position={[lat, lng]} icon={icon} />
       </MapContainer>
 
-      {/* Viewport border overlay */}
-      <div className="absolute inset-0 pointer-events-none border-4 border-primary/30 rounded-md z-[500]" />
+      {/* Viewport border to show "this is the selection" */}
+      <div className="absolute inset-0 pointer-events-none border-4 border-primary/40 rounded-md z-[500]" />
 
-      <div className="absolute top-2 left-12 z-[1000] bg-background/80 backdrop-blur-sm text-xs px-3 py-1.5 rounded-md border shadow-sm pointer-events-none">
-        Pan and zoom to define your operating region. The visible area is what will be provisioned.
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-[1000] bg-background/80 backdrop-blur-sm text-xs px-3 py-1.5 rounded-md border shadow-sm pointer-events-none">
+        Pan and zoom so the visible area covers your full operating region
       </div>
     </div>
   );

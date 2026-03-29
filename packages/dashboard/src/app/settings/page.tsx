@@ -176,20 +176,14 @@ export default function SettingsPage() {
     }, 500);
   }, []);
 
-  // Select a search result
+  // Select a search result — recenters the map on that location
   function handleSelectResult(result: GeocodingResult) {
     setLat(result.lat);
     setLng(result.lng);
+    setZoom(13);
     setLabel(result.displayName);
     setSearchQuery(result.displayName);
     setShowResults(false);
-  }
-
-  // Map click handler
-  function handleMapClick(clickLat: number, clickLng: number) {
-    setLat(clickLat);
-    setLng(clickLng);
-    setLabel(`${clickLat.toFixed(4)}, ${clickLng.toFixed(4)}`);
   }
 
   // Save settings
@@ -320,10 +314,11 @@ export default function SettingsPage() {
                 lat={lat}
                 lng={lng}
                 zoom={zoom}
-                onLocationChange={handleMapClick}
-                onBoundsChange={(newBounds, newZoom) => {
+                onBoundsChange={(newBounds, newZoom, center) => {
                   setBounds(newBounds);
                   setZoom(newZoom);
+                  setLat(center.lat);
+                  setLng(center.lng);
                 }}
               />
             </div>
