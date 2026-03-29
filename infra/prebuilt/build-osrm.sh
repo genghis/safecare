@@ -303,7 +303,7 @@ fi
 # Also store per-state PBFs (for Nominatim local import)
 # ---------------------------------------------------------------------------
 
-echo "[5/6] Compressing state PBFs for Nominatim..."
+echo "[5/6] Storing state PBFs for Nominatim..."
 
 for state in "${!STATES[@]}"; do
   pbf="$WORK/states/${state}.osm.pbf"
@@ -313,6 +313,110 @@ for state in "${!STATES[@]}"; do
     cp "$pbf" "$dest"
   fi
 done
+
+# ---------------------------------------------------------------------------
+# Pre-process TIGER address data
+# ---------------------------------------------------------------------------
+
+echo "[5b/6] Pre-processing TIGER address data per state..."
+TIGER_RAW="$WORK/tiger-raw"
+TIGER_OUT="$WORK/output/tiger"
+
+if [ ! -d "$TIGER_OUT" ]; then
+  mkdir -p "$TIGER_RAW" "$TIGER_OUT"
+
+  # Download TIGER address files from Census Bureau
+  echo "  Downloading TIGER address files from Census Bureau..."
+  TIGER_YEAR=2023
+  TIGER_URL="https://www2.census.gov/geo/tiger/TIGER${TIGER_YEAR}/ADDR"
+
+  # Use Nominatim's built-in TIGER preprocessor
+  # It downloads, converts to CSV, and produces nominatim-ready files
+  docker run --rm \
+    -v "$TIGER_RAW:/tiger-raw" \
+    -v "$TIGER_OUT:/tiger-out" \
+    mediagis/nominatim:4.4 \
+    bash -c '
+      set -e
+      cd /tiger-raw
+
+      # Download all TIGER address files
+      YEAR=2023
+      BASE="https://www2.census.gov/geo/tiger/TIGER${YEAR}/ADDR"
+
+      echo "Fetching file list..."
+      curl -sf "$BASE/" | grep -oP "tl_${YEAR}_\d+_addr\.zip" | sort -u > filelist.txt
+      TOTAL=$(wc -l < filelist.txt)
+      echo "Downloading $TOTAL TIGER files..."
+
+      COUNT=0
+      while read f; do
+        COUNT=$((COUNT + 1))
+        if [ ! -f "$f" ]; then
+          curl -sf -O "$BASE/$f" 2>/dev/null || true
+        fi
+        if [ $((COUNT % 500)) -eq 0 ]; then
+          echo "  Downloaded $COUNT / $TOTAL"
+        fi
+      done < filelist.txt
+      echo "  Downloaded $COUNT TIGER files"
+
+      # Use Nominatim tiger-line import preprocessor to generate CSVs
+      echo "Preprocessing TIGER data..."
+      if command -v nominatim-tiger &>/dev/null; then
+        nominatim-tiger /tiger-raw /tiger-out
+      else
+        # Manual preprocessing: just package the zips per state FIPS code
+        # State FIPS codes are the first 2 digits of the county FIPS in the filename
+        for zip in /tiger-raw/tl_*.zip; do
+          fname=$(basename "$zip")
+          # Extract 5-digit FIPS, first 2 = state
+          fips=$(echo "$fname" | grep -oP "\d{5}" | head -1)
+          state_fips=${fips:0:2}
+          mkdir -p "/tiger-out/$state_fips"
+          cp "$zip" "/tiger-out/$state_fips/"
+        done
+      fi
+      echo "Done preprocessing TIGER data"
+    ' 2>&1
+
+  # Package per-state TIGER data
+  echo "  Packaging per-state TIGER archives..."
+
+  # FIPS to state mapping
+  declare -A FIPS_TO_STATE=(
+    [01]=alabama [02]=alaska [04]=arizona [05]=arkansas [06]=california
+    [08]=colorado [09]=connecticut [10]=delaware [11]=district-of-columbia
+    [12]=florida [13]=georgia [15]=hawaii [16]=idaho [17]=illinois
+    [18]=indiana [19]=iowa [20]=kansas [21]=kentucky [22]=louisiana
+    [23]=maine [24]=maryland [25]=massachusetts [26]=michigan [27]=minnesota
+    [28]=mississippi [29]=missouri [30]=montana [31]=nebraska [32]=nevada
+    [33]=new-hampshire [34]=new-jersey [35]=new-mexico [36]=new-york
+    [37]=north-carolina [38]=north-dakota [39]=ohio [40]=oklahoma
+    [41]=oregon [42]=pennsylvania [44]=rhode-island [45]=south-carolina
+    [46]=south-dakota [47]=tennessee [48]=texas [49]=utah [50]=vermont
+    [51]=virginia [53]=washington [54]=west-virginia [55]=wisconsin
+    [56]=wyoming
+  )
+
+  for fips_dir in "$TIGER_OUT"/*/; do
+    fips=$(basename "$fips_dir")
+    state="${FIPS_TO_STATE[$fips]:-}"
+    if [ -n "$state" ] && [ -d "$fips_dir" ]; then
+      tiger_archive="$WORK/output/us/${state}-tiger.tar.gz"
+      if [ ! -f "$tiger_archive" ]; then
+        tar -czf "$tiger_archive" -C "$fips_dir" .
+        size_mb=$(echo "scale=1; $(stat -c%s "$tiger_archive" 2>/dev/null || stat -f%z "$tiger_archive") / 1048576" | bc)
+        echo "  $state: ${size_mb} MB"
+      fi
+    fi
+  done
+
+  rm -rf "$TIGER_RAW"
+  echo "  TIGER preprocessing complete."
+else
+  echo "  TIGER data already processed, skipping."
+fi
 
 # ---------------------------------------------------------------------------
 # Generate manifest
@@ -392,9 +496,11 @@ for line in states_raw.strip().split("\n"):
 
     osrm_size = os.path.getsize(osrm_path)
     pbf_size = os.path.getsize(pbf_path) if os.path.exists(pbf_path) else 0
+    tiger_path = f"{work}/output/us/{state}-tiger.tar.gz"
+    tiger_size = os.path.getsize(tiger_path) if os.path.exists(tiger_path) else 0
     name = state.replace("-", " ").title()
 
-    regions.append({
+    entry = {
         "id": state,
         "name": name,
         "bounds": {"south": south, "west": west, "north": north, "east": east},
@@ -403,7 +509,11 @@ for line in states_raw.strip().split("\n"):
         "pbfUrl": f"/us/{state}-nominatim.pbf",
         "pbfSize": pbf_size,
         "pbfDate": build_date,
-    })
+    }
+    if tiger_size > 0:
+        entry["tigerUrl"] = f"/us/{state}-tiger.tar.gz"
+        entry["tigerSize"] = tiger_size
+    regions.append(entry)
 
 # Add metro areas
 metros_file = os.path.join(os.path.dirname(os.path.abspath("$0")), "metros.json")

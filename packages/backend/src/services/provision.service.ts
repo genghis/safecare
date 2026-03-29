@@ -32,7 +32,10 @@ export interface PrebuiltRegion {
   osrmSize: number;      // bytes
   pbfUrl: string;        // state PBF for local Nominatim import
   pbfSize: number;       // bytes
+  tigerUrl?: string;     // pre-processed TIGER address data
+  tigerSize?: number;    // bytes
   pbfDate: string;
+  type?: string;         // 'metro' or undefined for state
   // Legacy single-archive format
   archiveUrl?: string;
   archiveSize?: number;
@@ -176,6 +179,29 @@ export class ProvisionService {
         `${destDir}/data.osm.pbf`,
         (dl, total) => onProgress?.('nominatim', dl, total),
       );
+    }
+
+    // 3. Download pre-processed TIGER address data (house numbers)
+    if (region.tigerUrl) {
+      const tigerUrl = region.tigerUrl.startsWith('http')
+        ? region.tigerUrl
+        : `${baseUrl}${region.tigerUrl}`;
+
+      const tigerArchive = `${destDir}/tiger.tar.gz`;
+      await this.streamDownload(
+        tigerUrl,
+        tigerArchive,
+        (dl, total) => onProgress?.('tiger', dl, total),
+      );
+
+      // Extract TIGER data for Nominatim to pick up
+      const { execSync } = await import('child_process');
+      const { mkdir } = await import('fs/promises');
+      const tigerDir = `${destDir}/tiger`;
+      await mkdir(tigerDir, { recursive: true });
+      execSync(`tar -xzf "${tigerArchive}" -C "${tigerDir}"`, { timeout: 300000 });
+      const { unlink } = await import('fs/promises');
+      await unlink(tigerArchive).catch(() => {});
     }
   }
 
