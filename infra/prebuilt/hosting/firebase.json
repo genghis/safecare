@@ -2,19 +2,10 @@
   "hosting": {
     "public": "public",
     "ignore": ["firebase.json", "**/.*"],
-    "rewrites": [
-      {
-        "source": "/us/**",
-        "run": {
-          "serviceId": "default",
-          "region": "us-central1"
-        }
-      }
-    ],
     "redirects": [
       {
-        "source": "/us/:file",
-        "destination": "https://storage.googleapis.com/safecare-maps-osrm/us/:file",
+        "source": "/us/**",
+        "destination": "https://storage.googleapis.com/safecare-maps-osrm/us/:splat",
         "type": 302
       },
       {
