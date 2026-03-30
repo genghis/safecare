@@ -5,7 +5,8 @@ import { dispatchService } from '../services/dispatch.service.js';
 import { routingService } from '../services/routing.service.js';
 import { notificationService } from '../services/notification.service.js';
 import { db } from '../db/index.js';
-import { deliveries, recipients } from '../db/schema.js';
+import { deliveries, recipients, downloadTokens } from '../db/schema.js';
+import crypto from 'crypto';
 import { config } from '../config.js';
 import { RATE_LIMIT_DRIVER_RPM } from '@safecare/shared';
 import type { DriverSyncPayload } from '@safecare/shared';
@@ -100,6 +101,26 @@ export default async function driverAppRoutes(fastify: FastifyInstance) {
             (c) => c.driverId === driverId,
           );
 
+          // If route is released but not downloaded, generate a fresh download token
+          let downloadToken: string | undefined;
+          if (checkIn?.routeReleasedAt && !checkIn?.routeDownloadedAt) {
+            const { generateDownloadToken } = await import('@safecare/shared');
+            const token = generateDownloadToken();
+            const tokenHash = crypto
+              .createHash('sha256')
+              .update(token)
+              .digest('hex');
+
+            await db.insert(downloadTokens).values({
+              driverId,
+              dispatchSessionId: session.id,
+              tokenHash,
+              expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min
+            });
+
+            downloadToken = token;
+          }
+
           return reply.send({
             success: true,
             data: {
@@ -109,6 +130,7 @@ export default async function driverAppRoutes(fastify: FastifyInstance) {
               routeReleased: !!checkIn?.routeReleasedAt,
               routeDownloaded: !!checkIn?.routeDownloadedAt,
               purgeConfirmed: !!checkIn?.purgeConfirmedAt,
+              downloadToken,
             },
           });
         },
