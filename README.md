@@ -76,8 +76,12 @@ Monthly operating cost: $0 (Signal only) to ~$6/mo (Twilio SMS).
 
 ## Documentation
 
+- **[safecare.app](https://safecare.app)** — Project website + pre-built map data
 - **[GETTING-STARTED.md](GETTING-STARTED.md)** — Full setup guide, daily use, troubleshooting
 - **[STATUS.md](STATUS.md)** — Implementation progress against the phased plan
+- **[tests/README.md](tests/README.md)** — Test suite documentation (94 tests)
+- **[docs/THREAT-MODEL.md](docs/THREAT-MODEL.md)** — Security threat analysis
+- **[docs/CLOUD-PROVISIONING.md](docs/CLOUD-PROVISIONING.md)** — Map provisioning architecture
 - **[PLAN.md](PLAN.md)** — Product plan, security architecture, phased roadmap
 - **[SPEC.md](SPEC.md)** — Product specification
 
@@ -88,7 +92,12 @@ corepack enable && corepack prepare pnpm@9.15.0 --activate
 pnpm install
 cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 pnpm dev    # hot reload on http://localhost:3000 + :3001
-pnpm test   # run test suites
+pnpm test   # run unit tests
+
+# Integration + security tests (against running instance)
+./tests/e2e-smoke.sh           # 35 API tests
+./tests/security-verify.sh     # 32 security tests
+cd tests/integration && npx playwright test  # 27 browser tests
 ```
 
 ## Emergency Destroy

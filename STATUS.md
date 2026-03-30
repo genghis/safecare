@@ -1,6 +1,13 @@
 # SafeCare — Implementation Status
 
-Last updated: 2026-03-29
+Last updated: 2026-03-30
+
+## Project URLs
+
+- **Website**: https://safecare.app
+- **Pre-built Map Data**: https://safecare.app/manifest.json
+- **GitHub**: https://github.com/safecare-project/safecare
+- **Contact**: info@safecare.app
 
 ## Phase 1: Foundation + Manual MVP -- COMPLETE
 
@@ -16,20 +23,23 @@ Last updated: 2026-03-29
 | Add Driver with availability scheduling | Done | Vehicle, team, day/time availability, vetting workflow |
 | Dispatch session + route release gate | Done | Admin creates session, drivers check in, admin releases |
 | Distribution planner (auto-assign) | Done | Zone-aware, capacity-aware, nearest-neighbour routing |
-| Driver PWA (React + Vite) | Done | Login, dashboard, delivery detail, profile, offline sync |
-| Docker Compose (all services) | Done | postgres, redis, backend, dashboard, nominatim, osrm, signal |
-| Guided setup wizard | Done | 3-step first-run: account, region, provision |
-| Settings-driven map provisioning | Done | Operating region → auto-downloads correct state/regional extract |
+| Driver PWA (React + Vite) | Done | Login, dashboard, delivery detail, offline sync, route map |
+| Docker Compose (all services) | Done | postgres, redis, backend, dashboard, nominatim, osrm, signal, pwa |
+| Guided setup wizard | Done | 5-step first-run: account, region, provision, notifications, security |
+| Settings-driven map provisioning | Done | Operating region → auto-downloads correct state/metro extract |
 | scripts/setup.sh interactive installer | Done | Generates secrets, .env, starts containers |
 
 ## Phase 2: Mapping, Routing & Air-Gap -- MOSTLY DONE
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| OSRM routing container | Done | Docker service, MLD algorithm, viewport-trimmed data |
-| Self-hosted Nominatim geocoding | Done | Viewport-trimmed, TIGER house numbers, public API fallback |
-| Viewport-based map provisioning | Done | Download state extract → osmium trim to viewport → ~20MB for metro |
-| Region size estimation + RAM warnings | Done | Live estimate as you pan/zoom, color-coded by hardware fit |
+| Pre-built OSRM on GCS (safecare.app) | Done | 50 states + 50 metros, quarterly builds, ~$0.50/build |
+| OSRM routing container | Done | Docker service, MLD algorithm, pre-built or viewport-trimmed |
+| Self-hosted Nominatim geocoding | Done | Local import with public API fallback |
+| Viewport-based operating region | Done | Map viewport IS the region, auto-selects best pre-built match |
+| Region size estimation + RAM warnings | Done | Live estimate, color-coded (green/amber/red) |
+| GPS-aware route ordering | Done | Nearest stop to driver first, then nearest-neighbour chain |
+| Driver position in route geometry | Done | OSRM route starts from driver's GPS, not just first stop |
 | Admin map view for zones (Leaflet/OSM) | Done | Interactive polygon drawing, click/drag |
 | Address picker with geocoding in recipient form | Done | Search + pin-drop + reverse geocode + zone overlay |
 | Offline map tiles in driver PWA | Done | Service worker CacheFirst, tile pre-caching on route download |
@@ -51,19 +61,20 @@ Last updated: 2026-03-29
 | Twilio SMS send/receive | Done | REST API integration with SID tracking |
 | WhatsApp via Twilio | Done | Sends when recipient opts in, falls back to SMS otherwise |
 | Signal via signal-cli | Done | Self-hosted container, E2E encrypted, free |
+| Twilio inbound SMS webhook | Done | POST /api/webhooks/twilio/sms for ack processing |
+| Recipient "GOT IT" ack flow | Done | Multi-language keyword matching, auto-purge on ack |
+| Orphaned food alert (15-min timeout) | Done | BullMQ job, dashboard endpoint, Redis tracking |
+| Number rotation monitoring | Done | Daily job, warns when rotation due |
 | Notification test endpoint | Done | POST /api/notifications/test for admin verification |
-| Twilio log auto-deletion | Done | Per-session scrub + daily 2AM sweep (Phase 5 hardening) |
+| Twilio log auto-deletion | Done | Per-session scrub + daily 2AM sweep |
 | Communication proxy (blind number pool) | Not done | Schema exists, no proxy logic |
-| Number rotation cron | Not done | Constant defined (14 days), no job |
-| Recipient "GOT IT" ack flow | Not done | |
-| Orphaned food alert (15-min timeout) | Not done | Constant defined, no implementation |
 
 ## Phase 4: Volunteer Management -- PARTIAL
 
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Driver profiles (vehicle, availability, zones) | Done | Full CRUD in dashboard |
-| Vetting workflow (pending/vetted/suspended) | Partial | Status field exists, no UI workflow |
+| Vetting workflow (pending/vetted/suspended) | Done | Approve/suspend/reinstate buttons in driver detail panel |
 | Team gamification | Not done | |
 | Route optimization with driver constraints | Partial | Zone-aware distribution, no constraint optimization |
 
@@ -77,24 +88,34 @@ Last updated: 2026-03-29
 | Purge confirmation loop | Done | 12h window, Redis tracking, dashboard warnings |
 | Dashboard purge warnings endpoint | Done | GET /api/dashboard/purge-warnings |
 | Emergency destroy script | Done | Cross-platform (Linux + macOS), shreds secrets, wipes volumes |
+| TOTP 2FA for admin accounts | Done | Authenticator app, optional but encouraged, dashboard nudge |
+| Threat model documentation | Done | docs/THREAT-MODEL.md, 8 scenarios analyzed |
+| CI/CD (GitHub Actions) | Done | Lint, typecheck, test, build on push/PR |
+| E2E smoke tests | Done | 35 API tests, full flow verification |
+| Security verification tests | Done | 32 tests, encryption/purge/access controls |
+| Playwright integration tests | Done | 27 browser tests, fresh install + Detroit flow |
 | Remote wipe via push notification | Not done | |
 | Key rotation tooling | Not done | |
-| Security docs/runbook | Partial | README.md + STATUS.md |
-| CI/CD (GitHub Actions) | Not done | |
-| Playwright dashboard tests | Not done | |
-| PostgreSQL integration tests (testcontainers) | Not done | |
 
-## Cross-Cutting Gaps
+## Infrastructure
 
-| Gap | Priority | Notes |
-|-----|----------|-------|
-| **Communication proxy** (blind number pool) | Medium | Twilio proxy numbers for driver-recipient messaging |
-| **Tailscale networking** | Medium | Documented in plan but not configured |
-| **CI/CD pipeline** | Medium | No automated lint/test/build |
-| **Exclusion zones** | Medium | Draw on map, OSRM edge-weighting to avoid |
-| **Recipient ack flow** | Medium | "Reply GOT IT" + orphaned food alert |
-| **Key rotation tooling** | Low | Scripted DEK re-encryption |
-| **Remote wipe** | Low | Push notification to destroy route data on driver phone |
+| Component | Location | Notes |
+|-----------|----------|-------|
+| Project website | https://safecare.app | Firebase Hosting, custom domain |
+| Pre-built OSRM data | GCS bucket (safecare-maps-osrm) | 50 states + 50 metros, ~40 GB |
+| Build VM | GCE spot (c2-standard-8) | Quarterly builds, ~$0.50/run |
+| Terraform | infra/prebuilt/ | GCS, service account, VM |
+
+## Test Suites (94 total)
+
+| Suite | Tests | File |
+|-------|-------|------|
+| E2E Smoke | 35 | tests/e2e-smoke.sh |
+| Security Verification | 32 | tests/security-verify.sh |
+| Fresh Install (Playwright) | 10 | tests/integration/fresh-install.spec.ts |
+| Full Flow - Detroit (Playwright) | 17 | tests/integration/full-flow.spec.ts |
+
+See [tests/README.md](tests/README.md) for details.
 
 ## Services (Docker)
 
@@ -102,16 +123,14 @@ Last updated: 2026-03-29
 |---------|-----------|------|-------|
 | Dashboard | safecare-dashboard | 3000 | Next.js standalone |
 | Backend API | safecare-backend | 3001 | Fastify + Node 20 |
-| Driver PWA | (served via backend or Vite) | 5173 | React + Vite |
+| Driver PWA | safecare-pwa | 5173 | React + Vite |
 | PostgreSQL | safecare-postgres | 5432 | postgres:16-alpine |
 | Redis | safecare-redis | 6379 | redis:7-alpine |
 | Nominatim | safecare-nominatim | 8088 | mediagis/nominatim:4.4 |
 | OSRM | safecare-osrm | 5000 | osrm/osrm-backend:latest |
-| Signal | safecare-signal | 8089 | bbernhard/signal-cli-rest-api:latest |
+| Signal | safecare-signal | 8089 | bbernhard/signal-cli-rest-api |
 
 ## i18n Coverage
-
-All user-facing strings are keyed in `packages/shared/src/i18n.ts`.
 
 | Locale | Language | Status |
 |--------|----------|--------|
@@ -122,18 +141,12 @@ All user-facing strings are keyed in `packages/shared/src/i18n.ts`.
 | fr | Français (French) | Complete |
 | zh | 中文 (Chinese) | Complete |
 
-String categories: notification messages, driver app UI, dashboard navigation, communication preferences. Adding a new language requires only adding translations to the string table.
+## Cross-Cutting Gaps
 
-## Test Coverage
-
-| Package | Tests | Status |
-|---------|-------|--------|
-| Backend: auth | Unit tests | Existing (from Phase 1) |
-| Backend: dispatch | Unit tests | Existing (from Phase 1) |
-| Backend: geocode | Unit tests | New |
-| Backend: routing | Unit tests | New |
-| Backend: purge | Unit tests | Existing (from Phase 1) |
-| PWA: crypto, db, sync, hooks, api | Unit tests | Existing (from Phase 1) |
-| Dashboard | No tests | |
-| Integration (testcontainers) | Not done | |
-| E2E (Playwright) | Not done | |
+| Gap | Priority | Notes |
+|-----|----------|-------|
+| Communication proxy (blind number pool) | Medium | Twilio proxy for driver-recipient messaging |
+| Exclusion zones | Medium | Draw on map, OSRM edge-weighting |
+| Key rotation tooling | Low | Scripted DEK re-encryption |
+| Remote wipe | Low | Push notification to destroy route data |
+| Route variation | Low | Vary routes between delivery cycles |
