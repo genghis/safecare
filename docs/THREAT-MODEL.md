@@ -10,7 +10,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 
 ## Threat 1: Server is Physically Confiscated
 
-**Scenario:** Law enforcement or another adversary seizes the Raspberry Pi, PC, or VPS running SafeCare.
+**Scenario:** Illegal actors or another adversary seizes the Raspberry Pi, PC, or VPS running SafeCare.
 
 **What they get:**
 - A Docker host with encrypted data at rest
