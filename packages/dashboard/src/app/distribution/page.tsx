@@ -159,7 +159,13 @@ export default function DistributionPage() {
       setDrivers(res.data.drivers || []);
       setUnassigned(res.data.unassigned || []);
       setWarnings(res.data.warnings || []);
-      if (res.data.sessions) setSessions(res.data.sessions);
+      if (res.data.sessions) {
+        setSessions(res.data.sessions);
+        // Auto-select first session if none selected
+        if (!selectedSession && res.data.sessions.length > 0) {
+          setSelectedSession(res.data.sessions[0].id);
+        }
+      }
     }
     setLoading(false);
   }, [selectedSession, selectedDay]);
@@ -546,7 +552,7 @@ export default function DistributionPage() {
                 <Button
                   size="lg"
                   onClick={handleAutoDistribute}
-                  disabled={distributing}
+                  disabled={distributing || !selectedSession}
                   className="px-8"
                 >
                   {distributing ? "Distributing..." : "Auto-Distribute"}
