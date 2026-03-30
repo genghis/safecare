@@ -1,9 +1,218 @@
 <!DOCTYPE html>
-<html>
-<head><title>SafeCare Maps</title></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeCare — Mutual Aid Delivery System</title>
+  <meta name="description" content="A secure, privacy-first logistics platform for managing volunteer food deliveries to at-risk families.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #1a1a2e;
+      line-height: 1.6;
+      background: #fafaf5;
+    }
+    .hero {
+      text-align: center;
+      padding: 80px 24px 60px;
+      background: linear-gradient(135deg, #0f4c2e 0%, #1a6b3c 100%);
+      color: white;
+    }
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: 20px;
+      opacity: 0.9;
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+    .hero .badges {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.15);
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 60px 24px;
+    }
+    h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: #0f4c2e;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+    .feature {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid #e8e8e0;
+    }
+    .feature h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #1a6b3c;
+    }
+    .feature p {
+      font-size: 15px;
+      color: #666;
+    }
+    .cta {
+      text-align: center;
+      padding: 48px 24px;
+      background: #f0f0e8;
+      border-radius: 16px;
+      margin-bottom: 48px;
+    }
+    .cta h2 { margin-bottom: 16px; }
+    .cta p { margin-bottom: 24px; color: #666; }
+    .btn {
+      display: inline-block;
+      padding: 14px 32px;
+      background: #1a6b3c;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 16px;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #0f4c2e; }
+    .btn-outline {
+      background: transparent;
+      color: #1a6b3c;
+      border: 2px solid #1a6b3c;
+    }
+    .btn-outline:hover { background: #1a6b3c; color: white; }
+    .privacy {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      border: 1px solid #e8e8e0;
+      margin-bottom: 48px;
+    }
+    .privacy ul {
+      list-style: none;
+      padding: 0;
+    }
+    .privacy li {
+      padding: 8px 0;
+      font-size: 15px;
+      color: #444;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .privacy li::before {
+      content: "✓";
+      color: #1a6b3c;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    footer {
+      text-align: center;
+      padding: 32px;
+      color: #999;
+      font-size: 14px;
+      border-top: 1px solid #e8e8e0;
+    }
+    footer a { color: #1a6b3c; text-decoration: none; }
+  </style>
+</head>
 <body>
-<h1>SafeCare Map Data</h1>
-<p>Pre-built OSRM routing data for SafeCare deployments.</p>
-<p><a href="/manifest.json">manifest.json</a></p>
+
+<div class="hero">
+  <h1>SafeCare</h1>
+  <p>A secure, privacy-first logistics platform for managing volunteer food deliveries to at-risk families.</p>
+  <div class="badges">
+    <span class="badge">Self-Hosted</span>
+    <span class="badge">End-to-End Encrypted</span>
+    <span class="badge">Runs on Raspberry Pi</span>
+    <span class="badge">Open Source</span>
+  </div>
+</div>
+
+<div class="container">
+  <h2>Built for Mutual Aid</h2>
+  <div class="features">
+    <div class="feature">
+      <h3>Admin Dashboard</h3>
+      <p>Manage recipients, drivers, delivery zones, and dispatch sessions. Map-based address entry with self-hosted geocoding.</p>
+    </div>
+    <div class="feature">
+      <h3>Driver App (PWA)</h3>
+      <p>Offline maps, GPS-guided routing, automatic tile caching. Works on any phone — no app store needed.</p>
+    </div>
+    <div class="feature">
+      <h3>Recipient Notifications</h3>
+      <p>Signal (E2E encrypted), SMS, or WhatsApp. 6 languages. No names or addresses in messages.</p>
+    </div>
+    <div class="feature">
+      <h3>Self-Hosted Maps</h3>
+      <p>Geocoding and routing run on your hardware. No addresses sent to Google, Mapbox, or any external service.</p>
+    </div>
+    <div class="feature">
+      <h3>Privacy by Design</h3>
+      <p>Field-level encryption, automatic data purge, HMAC hashes, airplane mode prompts for drivers.</p>
+    </div>
+    <div class="feature">
+      <h3>Runs Anywhere</h3>
+      <p>Raspberry Pi (4GB+), home PC, or VPS. Docker Compose. Setup wizard — no technical experience needed.</p>
+    </div>
+  </div>
+
+  <div class="privacy">
+    <h2>Privacy & Security</h2>
+    <ul>
+      <li>Recipient names, addresses, and phone numbers encrypted at rest (pgcrypto)</li>
+      <li>Delivery records automatically deleted and VACUUMed within 24 hours</li>
+      <li>Driver phones auto-purge route data at end of shift (8-hour TTL)</li>
+      <li>Self-hosted geocoding — address searches never leave your network</li>
+      <li>Signal notifications are end-to-end encrypted</li>
+      <li>Two-factor authentication for admin accounts</li>
+      <li>Emergency destroy script shreds all data in seconds</li>
+    </ul>
+  </div>
+
+  <div class="cta">
+    <h2>Get Started</h2>
+    <p>Three commands to install. A setup wizard handles the rest.</p>
+    <a href="https://github.com/safecare-project/safecare" class="btn">View on GitHub</a>
+    <a href="https://github.com/safecare-project/safecare/blob/main/GETTING-STARTED.md" class="btn btn-outline" style="margin-left: 12px;">Getting Started Guide</a>
+  </div>
+
+  <h2>Pre-Built Map Data</h2>
+  <p style="color:#666; margin-bottom:16px;">
+    SafeCare provides pre-built OSRM routing data for all 50 US states and 50 metro areas.
+    Each deployment downloads only what it needs based on its operating region.
+  </p>
+  <p style="margin-bottom:8px;"><a href="/manifest.json" style="color:#1a6b3c; font-weight:600;">manifest.json</a> — Index of all available regions</p>
+  <p style="color:#999; font-size:14px;">Updated quarterly. Total: ~40 GB across all regions. Monthly cost: ~$1.</p>
+</div>
+
+<footer>
+  <p>SafeCare is open source software. <a href="https://github.com/safecare-project/safecare">GitHub</a> · <a href="mailto:info@safecare.app">info@safecare.app</a></p>
+</footer>
+
 </body>
 </html>
