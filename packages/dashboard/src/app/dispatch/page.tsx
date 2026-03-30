@@ -17,7 +17,7 @@ import { apiGet, apiPost } from "@/lib/api";
 interface DispatchSession {
   id: string;
   date: string;
-  status: "active" | "released" | "completed";
+  status: "draft" | "active" | "released" | "completed";
   createdAt: string;
   releasedAt?: string;
 }
@@ -425,7 +425,7 @@ export default function DispatchPage() {
                   </div>
                 )}
               </CardContent>
-              {checkIns.length > 0 && session.status === "active" && (
+              {checkIns.length > 0 && (session.status === "draft" || session.status === "active") && (
                 <CardFooter>
                   <Button
                     onClick={handleReleaseRoutes}

@@ -1,9 +1,10 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { dispatchService } from '../services/dispatch.service.js';
-import { eq, ne, desc } from 'drizzle-orm';
+import { eq, ne, desc, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { driverCheckIns, dispatchSessions, deliveries } from '../db/schema.js';
+import { driverCheckIns, dispatchSessions, deliveries, drivers, recipients } from '../db/schema.js';
+import { config } from '../config.js';
 
 const createSessionSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -80,20 +81,39 @@ export default async function dispatchRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Fetch check-ins and deliveries for this session
-      const checkIns = await db
-        .select()
+      // Fetch check-ins with driver names
+      const checkInRows = await db
+        .select({
+          id: driverCheckIns.id,
+          driverId: driverCheckIns.driverId,
+          dispatchSessionId: driverCheckIns.dispatchSessionId,
+          checkedInAt: driverCheckIns.checkedInAt,
+          routeReleasedAt: driverCheckIns.routeReleasedAt,
+          driverName: sql<string>`pgp_sym_decrypt(${drivers.nameEnc}::bytea, ${config.DEK})`,
+          vehicle: drivers.vehicleSize,
+        })
         .from(driverCheckIns)
+        .leftJoin(drivers, eq(driverCheckIns.driverId, drivers.id))
         .where(eq(driverCheckIns.dispatchSessionId, session.id));
 
+      // Fetch deliveries with recipient names
       const sessionDeliveries = await db
-        .select()
+        .select({
+          id: deliveries.id,
+          recipientName: sql<string>`pgp_sym_decrypt(${recipients.nameEnc}::bytea, ${config.DEK})`,
+          address: sql<string>`pgp_sym_decrypt(${deliveries.addressEnc}::bytea, ${config.DEK})`,
+          driverName: sql<string>`COALESCE(pgp_sym_decrypt(${drivers.nameEnc}::bytea, ${config.DEK}), 'Unassigned')`,
+          status: deliveries.status,
+          driverId: deliveries.driverId,
+        })
         .from(deliveries)
+        .leftJoin(recipients, eq(deliveries.recipientId, recipients.id))
+        .leftJoin(drivers, eq(deliveries.driverId, drivers.id))
         .where(eq(deliveries.dispatchSessionId, session.id));
 
       return reply.send({
         success: true,
-        data: { session, checkIns, deliveries: sessionDeliveries },
+        data: { session, checkIns: checkInRows, deliveries: sessionDeliveries },
       });
     },
   );
