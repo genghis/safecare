@@ -135,6 +135,23 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadCachedRoute();
+
+    // Check current status on mount -- driver may already be checked in
+    (async () => {
+      try {
+        const status = await pollStatus();
+        if (status.sessionActive && status.checkedIn) {
+          setSessionStatus("checked_in");
+          if (status.sessionId) setSessionId(status.sessionId);
+          if (status.routeReleased && status.downloadToken) {
+            // Route is ready -- auto-download
+            handlePollAndDownload();
+          }
+        }
+      } catch {
+        // Not checked in or no session -- stay on idle
+      }
+    })();
   }, [loadCachedRoute]);
 
   // ---------------------------------------------------------------------------

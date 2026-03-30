@@ -25,14 +25,23 @@ let jwt: string | null = null;
 
 export function setToken(token: string): void {
   jwt = token;
+  // Fallback: store in localStorage when crypto isn't ready
+  try { localStorage.setItem('safecare_driver_token', token); } catch {}
 }
 
 export function getToken(): string | null {
-  return jwt;
+  if (jwt) return jwt;
+  // Restore from localStorage
+  try {
+    const stored = localStorage.getItem('safecare_driver_token');
+    if (stored) { jwt = stored; return stored; }
+  } catch {}
+  return null;
 }
 
 export function clearToken(): void {
   jwt = null;
+  try { localStorage.removeItem('safecare_driver_token'); } catch {}
 }
 
 /**
