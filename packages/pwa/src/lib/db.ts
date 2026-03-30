@@ -197,7 +197,8 @@ export async function checkExpiry(): Promise<boolean> {
     const store = tx(db, "session", "readonly");
     const record = await wrap(store.get("expiresAt"));
 
-    if (!record) return true;
+    // No expiry record means no active session — nothing to expire
+    if (!record) return false;
 
     const expiresAt = await decrypt(
       (record as { key: string; data: string }).data,
