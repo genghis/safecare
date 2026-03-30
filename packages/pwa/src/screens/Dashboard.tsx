@@ -274,12 +274,8 @@ export default function Dashboard() {
   // Refresh
   // ---------------------------------------------------------------------------
   const handleRefresh = async () => {
-    if (sessionStatus === "routes_released") {
-      // Re-read cached data to pick up status changes from DeliveryDetail
-      await loadCachedRoute();
-    } else if (sessionStatus === "checked_in") {
-      await handlePollAndDownload();
-    }
+    // Always try to download/refresh the route data
+    await handlePollAndDownload();
   };
 
   // ---------------------------------------------------------------------------
