@@ -23,6 +23,7 @@ interface DistributionDriver {
   vehicleSize: string;
   maxDeliveries: number;
   assignedDeliveries: AssignedDelivery[];
+  loadPercent?: number;
 }
 
 interface AssignedDelivery {
@@ -107,7 +108,30 @@ function loadColor(pct: number): string {
 // ---------------------------------------------------------------------------
 
 export default function DistributionPage() {
-  const [drivers, setDrivers] = useState<DistributionDriver[]>([]);
+  const [drivers, setDriversRaw] = useState<DistributionDriver[]>([]);
+
+  // Normalize API response fields to match frontend expectations
+  function normalizeDrivers(raw: any[]): DistributionDriver[] {
+    return raw.map((d: any) => ({
+      ...d,
+      id: d.id || d.driverId,
+      name: d.name || d.driverName,
+      team: d.team || '',
+      assignedDeliveries: (d.assignedDeliveries || d.deliveries || []).map((del: any) => ({
+        ...del,
+        id: del.id || del.deliveryId,
+        shortAddress: del.shortAddress || (del.address ? del.address.split(',')[0] : ''),
+      })),
+    }));
+  }
+
+  function setDrivers(raw: DistributionDriver[] | ((prev: DistributionDriver[]) => DistributionDriver[])) {
+    if (typeof raw === 'function') {
+      setDriversRaw(raw);
+    } else {
+      setDriversRaw(normalizeDrivers(raw));
+    }
+  }
   const [unassigned, setUnassigned] = useState<UnassignedDelivery[]>([]);
   const [warnings, setWarnings] = useState<DistributionWarning[]>([]);
   const [sessions, setSessions] = useState<DistributionSession[]>([]);
