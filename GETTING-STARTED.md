@@ -25,7 +25,7 @@ A 4GB Raspberry Pi works well for metro-area deployments. The setup wizard shows
 For now, install Docker on your Pi, then:
 
 ```bash
-git clone https://github.com/jasontitus/safecare.git
+git clone https://github.com/safecare-project/safecare.git
 cd safecare
 bash scripts/setup.sh
 cd docker
@@ -38,7 +38,7 @@ docker compose up -d
 2. Open a terminal and run:
 
 ```bash
-git clone https://github.com/jasontitus/safecare.git
+git clone https://github.com/safecare-project/safecare.git
 cd safecare
 bash scripts/setup.sh
 cd docker
@@ -264,6 +264,6 @@ Then open the setup wizard again at http://localhost:3000/setup to create a new 
 
 ## Getting Help
 
-- GitHub Issues: https://github.com/jasontitus/safecare/issues
+- GitHub Issues: https://github.com/safecare-project/safecare/issues
 - See [STATUS.md](STATUS.md) for current implementation status
 - See [PLAN.md](PLAN.md) for the full product plan

@@ -19,3 +19,4 @@ docker/nominatim-data/
 infra/**/.terraform/
 infra/**/terraform.tfstate*
 *.tfstate*
+.claude/

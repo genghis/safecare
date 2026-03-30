@@ -15,7 +15,7 @@ All geocoding, routing, and maps are self-hosted. No addresses leave your networ
 ## Quick Start
 
 ```bash
-git clone https://github.com/jasontitus/safecare.git && cd safecare
+git clone https://github.com/safecare-project/safecare.git && cd safecare
 bash scripts/setup.sh
 cd docker && docker compose up -d
 ```
