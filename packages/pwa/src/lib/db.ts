@@ -189,9 +189,8 @@ export async function purgeAll(): Promise<void> {
 export async function checkExpiry(): Promise<boolean> {
   const cryptoKey = getCurrentKey();
 
-  // If there is no key, there is nothing to check — treat as expired so
-  // the app resets to the login flow.
-  if (!cryptoKey) return true;
+  // If there is no key, there is no session to expire — nothing to purge.
+  if (!cryptoKey) return false;
 
   try {
     const db = await initDB();
