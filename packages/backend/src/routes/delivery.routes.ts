@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { eq, and, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { deliveries, recipients } from '../db/schema.js';
+import { deliveries, recipients, drivers } from '../db/schema.js';
 import { config } from '../config.js';
 
 const createDeliverySchema = z.object({
@@ -60,16 +60,21 @@ export default async function deliveryRoutes(fastify: FastifyInstance) {
           driverId: deliveries.driverId,
           dispatchSessionId: deliveries.dispatchSessionId,
           status: deliveries.status,
-          address: sql<string>`pgp_sym_decrypt(${deliveries.addressEnc}::bytea, ${config.DEK})`,
+          recipientName: sql<string>`pgp_sym_decrypt(${recipients.nameEnc}::bytea, ${config.DEK})`,
+          recipientAddress: sql<string>`pgp_sym_decrypt(${deliveries.addressEnc}::bytea, ${config.DEK})`,
+          driverName: sql<string>`COALESCE(pgp_sym_decrypt(${drivers.nameEnc}::bytea, ${config.DEK}), 'Unassigned')`,
           lat: deliveries.lat,
           lng: deliveries.lng,
           notes: deliveries.notes,
           releasedAt: deliveries.releasedAt,
           deliveredAt: deliveries.deliveredAt,
           acknowledgedAt: deliveries.acknowledgedAt,
+          scheduledDate: sql<string>`COALESCE(${deliveries.createdAt}::text, '')`,
           createdAt: deliveries.createdAt,
         })
         .from(deliveries)
+        .leftJoin(recipients, eq(deliveries.recipientId, recipients.id))
+        .leftJoin(drivers, eq(deliveries.driverId, drivers.id))
         .where(conditions.length > 0 ? and(...conditions) : undefined);
 
       return reply.send({ success: true, data: rows });

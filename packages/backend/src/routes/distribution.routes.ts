@@ -221,6 +221,19 @@ export default async function distributionRoutes(fastify: FastifyInstance) {
         parsed.data.dayOfWeek as any,
       );
 
+      // Persist assignments to the database immediately
+      for (const assignment of proposal.assignments) {
+        for (const delivery of assignment.deliveries) {
+          await db
+            .update(deliveries)
+            .set({
+              driverId: assignment.driverId,
+              status: 'assigned',
+            })
+            .where(eq(deliveries.id, delivery.deliveryId));
+        }
+      }
+
       return reply.send({ success: true, data: proposal });
     },
   );
