@@ -162,7 +162,7 @@ export default function Dashboard() {
     setRefreshing(true);
     try {
       const status = await pollStatus();
-      if (status.routesReady && status.downloadToken) {
+      if (status.routeReleased && status.downloadToken) {
         const route = await downloadRoute(status.downloadToken);
         const items: Delivery[] = route.stops.map((s, i) => ({
           id: s.deliveryId,

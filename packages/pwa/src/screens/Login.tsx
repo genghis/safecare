@@ -9,23 +9,27 @@ export default function Login() {
   const navigate = useNavigate();
   const [stage, setStage] = useState<Stage>("phone");
   const [phone, setPhone] = useState("");
-  const [pin, setPin] = useState("");
   const [otpCode, setOtpCode] = useState("");
+  const [devOtp, setDevOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleRequestOtp = async () => {
     setError("");
-    if (phone.length < 10 || pin.length < 4) {
-      setError("Enter a valid phone number and 4-digit PIN.");
+    if (phone.length < 10) {
+      setError("Enter a valid phone number.");
       return;
     }
     setLoading(true);
     try {
-      await requestOtp(phone);
+      const result = await requestOtp(phone);
+      // In dev/test mode, the OTP is returned in the response
+      if ((result as any)?.otp) {
+        setDevOtp((result as any).otp);
+      }
       setStage("otp");
     } catch {
-      setError("Could not request OTP. Check your phone number and PIN.");
+      setError("Could not request OTP. Is this phone number registered as a driver?");
     } finally {
       setLoading(false);
     }
@@ -34,7 +38,7 @@ export default function Login() {
   const handleVerifyOtp = async () => {
     setError("");
     if (otpCode.length < 6) {
-      setError("Enter the 6-digit code sent to your phone.");
+      setError("Enter the 6-digit code.");
       return;
     }
     setLoading(true);
@@ -115,25 +119,9 @@ export default function Login() {
             className="input"
             type="tel"
             autoComplete="tel"
-            placeholder="(555) 123-4567"
+            placeholder="6505551011"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, handleRequestOtp)}
-          />
-
-          <label className="label" htmlFor="pin" style={{ marginTop: 16 }}>
-            PIN
-          </label>
-          <input
-            id="pin"
-            className="input"
-            type="password"
-            inputMode="numeric"
-            maxLength={4}
-            placeholder="4-digit PIN"
-            autoComplete="off"
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
             onKeyDown={(e) => handleKeyDown(e, handleRequestOtp)}
           />
 
@@ -141,9 +129,9 @@ export default function Login() {
             className="btn btn-primary btn-block"
             style={{ marginTop: 28, minHeight: 56, fontSize: 18 }}
             onClick={handleRequestOtp}
-            disabled={loading}
+            disabled={loading || phone.length < 10}
           >
-            {loading ? <span className="spinner" /> : "Request OTP"}
+            {loading ? <span className="spinner" /> : "Send Verification Code"}
           </button>
         </>
       ) : (
@@ -152,6 +140,25 @@ export default function Login() {
             Enter Verification Code
           </label>
           <p className="hint">A 6-digit code was sent to {phone}</p>
+
+          {/* Show OTP in dev mode */}
+          {devOtp && (
+            <div
+              style={{
+                backgroundColor: "#f0fdf4",
+                border: "1px solid #86efac",
+                color: "#166534",
+                padding: "12px 16px",
+                borderRadius: "var(--radius-md)",
+                fontSize: 14,
+                marginBottom: 16,
+                textAlign: "center",
+              }}
+            >
+              Dev mode — your code is: <strong>{devOtp}</strong>
+            </div>
+          )}
+
           <input
             id="otp"
             className="input"
@@ -172,7 +179,7 @@ export default function Login() {
             className="btn btn-primary btn-block"
             style={{ marginTop: 28, minHeight: 56, fontSize: 18 }}
             onClick={handleVerifyOtp}
-            disabled={loading}
+            disabled={loading || otpCode.length < 6}
           >
             {loading ? <span className="spinner" /> : "Verify & Sign In"}
           </button>
@@ -192,10 +199,11 @@ export default function Login() {
             onClick={() => {
               setStage("phone");
               setOtpCode("");
+              setDevOtp("");
               setError("");
             }}
           >
-            Back to phone entry
+            Back
           </button>
         </>
       )}

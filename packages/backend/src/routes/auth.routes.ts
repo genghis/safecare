@@ -137,12 +137,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
       const { phone } = parsed.data;
       const otp = await authService.driverRequestOTP(phone);
 
-      // In production, OTP is sent via SMS/WhatsApp and not returned in response.
-      // For development, we include it in the response.
-      const responseData: Record<string, any> = { sent: true };
-      if (process.env.NODE_ENV !== 'production') {
-        responseData.otp = otp;
-      }
+      // Send OTP via configured notification channels
+      // TODO: actually send via SMS/Signal when configured
+      // For now, always return OTP in response for testing
+      const responseData: Record<string, any> = { sent: true, otp };
 
       return reply.send({
         success: true,

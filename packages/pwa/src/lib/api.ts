@@ -15,7 +15,7 @@ import { getCurrentKey } from "@/lib/crypto";
 // ---------------------------------------------------------------------------
 
 const BASE_URL: string =
-  import.meta.env.VITE_API_URL ?? `${window.location.origin}/api/v1`;
+  import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
 
 // ---------------------------------------------------------------------------
 // In-memory JWT (not localStorage — less surface for XSS exfiltration)
@@ -104,7 +104,10 @@ async function request<T = unknown>(
     return undefined as T;
   }
 
-  return response.json() as Promise<T>;
+  const json = await response.json();
+  // Backend wraps responses in { success, data }. Unwrap if present.
+  const unwrapped = json?.data !== undefined ? json.data : json;
+  return unwrapped as T;
 }
 
 // ---------------------------------------------------------------------------
@@ -112,7 +115,7 @@ async function request<T = unknown>(
 // ---------------------------------------------------------------------------
 
 export function requestOtp(phone: string) {
-  return request<{ ok: boolean }>("/auth/otp", {
+  return request<{ sent: boolean; otp?: string }>("/auth/driver/request-otp", {
     method: "POST",
     body: { phone },
     noAuth: true,
@@ -120,9 +123,9 @@ export function requestOtp(phone: string) {
 }
 
 export function verifyOtp(phone: string, otp: string) {
-  return request<{ token: string }>("/auth/verify", {
+  return request<{ token: string; driverId: string }>("/auth/driver/verify-otp", {
     method: "POST",
-    body: { phone, code: otp },
+    body: { phone, otp },
     noAuth: true,
   });
 }
@@ -139,9 +142,12 @@ export function checkIn() {
 
 export function pollStatus() {
   return request<{
-    routesReady: boolean;
-    downloadToken?: string;
+    sessionActive: boolean;
     sessionId?: string;
+    checkedIn: boolean;
+    routeReleased: boolean;
+    routeDownloaded: boolean;
+    downloadToken?: string;
   }>("/driver/status");
 }
 
@@ -164,7 +170,7 @@ export function downloadRoute(token: string) {
     tileUrls?: string[];
     routeDistance?: number;
     routeDuration?: number;
-  }>("/driver/route", {
+  }>("/driver/download", {
     method: "POST",
     body: { token },
   });
@@ -177,14 +183,14 @@ export function downloadRoute(token: string) {
 export function syncUpdates(
   updates: Array<{ deliveryId: string; status: string; timestamp: string }>,
 ) {
-  return request<{ accepted: number }>("/driver/sync", {
+  return request<{ synced: number }>("/driver/sync", {
     method: "POST",
     body: { updates },
   });
 }
 
 export function confirmPurge(sessionId: string) {
-  return request<{ ok: boolean }>("/driver/purge", {
+  return request<{ success: boolean }>("/driver/purge-confirm", {
     method: "POST",
     body: { sessionId },
   });
