@@ -119,6 +119,7 @@ echo "  Size: $(du -h "$US_PBF" | cut -f1)"
 
 echo "[3/6] Slicing into ${#STATES[@]} state extracts with osmium..."
 
+LAUNCHED=0
 for state in "${!STATES[@]}"; do
   if [ -f "$WORK/states/${state}.osm.pbf" ]; then
     continue
@@ -128,13 +129,16 @@ for state in "${!STATES[@]}"; do
 
   osmium extract -b "$west,$south,$east,$north" \
     "$US_PBF" -o "$WORK/states/${state}.osm.pbf" --overwrite &
+  LAUNCHED=$((LAUNCHED + 1))
 
   # Limit parallel osmium jobs
   if (( $(jobs -r | wc -l) >= PARALLEL )); then
     wait -n
   fi
 done
-wait
+if [ $LAUNCHED -gt 0 ]; then
+  wait
+fi
 
 echo "  $(ls "$WORK/states/"*.osm.pbf | wc -l) states extracted."
 
