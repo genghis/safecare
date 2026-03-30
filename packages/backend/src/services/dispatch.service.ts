@@ -71,10 +71,13 @@ export class DispatchService {
    * Get the current active dispatch session.
    */
   async getActiveSession() {
+    // Drivers can check in during 'draft' (before release) or 'active' (after release)
     const rows = await db
       .select()
       .from(dispatchSessions)
-      .where(eq(dispatchSessions.status, 'active'));
+      .where(
+        sql`${dispatchSessions.status} IN ('draft', 'active')`,
+      );
 
     return rows[0] ?? null;
   }
