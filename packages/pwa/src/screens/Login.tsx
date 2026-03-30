@@ -43,12 +43,13 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      const { token } = await verifyOtp(phone, otpCode);
-      setToken(token);
-      await persistToken(token);
+      const result = await verifyOtp(phone, otpCode);
+      setToken(result.token);
+      try { await persistToken(result.token); } catch { /* crypto not ready, token in memory only */ }
       navigate("/dashboard", { replace: true });
-    } catch {
+    } catch (err) {
       setError("Invalid or expired code. Please try again.");
+      console.error("Login failed:", err);
     } finally {
       setLoading(false);
     }
