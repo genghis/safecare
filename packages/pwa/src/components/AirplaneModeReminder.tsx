@@ -2,15 +2,23 @@
  * Airplane mode reminder component.
  *
  * Watches the driver's GPS position and shows a dismissible banner when
- * they approach or enter the delivery zone bounding box. The reminder
- * only fires once per session to avoid being annoying.
+ * they approach or enter the delivery zone bounding box. Also plays a
+ * loud audio alert when within ~500 m of an individual delivery stop.
+ * Each stop only triggers the audio once per session.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+export interface StopLocation {
+  deliveryId: string;
+  lat: number;
+  lng: number;
+  status?: string;
+}
 
 export interface AirplaneModeReminderProps {
   deliveryZoneBounds: {
@@ -19,7 +27,18 @@ export interface AirplaneModeReminderProps {
     north: number;
     east: number;
   } | null;
+  /** Individual stop coordinates for per-stop proximity alerts. */
+  stops?: StopLocation[];
+  /** Driver's current GPS position (updated externally). */
+  currentLocation?: { lat: number; lng: number } | null;
 }
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/** Distance in meters at which the audio alert fires for a stop. */
+const STOP_ALERT_RADIUS_M = 500;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -66,18 +85,89 @@ function isInsideBounds(
   );
 }
 
+/**
+ * Haversine distance between two lat/lng points in meters.
+ */
+function haversineMeters(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const R = 6_371_000; // Earth radius in meters
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Play a loud two-tone alert using the Web Audio API.
+ * Works offline — no external audio files needed.
+ */
+function playProximityAlert(): void {
+  try {
+    const ctx = new (window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext)();
+
+    const playTone = (frequency: number, startTime: number, duration: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "square";
+      osc.frequency.value = frequency;
+
+      // Ramp up quickly, hold, then ramp down
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.6, startTime + 0.05);
+      gain.gain.setValueAtTime(0.6, startTime + duration - 0.05);
+      gain.gain.linearRampToValueAtTime(0, startTime + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+
+    const now = ctx.currentTime;
+    // Two-tone alert pattern: high-low repeated twice
+    playTone(880, now, 0.2);
+    playTone(660, now + 0.25, 0.2);
+    playTone(880, now + 0.55, 0.2);
+    playTone(660, now + 0.80, 0.2);
+
+    // Clean up after sounds finish
+    setTimeout(() => ctx.close(), 2000);
+  } catch {
+    // Web Audio not available — fail silently
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export default function AirplaneModeReminder({
   deliveryZoneBounds,
+  stops,
+  currentLocation,
 }: AirplaneModeReminderProps) {
   const [dismissed, setDismissed] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [insideZone, setInsideZone] = useState(false);
+  const [nearbyStopId, setNearbyStopId] = useState<string | null>(null);
   const watchIdRef = useRef<number | null>(null);
+  /** Set of stop IDs that have already triggered an audio alert this session. */
+  const alertedStopsRef = useRef<Set<string>>(new Set());
 
+  // -------------------------------------------------------------------------
+  // Zone-level proximity (bounding box) — uses its own geolocation watcher
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (!deliveryZoneBounds) return;
     if (!("geolocation" in navigator)) return;
@@ -122,6 +212,44 @@ export default function AirplaneModeReminder({
     };
   }, [deliveryZoneBounds, dismissed]);
 
+  // -------------------------------------------------------------------------
+  // Stop-level proximity — uses currentLocation from parent (no extra watcher)
+  // -------------------------------------------------------------------------
+  const checkStopProximity = useCallback(() => {
+    if (!currentLocation || !stops?.length) {
+      setNearbyStopId(null);
+      return;
+    }
+
+    for (const stop of stops) {
+      // Only alert for non-delivered stops
+      if (stop.status === "delivered") continue;
+
+      const dist = haversineMeters(
+        currentLocation.lat,
+        currentLocation.lng,
+        stop.lat,
+        stop.lng,
+      );
+
+      if (dist <= STOP_ALERT_RADIUS_M) {
+        setNearbyStopId(stop.deliveryId);
+
+        if (!alertedStopsRef.current.has(stop.deliveryId)) {
+          alertedStopsRef.current.add(stop.deliveryId);
+          playProximityAlert();
+        }
+        return;
+      }
+    }
+
+    setNearbyStopId(null);
+  }, [currentLocation, stops]);
+
+  useEffect(() => {
+    checkStopProximity();
+  }, [checkStopProximity]);
+
   const handleDismiss = () => {
     setDismissed(true);
     setShowBanner(false);
@@ -132,8 +260,53 @@ export default function AirplaneModeReminder({
 
   return (
     <>
-      {/* Proximity banner */}
-      {showBanner && !dismissed && (
+      {/* Per-stop proximity alert banner */}
+      {nearbyStopId && (
+        <div
+          style={{
+            backgroundColor: "var(--color-danger-light, #fee2e2)",
+            borderBottom: "2px solid var(--color-danger, #dc2626)",
+            padding: "12px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexShrink: 0,
+            animation: "slide-up 0.2s ease",
+          }}
+        >
+          {/* Volume/alert icon */}
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0, color: "var(--color-danger, #dc2626)" }}
+            aria-hidden="true"
+          >
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+          </svg>
+          <span
+            style={{
+              flex: 1,
+              fontSize: 15,
+              fontWeight: 700,
+              color: "var(--color-danger, #dc2626)",
+              lineHeight: 1.4,
+            }}
+          >
+            Approaching delivery address — enable airplane mode now!
+          </span>
+        </div>
+      )}
+
+      {/* Zone-level proximity banner */}
+      {showBanner && !dismissed && !nearbyStopId && (
         <div
           style={{
             backgroundColor: "var(--color-warning-bg)",
@@ -200,7 +373,7 @@ export default function AirplaneModeReminder({
       )}
 
       {/* Subtle in-zone indicator */}
-      {insideZone && (
+      {insideZone && !nearbyStopId && (
         <div
           style={{
             display: "flex",

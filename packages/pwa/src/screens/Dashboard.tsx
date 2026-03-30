@@ -344,7 +344,11 @@ export default function Dashboard() {
 
       {/* Airplane mode reminder */}
       {sessionStatus === "routes_released" && (
-        <AirplaneModeReminder deliveryZoneBounds={tileBounds} />
+        <AirplaneModeReminder
+          deliveryZoneBounds={tileBounds}
+          stops={stops}
+          currentLocation={currentLocation}
+        />
       )}
 
       {/* Top nav bar */}

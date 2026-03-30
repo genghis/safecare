@@ -45,7 +45,7 @@ Last updated: 2026-03-30
 | Offline map tiles in driver PWA | Done | Service worker CacheFirst, tile pre-caching on route download |
 | Route geometry display (polyline) | Done | OSRM driving directions rendered on Leaflet map |
 | GPS tracking in driver PWA | Done | Live position on map via watchPosition |
-| Airplane mode reminder | Done | Geofenced proximity detection, dismissible banner |
+| Airplane mode reminder | Done | Geofenced proximity detection, dismissible banner, loud audio alert at 500 m per stop |
 | Route packet with tile URLs + bounds | Done | Backend computes tile coverage for pre-caching |
 | **Exclusion zones (draw + OSRM edge-weighting)** | **Not done** | Zones page handles delivery zones, not exclusion zones |
 | **Route variation between delivery cycles** | **Not done** | Same route every time currently |

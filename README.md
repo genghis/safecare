@@ -54,7 +54,7 @@ Open **http://localhost:3000** — a setup wizard walks you through creating you
 - **Self-hosted maps** — OpenStreetMap data provisioned to your operating region
 - **Address autocomplete** — house-number-level accuracy with TIGER data
 - **Offline driver navigation** — map tiles and routes pre-cached on phones
-- **Airplane mode prompts** — privacy reminder near delivery areas
+- **Airplane mode prompts** — privacy reminder near delivery areas with loud audio alert at 500 m
 - **6 languages** — English, Spanish, Arabic, Somali, French, Chinese
 - **3 notification channels** — Signal (free, E2E), SMS (Twilio), WhatsApp (Twilio)
 - **Field-level encryption** — recipient PII encrypted with pgcrypto

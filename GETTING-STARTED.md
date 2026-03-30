@@ -137,7 +137,7 @@ Drivers use a phone app (Progressive Web App -- works on any phone's browser):
 3. Tap **Ready for Routes** to check in
 4. When the admin releases routes, they download automatically with offline maps
 5. The app shows a map with numbered stops and driving directions
-6. Near the delivery area, the app suggests enabling airplane mode for privacy
+6. Near the delivery area, the app plays a loud audio alert and suggests enabling airplane mode for privacy
 7. Tap each delivery to mark it complete
 8. At the end, tap **End Shift** -- all route data is deleted from the phone
 

@@ -51,7 +51,7 @@ The system consists of three main components:
 
 1. **Download:** Driver downloads the encrypted route packet at the depot.
 2. **En Route (Online):** Driver taps "Heading to Route." Server sends recipient the initial alert. *(Note: If using WhatsApp, this must be a pre-approved Meta Message Template).*
-3. **The Approach (Airplane Mode):** App alerts the driver to turn ON Airplane Mode 1 mile away from the destination.
+3. **The Approach (Airplane Mode):** App plays a loud audio alert and displays a red banner when the driver is within 500 m of a delivery address, prompting them to enable Airplane Mode.
 4. **The Drop (Offline):** Driver completes the drop-off and taps "Delivered." The app caches this timestamp.
 5. **The Sync (Online):** Driver drives away, turns Airplane Mode OFF. The app connects to the server and sends the final "Left food at door" message.
 
