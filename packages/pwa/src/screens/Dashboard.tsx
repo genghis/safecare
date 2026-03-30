@@ -5,7 +5,7 @@ import DeliveryCard from "@/components/DeliveryCard";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import RouteMap from "@/components/RouteMap";
 import AirplaneModeReminder from "@/components/AirplaneModeReminder";
-import { checkIn, pollStatus, downloadRoute } from "@/lib/api";
+import { checkIn, pollStatus, downloadRoute, getToken } from "@/lib/api";
 import { storeEncrypted, readEncrypted, purgeAll } from "@/lib/db";
 import { flushQueue } from "@/lib/sync";
 import { useAutoSync, usePurgeCheck } from "@/lib/hooks";
@@ -65,6 +65,13 @@ export default function Dashboard() {
   // Background auto-sync and TTL purge check
   useAutoSync();
   usePurgeCheck();
+
+  // Redirect to login if no token
+  useEffect(() => {
+    if (!getToken()) {
+      navigate("/", { replace: true });
+    }
+  }, [navigate]);
 
   // ---------------------------------------------------------------------------
   // Geolocation tracking for the map
