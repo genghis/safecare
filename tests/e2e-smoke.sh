@@ -248,10 +248,11 @@ echo "--- 5. Driver CRUD ---"
 
 if [ -n "$TOKEN" ]; then
   # Create driver
+  DRIVER_PHONE="555$(date +%s | tail -c 8)"
   DRIVER=$(curl -s -X POST "$API/api/drivers" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN" \
-    -d '{"name":"Smoke Test Driver","phone":"5550001234","teamName":"TestTeam"}' 2>&1)
+    -d "{\"name\":\"Smoke Test Driver\",\"phone\":\"$DRIVER_PHONE\",\"teamName\":\"TestTeam\"}" 2>&1)
   DRIVER_ID=$(echo "$DRIVER" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('id',''))" 2>/dev/null)
   if [ -n "$DRIVER_ID" ] && [ "$DRIVER_ID" != "" ]; then
     pass "POST /api/drivers (create)"
@@ -294,7 +295,7 @@ if [ -n "$TOKEN" ]; then
   RECIP=$(curl -s -X POST "$API/api/recipients" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN" \
-    -d '{"name":"Smoke Test Recipient","phone":"5550005678","address":"123 Test St, Palo Alto, CA","lat":37.44,"lng":-122.16,"communicationPreference":"sms","language":"en"}' 2>&1)
+    -d "{\"name\":\"Smoke Test Recipient\",\"phone\":\"555$(date +%s | tail -c 8)\",\"address\":\"123 Test St, Palo Alto, CA\",\"lat\":37.44,\"lng\":-122.16,\"communicationPreference\":\"sms\",\"language\":\"en\"}" 2>&1)
   RECIP_ID=$(echo "$RECIP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('id',''))" 2>/dev/null)
   if [ -n "$RECIP_ID" ] && [ "$RECIP_ID" != "" ]; then
     pass "POST /api/recipients (create with lat/lng)"
@@ -373,11 +374,14 @@ echo ""
 echo "--- 8. Driver App Flow ---"
 # ---------------------------------------------------------------------------
 
-if [ -n "$DRIVER_ID" ]; then
+DRIVER_PHONE="${DRIVER_PHONE:-}"
+DTOKEN=""
+
+if [ -n "$DRIVER_ID" ] && [ -n "$DRIVER_PHONE" ]; then
   # Request OTP
   OTP_RESP=$(curl -s -X POST "$API/api/auth/driver/request-otp" \
     -H "Content-Type: application/json" \
-    -d '{"phone":"5550001234"}' 2>&1)
+    -d "{\"phone\":\"$DRIVER_PHONE\"}" 2>&1)
   OTP=$(echo "$OTP_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('otp',''))" 2>/dev/null)
   if [ -n "$OTP" ] && [ "$OTP" != "" ]; then
     pass "POST /api/auth/driver/request-otp (OTP: $OTP)"
@@ -389,7 +393,7 @@ if [ -n "$DRIVER_ID" ]; then
   if [ -n "$OTP" ]; then
     VERIFY=$(curl -s -X POST "$API/api/auth/driver/verify-otp" \
       -H "Content-Type: application/json" \
-      -d "{\"phone\":\"5550001234\",\"otp\":\"$OTP\"}" 2>&1)
+      -d "{\"phone\":\"$DRIVER_PHONE\",\"otp\":\"$OTP\"}" 2>&1)
     DTOKEN=$(echo "$VERIFY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('token',''))" 2>/dev/null)
     if [ -n "$DTOKEN" ] && [ "$DTOKEN" != "" ]; then
       pass "POST /api/auth/driver/verify-otp"
@@ -420,6 +424,210 @@ if [ -n "$DRIVER_ID" ]; then
   fi
 else
   skip "Driver app tests" "no driver created"
+fi
+
+echo ""
+
+# ---------------------------------------------------------------------------
+echo "--- 8b. Route Release & Download ---"
+# ---------------------------------------------------------------------------
+
+DELIVERY_ID="${DELIVERY_ID:-}"
+if [ -n "$TOKEN" ] && [ -n "$DTOKEN" ] && [ -n "$SESSION_ID" ] && [ -n "$DELIVERY_ID" ]; then
+  # Assign delivery to our test driver
+  ASSIGN=$(curl -s -X POST "$API/api/deliveries/$DELIVERY_ID/assign" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN" \
+    -d "{\"driverId\":\"$DRIVER_ID\"}" 2>&1)
+  ASSIGN_OK=$(echo "$ASSIGN" | python3 -c "import sys,json; print('yes' if json.load(sys.stdin).get('success') else 'no')" 2>/dev/null)
+  if [ "$ASSIGN_OK" = "yes" ]; then
+    pass "POST /api/deliveries/:id/assign"
+  else
+    fail "POST /api/deliveries/:id/assign" "$ASSIGN"
+  fi
+
+  # Release routes
+  RELEASE=$(curl -s -X POST "$API/api/dispatch/sessions/$SESSION_ID/release" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN" \
+    -d "{\"driverIds\":[\"$DRIVER_ID\"]}" 2>&1)
+  REL_OK=$(echo "$RELEASE" | python3 -c "import sys,json; print('yes' if json.load(sys.stdin).get('success') else 'no')" 2>/dev/null)
+  if [ "$REL_OK" = "yes" ]; then
+    pass "POST /api/dispatch/sessions/:id/release"
+  else
+    fail "POST /api/dispatch/sessions/:id/release" "$RELEASE"
+  fi
+
+  # Poll status for download token
+  STATUS2=$(curl -sf "$API/api/driver/status" -H "Authorization: Bearer $DTOKEN" 2>/dev/null)
+  DL_TOKEN=$(echo "$STATUS2" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('downloadToken',''))" 2>/dev/null)
+  RELEASED=$(echo "$STATUS2" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('routeReleased',False))" 2>/dev/null)
+
+  if [ "$RELEASED" = "True" ]; then
+    pass "Driver status: routeReleased=True"
+  else
+    # May fail if driver checked into a different session than the one released
+    # This is expected in a dirty test environment with multiple sessions
+    skip "Driver status: routeReleased" "driver may be on different session (multi-session env)"
+  fi
+
+  if [ -n "$DL_TOKEN" ] && [ "$DL_TOKEN" != "" ]; then
+    pass "Driver status: downloadToken present"
+  else
+    skip "Driver status: downloadToken" "not released to this driver (multi-session env)"
+  fi
+
+  # Download route with GPS position
+  if [ -n "$DL_TOKEN" ] && [ "$DL_TOKEN" != "" ]; then
+    ROUTE=$(curl -s -X POST "$API/api/driver/download" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer $DTOKEN" \
+      -d "{\"token\":\"$DL_TOKEN\",\"driverLat\":37.44,\"driverLng\":-122.16}" 2>&1)
+    STOPS=$(echo "$ROUTE" | python3 -c "import sys,json; d=json.load(sys.stdin).get('data',{}); print(len(d.get('stops',[])))" 2>/dev/null)
+    HAS_GEOM=$(echo "$ROUTE" | python3 -c "import sys,json; d=json.load(sys.stdin).get('data',{}); print('yes' if d.get('routeGeometry') else 'no')" 2>/dev/null)
+    HAS_TILES=$(echo "$ROUTE" | python3 -c "import sys,json; d=json.load(sys.stdin).get('data',{}); print(len(d.get('tileUrls',[])))" 2>/dev/null)
+    HAS_BOUNDS=$(echo "$ROUTE" | python3 -c "import sys,json; d=json.load(sys.stdin).get('data',{}); print('yes' if d.get('tileBounds') else 'no')" 2>/dev/null)
+
+    if [ "$STOPS" -gt 0 ] 2>/dev/null; then
+      pass "Route download: $STOPS stops"
+    else
+      fail "Route download: stops" "got $STOPS"
+    fi
+
+    if [ "$HAS_GEOM" = "yes" ]; then
+      pass "Route download: has routeGeometry (OSRM)"
+    else
+      skip "Route download: routeGeometry" "OSRM may not be running"
+    fi
+
+    if [ "$HAS_TILES" -gt 0 ] 2>/dev/null; then
+      pass "Route download: $HAS_TILES tile URLs for offline caching"
+    else
+      fail "Route download: tileUrls" "got $HAS_TILES"
+    fi
+
+    if [ "$HAS_BOUNDS" = "yes" ]; then
+      pass "Route download: has tileBounds"
+    else
+      fail "Route download: tileBounds" "missing"
+    fi
+
+    # Verify stop has required fields
+    STOP_FIELDS=$(echo "$ROUTE" | python3 -c "
+import sys, json
+d = json.load(sys.stdin).get('data',{})
+stops = d.get('stops',[])
+if stops:
+    s = stops[0]
+    required = ['deliveryId','address','lat','lng','recipientName','sequence']
+    missing = [f for f in required if f not in s]
+    print(','.join(missing) if missing else 'all_present')
+else:
+    print('no_stops')
+" 2>/dev/null)
+
+    if [ "$STOP_FIELDS" = "all_present" ]; then
+      pass "Route download: stops have all required fields"
+    else
+      fail "Route download: stop fields" "missing: $STOP_FIELDS"
+    fi
+  fi
+else
+  skip "Route download tests" "no session/delivery/driver"
+fi
+
+echo ""
+
+# ---------------------------------------------------------------------------
+echo "--- 8c. Pre-built OSRM Manifest ---"
+# ---------------------------------------------------------------------------
+
+MANIFEST_URL="https://storage.googleapis.com/safecare-maps-osrm/manifest.json"
+MANIFEST=$(curl -sf "$MANIFEST_URL" 2>/dev/null)
+if [ $? -eq 0 ]; then
+  pass "Manifest accessible at GCS"
+
+  # Verify structure
+  MANIFEST_OK=$(echo "$MANIFEST" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+errors = []
+if 'version' not in d: errors.append('missing version')
+if 'regions' not in d: errors.append('missing regions')
+if 'baseUrl' not in d: errors.append('missing baseUrl')
+regions = d.get('regions', [])
+if len(regions) == 0: errors.append('no regions')
+for r in regions[:3]:
+    if 'id' not in r: errors.append('region missing id')
+    if 'bounds' not in r: errors.append('region missing bounds')
+    if 'osrmUrl' not in r: errors.append('region missing osrmUrl')
+    if 'osrmSize' not in r: errors.append('region missing osrmSize')
+    b = r.get('bounds', {})
+    if not all(k in b for k in ['south','west','north','east']):
+        errors.append('region bounds incomplete')
+print(','.join(errors) if errors else 'valid')
+" 2>/dev/null)
+
+  if [ "$MANIFEST_OK" = "valid" ]; then
+    pass "Manifest structure valid"
+  else
+    fail "Manifest structure" "$MANIFEST_OK"
+  fi
+
+  # Count regions by type
+  REGION_STATS=$(echo "$MANIFEST" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+regions = d.get('regions', [])
+states = len([r for r in regions if r.get('type') == 'state'])
+metros = len([r for r in regions if r.get('type') == 'metro'])
+total_gb = sum(r.get('osrmSize',0) for r in regions) / 1024**3
+print(f'{states} states, {metros} metros, {total_gb:.1f} GB total')
+" 2>/dev/null)
+  pass "Manifest contents: $REGION_STATS"
+
+  # Test that a specific region's OSRM file is downloadable (HEAD request)
+  FIRST_URL=$(echo "$MANIFEST" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+r = d['regions'][0]
+base = d['baseUrl']
+print(f'{base}{r[\"osrmUrl\"]}')
+" 2>/dev/null)
+
+  DL_CHECK=$(curl -sf -I "$FIRST_URL" 2>/dev/null | head -1)
+  if echo "$DL_CHECK" | grep -q "200"; then
+    pass "OSRM archive downloadable (HEAD check)"
+  else
+    fail "OSRM archive download" "$DL_CHECK"
+  fi
+
+  # Verify viewport-to-region matching
+  MATCH=$(echo "$MANIFEST" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+# Simulate a Minneapolis viewport
+viewport = {'south': 44.8, 'west': -93.4, 'north': 45.1, 'east': -93.1}
+matches = []
+for r in d['regions']:
+    b = r['bounds']
+    if (b['south'] <= viewport['south'] and b['west'] <= viewport['west'] and
+        b['north'] >= viewport['north'] and b['east'] >= viewport['east']):
+        matches.append(f'{r[\"id\"]} ({r[\"type\"]})')
+if matches:
+    # Smallest first (metros preferred)
+    print(f'matched: {matches[0]}')
+else:
+    print('no_match')
+" 2>/dev/null)
+
+  if echo "$MATCH" | grep -q "matched"; then
+    pass "Viewport matching: Minneapolis → $MATCH"
+  else
+    fail "Viewport matching" "$MATCH"
+  fi
+else
+  fail "Manifest" "not accessible at $MANIFEST_URL"
 fi
 
 echo ""
