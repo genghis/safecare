@@ -136,23 +136,31 @@ export default function Dashboard() {
   useEffect(() => {
     loadCachedRoute();
 
-    // Check current status on mount -- driver may already be checked in
+    // Check current status on mount
     (async () => {
       try {
         const status = await pollStatus();
-        if (status.sessionActive && status.checkedIn) {
+        if (!status.sessionActive) return; // No session, stay idle
+
+        if (status.checkedIn) {
           setSessionStatus("checked_in");
           if (status.sessionId) setSessionId(status.sessionId);
+
           if (status.routeReleased && status.downloadToken) {
-            // Route is ready -- auto-download
-            handlePollAndDownload();
+            // Routes released -- download automatically
+            setSessionStatus("checked_in"); // Keep showing "downloading..."
+            try {
+              await handlePollAndDownload();
+            } catch {
+              // Download failed but that's OK -- user can tap "Check for Routes"
+            }
           }
         }
       } catch {
-        // Not checked in or no session -- stay on idle
+        // Not logged in or no session -- stay idle
       }
     })();
-  }, [loadCachedRoute]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------------------------------------------------------------------------
   // Check-in
@@ -208,16 +216,18 @@ export default function Dashboard() {
         if (route.routeGeometry) setRouteGeometry(route.routeGeometry);
         if (route.tileBounds) setTileBounds(route.tileBounds);
 
-        // Cache encrypted (including geo data for offline restore)
-        await storeEncrypted("routes", "currentRoute", {
-          deliveries: items,
-          sessionId: route.sessionId,
-          expiresAt: route.expiresAt,
-          stops: geoStops,
-          routeGeometry: route.routeGeometry,
-          tileBounds: route.tileBounds,
-          tilesCached: false,
-        });
+        // Cache for offline restore (non-fatal if crypto not ready)
+        try {
+          await storeEncrypted("routes", "currentRoute", {
+            deliveries: items,
+            sessionId: route.sessionId,
+            expiresAt: route.expiresAt,
+            stops: geoStops,
+            routeGeometry: route.routeGeometry,
+            tileBounds: route.tileBounds,
+            tilesCached: false,
+          });
+        } catch { /* crypto not initialized yet */ }
 
         // Pre-cache tiles for offline map use
         if (route.tileUrls?.length) {
@@ -230,15 +240,17 @@ export default function Dashboard() {
             setShowMapCachedNotice(true);
 
             // Update cached data to record tile caching complete
-            await storeEncrypted("routes", "currentRoute", {
-              deliveries: items,
-              sessionId: route.sessionId,
-              expiresAt: route.expiresAt,
-              stops: geoStops,
-              routeGeometry: route.routeGeometry,
-              tileBounds: route.tileBounds,
-              tilesCached: true,
-            });
+            try {
+              await storeEncrypted("routes", "currentRoute", {
+                deliveries: items,
+                sessionId: route.sessionId,
+                expiresAt: route.expiresAt,
+                stops: geoStops,
+                routeGeometry: route.routeGeometry,
+                tileBounds: route.tileBounds,
+                tilesCached: true,
+              });
+            } catch { /* best effort */ }
 
             // Auto-hide the notice after 4 seconds
             setTimeout(() => setShowMapCachedNotice(false), 4000);
