@@ -425,7 +425,7 @@ export default function DispatchPage() {
                   </div>
                 )}
               </CardContent>
-              {checkIns.length > 0 && (session.status === "draft" || session.status === "active") && (
+              {checkIns.length > 0 && session.status === "draft" && (
                 <CardFooter>
                   <Button
                     onClick={handleReleaseRoutes}
