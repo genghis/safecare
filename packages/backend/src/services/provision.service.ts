@@ -63,7 +63,7 @@ export interface CloudProvisionStatus {
 const MANIFEST_URL =
   config.PROVISION_SERVICE_URL
     ? `${config.PROVISION_SERVICE_URL}/manifest.json`
-    : 'https://storage.googleapis.com/safecare-maps-osrm/manifest.json';
+    : 'https://safecare.app/manifest.json';
 
 // ---------------------------------------------------------------------------
 // Service
