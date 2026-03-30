@@ -190,11 +190,8 @@ export default function DriversPage() {
     const res = await apiPut<Driver>(
       `/api/drivers/${editingDriver.id}/profile`,
       {
-        name: editName,
-        phone: editPhone,
         vehicleSize: editVehicleSize,
         maxDeliveries: editMaxDeliveries,
-        team: editTeam,
         availability: editAvailability,
       }
     );
@@ -265,18 +262,24 @@ export default function DriversPage() {
     if (!addName || !addPhone) return;
     setAddSaving(true);
 
-    const res = await apiPost<{ success: boolean; data: Driver }>(
+    const res = await apiPost<{ id: string }>(
       "/api/drivers",
       {
         name: addName,
         phone: addPhone,
-        email: addEmail,
-        vehicleSize: addVehicleSize,
-        maxDeliveries: addMaxDeliveries,
-        team: addTeam,
-        availability: addAvailability,
+        email: addEmail || undefined,
+        teamName: addTeam || undefined,
       }
     );
+
+    // Update profile separately (create endpoint doesn't accept all fields)
+    if (res.ok && (res.data as any)?.id) {
+      await apiPut(`/api/drivers/${(res.data as any).id}/profile`, {
+        vehicleSize: addVehicleSize,
+        maxDeliveries: addMaxDeliveries,
+        availability: addAvailability,
+      });
+    }
 
     if (res.ok) {
       const newDriver: Driver = {

@@ -193,21 +193,24 @@ export default function DistributionPage() {
     setDistributing(true);
     const res = await apiPost<DistributionState>("/api/distribution/propose", {
       sessionId: selectedSession,
-      day: selectedDay,
+      dayOfWeek: selectedDay,
     });
     if (res.ok && res.data) {
       setDrivers(res.data.drivers || []);
       setUnassigned(res.data.unassigned || []);
       setWarnings(res.data.warnings || []);
+    } else {
+      alert(res.error || "Auto-distribute failed. Make sure a session is selected.");
     }
     setDistributing(false);
   }
 
-  async function handleMoveDelivery(deliveryId: string, toDriverId: string) {
+  async function handleMoveDelivery(deliveryId: string, toDriverId: string, fromDriverId?: string) {
     const res = await apiPost<DistributionState>("/api/distribution/move", {
-      deliveryId,
-      toDriverId,
       sessionId: selectedSession,
+      deliveryId,
+      fromDriverId: fromDriverId || "",
+      toDriverId,
     });
     if (res.ok && res.data) {
       setDrivers(res.data.drivers || []);
@@ -261,9 +264,10 @@ export default function DistributionPage() {
   async function handleRemoveDelivery(driverId: string, deliveryId: string) {
     // Move delivery back to unassigned pool
     const res = await apiPost<DistributionState>("/api/distribution/move", {
-      deliveryId,
-      toDriverId: null,
       sessionId: selectedSession,
+      deliveryId,
+      fromDriverId: driverId,
+      toDriverId: driverId, // keeps in pool, backend handles unassign
     });
     if (res.ok && res.data) {
       setDrivers(res.data.drivers || []);
@@ -274,11 +278,19 @@ export default function DistributionPage() {
 
   async function handleConfirm() {
     setConfirming(true);
+    const assignments = drivers.map((d) => ({
+      driverId: d.id,
+      deliveryIds: (d.assignedDeliveries || []).map((del) => del.id),
+    })).filter((a) => a.deliveryIds.length > 0);
+
     const res = await apiPost("/api/distribution/confirm", {
       sessionId: selectedSession,
+      assignments,
     });
     if (res.ok) {
       window.location.href = "/dispatch";
+    } else {
+      alert(res.error || "Failed to confirm assignments.");
     }
     setConfirming(false);
   }
