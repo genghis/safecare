@@ -79,9 +79,14 @@ async function request<T = unknown>(
   const { method = "GET", body, noAuth = false } = options;
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     Accept: "application/json",
   };
+
+  // Only set Content-Type when we have a body to send
+  // Fastify rejects empty bodies with Content-Type: application/json
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (!noAuth && jwt) {
     headers["Authorization"] = `Bearer ${jwt}`;
@@ -90,7 +95,7 @@ async function request<T = unknown>(
   const response = await fetch(`${BASE_URL}${path}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
   if (!response.ok) {

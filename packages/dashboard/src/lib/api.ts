@@ -35,9 +35,14 @@ export async function api<T = unknown>(
   const authToken = token || getToken();
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...((customHeaders as Record<string, string>) || {}),
   };
+
+  // Only set Content-Type when there's a body
+  // Fastify rejects empty bodies with Content-Type: application/json
+  if (rest.body) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (authToken) {
     headers["Authorization"] = `Bearer ${authToken}`;
