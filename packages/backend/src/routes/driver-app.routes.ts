@@ -101,9 +101,10 @@ export default async function driverAppRoutes(fastify: FastifyInstance) {
             (c) => c.driverId === driverId,
           );
 
-          // If route is released but not downloaded, generate a fresh download token
+          // If route is released, always provide a download token
+          // (drivers may need to re-download if app crashes or page refreshes)
           let downloadToken: string | undefined;
-          if (checkIn?.routeReleasedAt && !checkIn?.routeDownloadedAt) {
+          if (checkIn?.routeReleasedAt) {
             const { generateDownloadToken } = await import('@safecare/shared');
             const token = generateDownloadToken();
             const tokenHash = crypto
