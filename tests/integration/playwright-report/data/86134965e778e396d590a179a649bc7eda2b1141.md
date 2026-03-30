@@ -1,0 +1,81 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - complementary [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: SC
+      - generic [ref=e6]: SafeCare
+    - navigation [ref=e7]:
+      - link "Dashboard" [ref=e8] [cursor=pointer]:
+        - /url: /
+        - img [ref=e9]
+        - text: Dashboard
+      - link "Recipients" [ref=e14] [cursor=pointer]:
+        - /url: /recipients
+        - img [ref=e15]
+        - text: Recipients
+      - link "Drivers" [ref=e20] [cursor=pointer]:
+        - /url: /drivers
+        - img [ref=e21]
+        - text: Drivers
+      - link "Zones" [ref=e26] [cursor=pointer]:
+        - /url: /zones
+        - img [ref=e27]
+        - text: Zones
+      - link "Dispatch" [ref=e29] [cursor=pointer]:
+        - /url: /dispatch
+        - img [ref=e30]
+        - text: Dispatch
+      - link "Distribution" [ref=e36] [cursor=pointer]:
+        - /url: /distribution
+        - img [ref=e37]
+        - text: Distribution
+      - link "Deliveries" [ref=e42] [cursor=pointer]:
+        - /url: /deliveries
+        - img [ref=e43]
+        - text: Deliveries
+      - link "Settings" [ref=e47] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e48]
+        - text: Settings
+    - link "Login" [ref=e52] [cursor=pointer]:
+      - /url: /login
+      - img [ref=e53]
+      - text: Login
+  - main [ref=e56]:
+    - generic [ref=e58]:
+      - generic [ref=e59]:
+        - heading "Dashboard" [level=1] [ref=e60]
+        - paragraph [ref=e61]: Overview of today's mutual aid delivery operations.
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - heading "Total Recipients" [level=3] [ref=e65]
+            - img [ref=e66]
+          - generic [ref=e71]:
+            - generic [ref=e72]: "0"
+            - paragraph [ref=e73]: Registered recipients in the system
+        - generic [ref=e74]:
+          - generic [ref=e75]:
+            - heading "Active Drivers" [level=3] [ref=e76]
+            - img [ref=e77]
+          - generic [ref=e82]:
+            - generic [ref=e83]: "0"
+            - paragraph [ref=e84]: Drivers currently checked in
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - heading "Today's Deliveries" [level=3] [ref=e87]
+            - img [ref=e88]
+          - generic [ref=e92]:
+            - generic [ref=e93]: "0"
+            - paragraph [ref=e94]: Deliveries scheduled for today
+        - generic [ref=e95]:
+          - generic [ref=e96]:
+            - heading "Pending Orders" [level=3] [ref=e97]
+            - img [ref=e98]
+          - generic [ref=e101]:
+            - generic [ref=e102]: "0"
+            - paragraph [ref=e103]: Orders awaiting assignment
+```
