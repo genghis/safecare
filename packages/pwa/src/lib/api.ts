@@ -165,7 +165,7 @@ export function pollStatus() {
   }>("/driver/status");
 }
 
-export function downloadRoute(token: string) {
+export function downloadRoute(token: string, driverLat?: number, driverLng?: number) {
   return request<{
     sessionId: string;
     driverId: string;
@@ -186,7 +186,7 @@ export function downloadRoute(token: string) {
     routeDuration?: number;
   }>("/driver/download", {
     method: "POST",
-    body: { token },
+    body: { token, driverLat, driverLng },
   });
 }
 

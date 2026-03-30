@@ -14,6 +14,8 @@ import type { RecipientContact } from '../services/notification.service.js';
 
 const downloadRouteSchema = z.object({
   token: z.string().min(1),
+  driverLat: z.number().optional(),
+  driverLng: z.number().optional(),
 });
 
 const syncSchema = z.object({
@@ -173,13 +175,55 @@ export default async function driverAppRoutes(fastify: FastifyInstance) {
             });
           }
 
-          // Enhance route packet with OSRM geometry and offline tile URLs
-          const stops = routePacket.stops.map((s) => ({
-            lat: s.lat,
-            lng: s.lng,
-          }));
+          // Reorder stops: nearest to driver first, then nearest-neighbour chain
+          const driverLat = parsed.data.driverLat;
+          const driverLng = parsed.data.driverLng;
 
-          const osrmRoute = await routingService.getRoute(stops);
+          if (driverLat !== undefined && driverLng !== undefined && routePacket.stops.length > 1) {
+            // Find nearest stop to driver
+            let nearestIdx = 0;
+            let nearestDist = Infinity;
+            for (let i = 0; i < routePacket.stops.length; i++) {
+              const s = routePacket.stops[i];
+              const dist = Math.sqrt(
+                Math.pow(s.lat - driverLat, 2) + Math.pow(s.lng - driverLng, 2),
+              );
+              if (dist < nearestDist) {
+                nearestDist = dist;
+                nearestIdx = i;
+              }
+            }
+            // Move nearest to front, then nearest-neighbour for the rest
+            const reordered = [routePacket.stops[nearestIdx]];
+            const remaining = routePacket.stops.filter((_, i) => i !== nearestIdx);
+            while (remaining.length > 0) {
+              const last = reordered[reordered.length - 1];
+              let bestIdx = 0;
+              let bestDist = Infinity;
+              for (let i = 0; i < remaining.length; i++) {
+                const d = Math.sqrt(
+                  Math.pow(remaining[i].lat - last.lat, 2) +
+                  Math.pow(remaining[i].lng - last.lng, 2),
+                );
+                if (d < bestDist) { bestDist = d; bestIdx = i; }
+              }
+              reordered.push(remaining.splice(bestIdx, 1)[0]);
+            }
+            // Reassign sequence numbers
+            reordered.forEach((s, i) => { s.sequence = i + 1; });
+            routePacket.stops = reordered;
+          }
+
+          // Build OSRM waypoints: driver position → stop 1 → stop 2 → ...
+          const waypoints: Array<{ lat: number; lng: number }> = [];
+          if (driverLat !== undefined && driverLng !== undefined) {
+            waypoints.push({ lat: driverLat, lng: driverLng });
+          }
+          for (const s of routePacket.stops) {
+            waypoints.push({ lat: s.lat, lng: s.lng });
+          }
+
+          const osrmRoute = await routingService.getRoute(waypoints);
 
           if (osrmRoute) {
             routePacket.routeGeometry = osrmRoute.geometry;
@@ -187,7 +231,7 @@ export default async function driverAppRoutes(fastify: FastifyInstance) {
             routePacket.routeDuration = osrmRoute.duration;
           }
 
-          const tileBounds = routingService.getTileBounds(stops);
+          const tileBounds = routingService.getTileBounds(waypoints);
           routePacket.tileBounds = tileBounds;
           routePacket.tileUrls = routingService.getTileUrls(tileBounds);
 

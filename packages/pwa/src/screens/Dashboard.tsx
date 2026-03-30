@@ -195,7 +195,23 @@ export default function Dashboard() {
     try {
       const status = await pollStatus();
       if (status.routeReleased && status.downloadToken) {
-        const route = await downloadRoute(status.downloadToken);
+        // Get driver's current GPS position for route optimization
+        let driverLat: number | undefined;
+        let driverLng: number | undefined;
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 10000,
+            }),
+          );
+          driverLat = pos.coords.latitude;
+          driverLng = pos.coords.longitude;
+        } catch {
+          // GPS not available -- route will use default stop order
+        }
+
+        const route = await downloadRoute(status.downloadToken, driverLat, driverLng);
         const items: Delivery[] = route.stops.map((s, i) => ({
           id: s.deliveryId,
           sequence: s.sequence ?? i + 1,
