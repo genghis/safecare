@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { authService } from '../services/auth.service.js';
+import { logAdminAction } from '../services/audit.service.js';
 import { db } from '../db/index.js';
 import { adminUsers } from '../db/schema.js';
 
@@ -63,6 +64,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       );
 
       if (!result) {
+        logAdminAction('admin_login_failed', request, { email });
         return reply.code(401).send({
           success: false,
           error: 'Invalid email or password',
@@ -76,6 +78,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
           data: { requiresTotp: true, tempToken: result.tempToken },
         });
       }
+
+      logAdminAction('admin_login', request, { email });
 
       return reply.send({
         success: true,
@@ -187,6 +191,28 @@ export default async function authRoutes(fastify: FastifyInstance) {
   );
 
   // ---------------------------------------------------------------------------
+  // Session management
+  // ---------------------------------------------------------------------------
+
+  /**
+   * POST /api/auth/admin/logout
+   * Revoke the current admin session.
+   */
+  fastify.post(
+    '/api/auth/admin/logout',
+    { preHandler: [fastify.requireAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const jti = request.user.jti;
+      if (jti) {
+        const { revokeSession } = await import('../middleware/auth.js');
+        await revokeSession(jti);
+      }
+      logAdminAction('admin_logout', request);
+      return reply.send({ success: true, data: { loggedOut: true } });
+    },
+  );
+
+  // ---------------------------------------------------------------------------
   // TOTP two-factor authentication endpoints
   // ---------------------------------------------------------------------------
 
@@ -288,6 +314,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
+      logAdminAction('totp_enabled', request);
+
       return reply.send({
         success: true,
         data: { enabled: true, backupCodes: result.backupCodes },
@@ -322,6 +350,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
           error: 'Invalid password',
         });
       }
+
+      logAdminAction('totp_disabled', request);
 
       return reply.send({
         success: true,

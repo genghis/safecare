@@ -7,6 +7,7 @@ import { db } from '../db/index.js';
 import { adminUsers, drivers } from '../db/schema.js';
 import { config } from '../config.js';
 import { generateOTP, JWT_EXPIRY } from '@safecare/shared';
+import { registerSession, revokeAllSessions } from '../middleware/auth.js';
 
 const redis = new Redis(config.REDIS_URL);
 
@@ -69,10 +70,14 @@ export class AuthService {
       return { requiresTotp: true, tempToken };
     }
 
+    const jti = crypto.randomUUID();
     const token = signJwt(
-      { sub: admin.id, role: admin.role },
+      { sub: admin.id, role: admin.role, jti },
       { expiresIn: JWT_EXPIRY },
     );
+
+    // Register session in Redis (24h TTL matching JWT expiry)
+    await registerSession(jti, admin.id, 24 * 60 * 60);
 
     return {
       token,
@@ -103,10 +108,13 @@ export class AuthService {
     // Delete the temp token after successful verification
     await redis.del(`${TOTP_TEMP_PREFIX}${tempToken}`);
 
+    const jti = crypto.randomUUID();
     const token = signJwt(
-      { sub: adminId, role },
+      { sub: adminId, role, jti },
       { expiresIn: JWT_EXPIRY },
     );
+
+    await registerSession(jti, adminId, 24 * 60 * 60);
 
     return { token, admin: { id: adminId, email, role } };
   }

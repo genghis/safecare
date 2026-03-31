@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { clearToken } from "@/lib/api";
+import { clearToken, apiPost } from "@/lib/api";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutIcon },
@@ -84,7 +84,9 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Revoke server-side session, then clear local token
+    await apiPost("/api/auth/admin/logout").catch(() => {});
     clearToken();
     router.replace("/login");
   };

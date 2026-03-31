@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { authService } from '../services/auth.service.js';
+import { logAdminAction } from '../services/audit.service.js';
 import { provisionService } from '../services/provision.service.js';
 import Redis from 'ioredis';
 import { config, setDEK, isUnlocked } from '../config.js';
@@ -157,6 +158,7 @@ export default async function setupRoutes(fastify: FastifyInstance) {
       }
 
       setDEK(dek);
+      logAdminAction('system_unlocked', request);
 
       return reply.send({
         success: true,

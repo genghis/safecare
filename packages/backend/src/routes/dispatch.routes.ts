@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { dispatchService } from '../services/dispatch.service.js';
+import { logAdminAction } from '../services/audit.service.js';
 import { eq, ne, desc, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { driverCheckIns, dispatchSessions, deliveries, drivers, recipients } from '../db/schema.js';
@@ -222,6 +223,7 @@ export default async function dispatchRoutes(fastify: FastifyInstance) {
       }
 
       await dispatchService.revokeDriverSession(parsed.data.driverId, id);
+      logAdminAction('driver_revoked', request, { driverId: parsed.data.driverId, sessionId: id });
 
       return reply.send({
         success: true,

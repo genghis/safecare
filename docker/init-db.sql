@@ -134,7 +134,10 @@ CREATE TABLE IF NOT EXISTS dek_canary (
 CREATE TABLE IF NOT EXISTS audit_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   driver_id UUID,
+  admin_id UUID,
   action TEXT NOT NULL,
+  ip TEXT,
+  details JSONB,
   stop_count INTEGER,
   completed_count INTEGER,
   released_at TIMESTAMP,

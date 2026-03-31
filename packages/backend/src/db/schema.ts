@@ -165,7 +165,10 @@ export const auditLog = pgTable('audit_log', {
     .primaryKey()
     .default(sql`gen_random_uuid()`),
   driverId: uuid('driver_id'),
+  adminId: uuid('admin_id'),
   action: text('action').notNull(),
+  ip: text('ip'),
+  details: jsonb('details'),
   stopCount: integer('stop_count'),
   completedCount: integer('completed_count'),
   releasedAt: timestamp('released_at'),

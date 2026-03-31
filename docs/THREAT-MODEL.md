@@ -117,8 +117,8 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | TOTP 2FA (dashboard) | Implemented | Settings page enable/disable flow, login page TOTP step, 2FA setup nudge banner. |
 | Dashboard route protection | Implemented | LayoutShell auth guard checks for token before rendering any sidebar page. Redirects to /login if no token. API client auto-redirects on 401. |
 | Logout | Implemented | Sidebar "Logout" button clears token from localStorage and redirects to /login. |
-| Session management with explicit logout | Not done | No server-side session revocation on password change. |
-| Admin audit log | Not done | Track who accessed what, when. |
+| Session management with explicit logout | Implemented | JWTs include jti tracked in Redis. Logout revokes session. `revokeAllSessions()` ready for password change. |
+| Admin audit log | Implemented | Logs login/logout/failed login/TOTP/unlock/revoke with admin_id, IP, details. 90-day retention. |
 | Tailscale-only access | Not done | Dashboard only accessible on private tailnet, not the internet. |
 
 **This is the highest-impact threat.** An attacker with admin access sees everything. Mitigations:
@@ -130,7 +130,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 5. **Don't use the admin account on public WiFi** — use a VPN or tailnet
 
 **Remaining gap:**
-- No server-side session revocation — changing password doesn't invalidate existing JWTs (they expire in 24h)
+- No password change endpoint yet — when added, should call `revokeAllSessions(adminId)` to invalidate all existing JWTs
 
 ---
 

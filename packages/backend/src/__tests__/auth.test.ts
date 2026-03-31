@@ -152,7 +152,7 @@ describe('AuthService — Admin Authentication', () => {
       expect(result).not.toBeNull();
       expect(result!.token).toContain('admin-42');
       expect(signJwt).toHaveBeenCalledWith(
-        { sub: 'admin-42', role: 'admin' },
+        expect.objectContaining({ sub: 'admin-42', role: 'admin', jti: expect.any(String) }),
         { expiresIn: '24h' },
       );
       expect(result!.admin).toEqual({
