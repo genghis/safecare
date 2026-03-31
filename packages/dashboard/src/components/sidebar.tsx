@@ -4,16 +4,17 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { clearToken, apiPost } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutIcon },
-  { href: "/recipients", label: "Recipients", icon: UsersIcon },
-  { href: "/drivers", label: "Drivers", icon: TruckIcon },
-  { href: "/zones", label: "Zones", icon: MapIcon },
-  { href: "/dispatch", label: "Dispatch", icon: RadioIcon },
-  { href: "/distribution", label: "Distribution", icon: SplitIcon },
-  { href: "/deliveries", label: "Deliveries", icon: PackageIcon },
-  { href: "/settings", label: "Settings", icon: SettingsIcon },
+  { href: "/", labelKey: "dashboard.nav.home", icon: LayoutIcon },
+  { href: "/recipients", labelKey: "dashboard.nav.recipients", icon: UsersIcon },
+  { href: "/drivers", labelKey: "dashboard.nav.drivers", icon: TruckIcon },
+  { href: "/zones", labelKey: "dashboard.nav.zones", icon: MapIcon },
+  { href: "/dispatch", labelKey: "dashboard.nav.dispatch", icon: RadioIcon },
+  { href: "/distribution", labelKey: "dashboard.nav.distribution", icon: SplitIcon },
+  { href: "/deliveries", labelKey: "dashboard.nav.deliveries", icon: PackageIcon },
+  { href: "/settings", labelKey: "dashboard.nav.settings", icon: SettingsIcon },
 ];
 
 function LayoutIcon({ className }: { className?: string }) {
@@ -83,6 +84,7 @@ function SettingsIcon({ className }: { className?: string }) {
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLocale();
 
   const handleLogout = async () => {
     // Revoke server-side session, then clear local token
@@ -119,7 +121,7 @@ export function Sidebar() {
               )}
             >
               <item.icon className="h-5 w-5" />
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           );
         })}
@@ -133,7 +135,7 @@ export function Sidebar() {
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" />
           </svg>
-          Logout
+          {t('dashboard.nav.logout')}
         </button>
       </div>
     </aside>

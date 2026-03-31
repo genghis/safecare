@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/status-badge";
 import { apiGet, apiPost } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 interface DispatchSession {
   id: string;
@@ -43,6 +44,7 @@ interface DeliveryStatus {
 const AUTO_REFRESH_INTERVAL = 10_000;
 
 export default function DispatchPage() {
+  const { t } = useLocale();
   const [session, setSession] = useState<DispatchSession | null>(null);
   const [checkIns, setCheckIns] = useState<DriverCheckIn[]>([]);
   const [deliveries, setDeliveries] = useState<DeliveryStatus[]>([]);
@@ -130,7 +132,7 @@ export default function DispatchPage() {
 
   async function handleRevokeDriver(driverId: string, driverName: string) {
     if (!session) return;
-    if (!confirm(`Revoke routes for ${driverName}? This will erase all delivery data from their phone the next time it connects.`)) return;
+    if (!confirm(t('dashboard.dispatch.revokeConfirm', { name: driverName }))) return;
 
     setRevokingDriver(driverId);
     const res = await apiPost(
@@ -160,9 +162,9 @@ export default function DispatchPage() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-8">Dispatch</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-8">{t('dashboard.dispatch.title')}</h1>
         <div className="flex items-center justify-center h-64 text-muted-foreground">
-          Loading dispatch data...
+          {t('dashboard.dispatch.loadingData')}
         </div>
       </div>
     );
@@ -183,9 +185,9 @@ export default function DispatchPage() {
     <div>
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dispatch</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.dispatch.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage delivery sessions, driver check-ins, and route releases.
+            {t('dashboard.dispatch.subtitle')}
           </p>
         </div>
         {session && (
@@ -194,7 +196,7 @@ export default function DispatchPage() {
               className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"
               aria-hidden="true"
             />
-            Auto-refreshing &middot; Last updated{" "}
+            {t('dashboard.dispatch.autoRefreshing')} &middot; {t('dashboard.dispatch.lastUpdated')}{" "}
             {lastRefreshed.toLocaleTimeString()}
           </div>
         )}
@@ -204,7 +206,7 @@ export default function DispatchPage() {
       {!session && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Create New Session</CardTitle>
+            <CardTitle className="text-lg">{t('dashboard.dispatch.createNewSession')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -212,7 +214,7 @@ export default function DispatchPage() {
                 htmlFor="session-date"
                 className="text-sm font-medium text-foreground"
               >
-                Session Date
+                {t('dashboard.dispatch.sessionDate')}
               </label>
               <Input
                 id="session-date"
@@ -225,7 +227,7 @@ export default function DispatchPage() {
           </CardContent>
           <CardFooter>
             <Button onClick={handleCreateSession} disabled={creating}>
-              {creating ? "Creating..." : "Create New Session"}
+              {creating ? t('dashboard.dispatch.creating') : t('dashboard.dispatch.createNewSession')}
             </Button>
           </CardFooter>
         </Card>
@@ -237,25 +239,25 @@ export default function DispatchPage() {
           {/* Session Info Bar */}
           <Card className="mb-6">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-lg">Session Status</CardTitle>
+              <CardTitle className="text-lg">{t('dashboard.dispatch.sessionStatus')}</CardTitle>
               <StatusBadge status={session.status} />
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-1">
                   <span className="text-xs text-muted-foreground">
-                    Session ID
+                    {t('dashboard.dispatch.sessionId')}
                   </span>
                   <p className="text-sm font-mono">{session.id.slice(0, 8)}...</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-xs text-muted-foreground">Date</span>
+                  <span className="text-xs text-muted-foreground">{t('dashboard.dispatch.date')}</span>
                   <p className="text-sm">
                     {new Date(session.date || session.createdAt).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-xs text-muted-foreground">Created</span>
+                  <span className="text-xs text-muted-foreground">{t('dashboard.dispatch.created')}</span>
                   <p className="text-sm">
                     {new Date(session.createdAt).toLocaleString()}
                   </p>
@@ -263,7 +265,7 @@ export default function DispatchPage() {
                 {session.releasedAt && (
                   <div className="space-y-1">
                     <span className="text-xs text-muted-foreground">
-                      Released
+                      {t('dashboard.dispatch.released')}
                     </span>
                     <p className="text-sm">
                       {new Date(session.releasedAt).toLocaleString()}
@@ -282,7 +284,7 @@ export default function DispatchPage() {
                   <p className="text-3xl font-bold text-amber-500">
                     {statusCounts.pending}
                   </p>
-                  <p className="text-sm text-muted-foreground mt-1">Pending</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t('dashboard.common.pending')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -293,7 +295,7 @@ export default function DispatchPage() {
                     {statusCounts.in_transit}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    In Transit
+                    {t('dashboard.common.inTransit')}
                   </p>
                 </div>
               </CardContent>
@@ -305,7 +307,7 @@ export default function DispatchPage() {
                     {statusCounts.delivered}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Delivered
+                    {t('dashboard.common.delivered')}
                   </p>
                 </div>
               </CardContent>
@@ -317,7 +319,7 @@ export default function DispatchPage() {
                     {statusCounts.acknowledged}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Acknowledged
+                    {t('dashboard.common.acknowledged')}
                   </p>
                 </div>
               </CardContent>
@@ -327,20 +329,19 @@ export default function DispatchPage() {
           {/* Recipient Notifications */}
           <Card className="mb-6">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Recipient Notifications</CardTitle>
+              <CardTitle className="text-lg">{t('dashboard.dispatch.recipientNotifications')}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Recipients are automatically notified when their delivery is on
-                its way and when it arrives.
+                {t('dashboard.dispatch.recipientNotificationsDesc')}
               </p>
               <div className="space-y-3">
                 <div className="flex items-start gap-3 rounded-md border p-3">
                   <div className="mt-0.5 h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium">En route notification</p>
+                    <p className="text-sm font-medium">{t('dashboard.dispatch.enRouteNotification')}</p>
                     <p className="text-xs text-muted-foreground">
-                      Sent when a driver starts their route
+                      {t('dashboard.dispatch.enRouteNotificationDesc')}
                     </p>
                   </div>
                 </div>
@@ -348,10 +349,10 @@ export default function DispatchPage() {
                   <div className="mt-0.5 h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-medium">
-                      Delivered notification
+                      {t('dashboard.dispatch.deliveredNotification')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Sent when the driver marks the delivery complete
+                      {t('dashboard.dispatch.deliveredNotificationDesc')}
                     </p>
                   </div>
                 </div>
@@ -365,7 +366,7 @@ export default function DispatchPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">
-                    Driver Check-ins
+                    {t('dashboard.dispatch.driverCheckIns')}
                     {checkIns.length > 0 && (
                       <Badge variant="success" className="ml-2">
                         {checkIns.length}
@@ -374,10 +375,10 @@ export default function DispatchPage() {
                   </CardTitle>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm" onClick={selectAll}>
-                      Select All
+                      {t('dashboard.dispatch.selectAll')}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={selectNone}>
-                      Clear
+                      {t('dashboard.dispatch.clear')}
                     </Button>
                   </div>
                 </div>
@@ -385,8 +386,7 @@ export default function DispatchPage() {
               <CardContent>
                 {checkIns.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
-                    No drivers have checked in yet. Drivers check in via the
-                    IVR/SMS system or mobile app.
+                    {t('dashboard.dispatch.noCheckIns')}
                   </p>
                 ) : (
                   <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -429,7 +429,7 @@ export default function DispatchPage() {
                               {checkIn.driverName}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {checkIn.vehicle || "No vehicle info"}
+                              {checkIn.vehicle || t('dashboard.dispatch.noVehicleInfo')}
                             </p>
                           </div>
                         </div>
@@ -448,7 +448,7 @@ export default function DispatchPage() {
                                 handleRevokeDriver(checkIn.driverId, checkIn.driverName);
                               }}
                             >
-                              {revokingDriver === checkIn.driverId ? "Revoking..." : "Revoke"}
+                              {revokingDriver === checkIn.driverId ? t('dashboard.dispatch.revoking') : t('dashboard.dispatch.revoke')}
                             </Button>
                           )}
                         </div>
@@ -465,10 +465,8 @@ export default function DispatchPage() {
                     className="w-full"
                   >
                     {releasing
-                      ? "Releasing Routes..."
-                      : `Approve & Release Routes (${selectedCount} driver${
-                          selectedCount !== 1 ? "s" : ""
-                        })`}
+                      ? t('dashboard.dispatch.releasingRoutes')
+                      : t('dashboard.dispatch.approveAndRelease', { count: String(selectedCount), plural: selectedCount !== 1 ? "s" : "" })}
                   </Button>
                 </CardFooter>
               )}
@@ -478,7 +476,7 @@ export default function DispatchPage() {
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Delivery Progress</CardTitle>
+                  <CardTitle className="text-lg">{t('dashboard.dispatch.deliveryProgress')}</CardTitle>
                   {totalDeliveries > 0 && (
                     <span className="text-sm text-muted-foreground">
                       {statusCounts.delivered + statusCounts.acknowledged}/
@@ -508,8 +506,8 @@ export default function DispatchPage() {
                 {deliveries.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
                     {session.status === "active"
-                      ? "Deliveries will appear here after routes are released."
-                      : "No deliveries in this session."}
+                      ? t('dashboard.dispatch.deliveriesAfterRelease')
+                      : t('dashboard.dispatch.noDeliveries')}
                   </p>
                 ) : (
                   <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -526,7 +524,7 @@ export default function DispatchPage() {
                             {delivery.address}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Driver: {delivery.driverName}
+                            {t('dashboard.dispatch.driver', { name: delivery.driverName })}
                           </p>
                         </div>
                         <div className="ml-3 flex-shrink-0">

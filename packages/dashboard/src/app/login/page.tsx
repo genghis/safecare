@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiPost, setToken } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 type LoginResponse = {
   token?: string;
@@ -15,6 +16,7 @@ type LoginResponse = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -42,7 +44,7 @@ export default function LoginPage() {
       setToken(res.data.token);
       router.push("/");
     } else {
-      setError(res.error || "Invalid credentials. Please try again.");
+      setError(res.error || t('dashboard.login.invalidCredentials'));
     }
 
     setLoading(false);
@@ -62,7 +64,7 @@ export default function LoginPage() {
       setToken(res.data.token);
       router.push("/");
     } else {
-      setError(res.error || "Invalid code. Please try again.");
+      setError(res.error || t('dashboard.login.invalidCode'));
     }
 
     setLoading(false);
@@ -76,9 +78,9 @@ export default function LoginPage() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
               SC
             </div>
-            <CardTitle className="text-2xl">Two-Factor Authentication</CardTitle>
+            <CardTitle className="text-2xl">{t('dashboard.login.totpTitle')}</CardTitle>
             <p className="text-sm text-muted-foreground mt-2">
-              Enter the 6-digit code from your authenticator app
+              {t('dashboard.login.totpSubtitle')}
             </p>
           </CardHeader>
           <CardContent>
@@ -91,7 +93,7 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <label htmlFor="totpCode" className="text-sm font-medium">
-                  Authentication Code
+                  {t('dashboard.login.authCode')}
                 </label>
                 <Input
                   id="totpCode"
@@ -115,7 +117,7 @@ export default function LoginPage() {
                 className="w-full"
                 disabled={loading || totpCode.length !== 6}
               >
-                {loading ? "Verifying..." : "Verify"}
+                {loading ? t('dashboard.settings.verifying') : t('dashboard.login.verify')}
               </Button>
 
               <Button
@@ -129,7 +131,7 @@ export default function LoginPage() {
                   setError("");
                 }}
               >
-                Back to login
+                {t('dashboard.login.backToLogin')}
               </Button>
             </form>
           </CardContent>
@@ -145,9 +147,9 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
             SC
           </div>
-          <CardTitle className="text-2xl">Admin Login</CardTitle>
+          <CardTitle className="text-2xl">{t('dashboard.login.title')}</CardTitle>
           <p className="text-sm text-muted-foreground mt-2">
-            Sign in to the SafeCare admin dashboard
+            {t('dashboard.login.subtitle')}
           </p>
         </CardHeader>
         <CardContent>
@@ -160,12 +162,12 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
-                Email
+                {t('dashboard.login.emailLabel')}
               </label>
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@safecare.org"
+                placeholder={t('dashboard.login.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -174,12 +176,12 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium">
-                Password
+                {t('dashboard.login.passwordLabel')}
               </label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder={t('dashboard.login.passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -187,7 +189,7 @@ export default function LoginPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t('dashboard.login.signingIn') : t('dashboard.login.signIn')}
             </Button>
           </form>
         </CardContent>

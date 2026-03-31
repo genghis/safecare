@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { apiGet } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 interface DashboardStats {
   totalRecipients: number;
@@ -31,6 +32,7 @@ const defaultStats: DashboardStats = {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const [stats, setStats] = useState<DashboardStats>(defaultStats);
   const [loading, setLoading] = useState(true);
   const [showSetupBanner, setShowSetupBanner] = useState(false);
@@ -70,9 +72,9 @@ export default function DashboardPage() {
 
   const cards = [
     {
-      title: "Total Recipients",
+      title: t('dashboard.home.totalRecipients'),
       value: stats.totalRecipients,
-      description: "Registered recipients in the system",
+      description: t('dashboard.home.totalRecipientsDesc'),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
@@ -80,9 +82,9 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: "Active Drivers",
+      title: t('dashboard.home.activeDrivers'),
       value: stats.activeDrivers,
-      description: "Drivers currently checked in",
+      description: t('dashboard.home.activeDriversDesc'),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
           <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" /><path d="M15 18h2a1 1 0 0 0 1-1v-3.28a1 1 0 0 0-.684-.948l-1.923-.641a1 1 0 0 1-.684-.948V8a1 1 0 0 1 1-1h2l3 3v5a1 1 0 0 1-1 1h-1" /><circle cx="7" cy="18" r="2" /><circle cx="17" cy="18" r="2" />
@@ -90,9 +92,9 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: "Today's Deliveries",
+      title: t('dashboard.home.todaysDeliveries'),
       value: stats.todaysDeliveries,
-      description: "Deliveries scheduled for today",
+      description: t('dashboard.home.todaysDeliveriesDesc'),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
           <path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />
@@ -100,9 +102,9 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: "Pending Orders",
+      title: t('dashboard.home.pendingOrders'),
       value: stats.pendingOrders,
-      description: "Orders awaiting assignment",
+      description: t('dashboard.home.pendingOrdersDesc'),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
           <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
@@ -114,22 +116,21 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.home.title')}</h1>
         <p className="text-muted-foreground mt-1">
-          Overview of today&apos;s mutual aid delivery operations.
+          {t('dashboard.home.subtitle')}
         </p>
       </div>
 
       {showSetupBanner && (
         <Card className="mb-6 border-primary/50 bg-primary/5">
           <CardContent className="pt-6">
-            <h3 className="font-semibold">Welcome to SafeCare</h3>
+            <h3 className="font-semibold">{t('dashboard.home.welcomeTitle')}</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Set up your service area in Settings to enable address search,
-              maps, and offline routing.
+              {t('dashboard.home.welcomeMessage')}
             </p>
             <Button className="mt-3" onClick={() => router.push("/settings")}>
-              Go to Settings
+              {t('dashboard.home.goToSettings')}
             </Button>
           </CardContent>
         </Card>
@@ -138,18 +139,18 @@ export default function DashboardPage() {
       {show2faBanner && (
         <div className="mb-6 flex items-center justify-between rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30 px-4 py-3">
           <p className="text-sm">
-            Protect your account with two-factor authentication.{" "}
+            {t('dashboard.home.2faBanner')}{" "}
             <button
               onClick={() => router.push("/settings")}
               className="font-medium underline underline-offset-2 hover:no-underline"
             >
-              Set it up in Settings.
+              {t('dashboard.home.2faSettingsLink')}
             </button>
           </p>
           <button
             onClick={() => setShow2faBanner(false)}
             className="ml-4 text-muted-foreground hover:text-foreground flex-shrink-0"
-            aria-label="Dismiss"
+            aria-label={t('dashboard.common.dismiss')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />

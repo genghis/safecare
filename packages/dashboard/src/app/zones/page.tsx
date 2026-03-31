@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 const ZoneMap = dynamic(() => import("@/components/zone-map"), { ssr: false });
 
@@ -54,6 +55,7 @@ const PRESET_COLORS = [
 // ---------------------------------------------------------------------------
 
 export default function ZonesPage() {
+  const { t } = useLocale();
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
   const [defaultCenter, setDefaultCenter] = useState<
@@ -188,9 +190,9 @@ export default function ZonesPage() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-8">Zones</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-8">{t('dashboard.zones.title')}</h1>
         <div className="flex items-center justify-center h-64 text-muted-foreground">
-          Loading zones...
+          {t('dashboard.zones.loadingZones')}
         </div>
       </div>
     );
@@ -202,13 +204,13 @@ export default function ZonesPage() {
     <div>
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Zones</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.zones.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage delivery zones and their boundaries.
+            {t('dashboard.zones.subtitle')}
           </p>
         </div>
         <Button onClick={startCreate} disabled={isCreating}>
-          Add Zone
+          {t('dashboard.zones.addZone')}
         </Button>
       </div>
 
@@ -220,7 +222,7 @@ export default function ZonesPage() {
           {zones.length === 0 && !showForm && (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground text-sm">
-                No zones defined yet. Click &quot;Add Zone&quot; to create one.
+                {t('dashboard.zones.noZones')}
               </CardContent>
             </Card>
           )}
@@ -245,8 +247,7 @@ export default function ZonesPage() {
                     <div>
                       <p className="text-sm font-medium">{zone.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {zone.polygon.length} point
-                        {zone.polygon.length !== 1 ? "s" : ""}
+                        {zone.polygon.length} {zone.polygon.length !== 1 ? t('dashboard.zones.points') : t('dashboard.zones.point')}
                       </p>
                     </div>
                   </div>
@@ -255,7 +256,7 @@ export default function ZonesPage() {
                       variant={zone.active ? "success" : "outline"}
                       className="text-xs"
                     >
-                      {zone.active ? "Active" : "Inactive"}
+                      {zone.active ? t('dashboard.common.active') : t('dashboard.common.inactive')}
                     </Badge>
                   </div>
                 </div>
@@ -272,8 +273,7 @@ export default function ZonesPage() {
             <Card>
               <CardContent className="py-16 text-center">
                 <p className="text-muted-foreground">
-                  Select a zone to edit, or click &quot;Add Zone&quot; to create
-                  a new one.
+                  {t('dashboard.zones.selectOrAdd')}
                 </p>
               </CardContent>
             </Card>
@@ -281,24 +281,24 @@ export default function ZonesPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {isCreating ? "Create New Zone" : "Edit Zone"}
+                  {isCreating ? t('dashboard.zones.createNewZone') : t('dashboard.zones.editZone')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Name */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Zone Name</label>
+                  <label className="text-sm font-medium">{t('dashboard.zones.zoneName')}</label>
                   <Input
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
-                    placeholder="e.g., North District"
+                    placeholder={t('dashboard.zones.zoneNamePlaceholder')}
                     className="max-w-sm"
                   />
                 </div>
 
                 {/* Color picker */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Color</label>
+                  <label className="text-sm font-medium">{t('dashboard.zones.color')}</label>
                   <div className="flex flex-wrap gap-2">
                     {PRESET_COLORS.map((c) => (
                       <button
@@ -318,7 +318,7 @@ export default function ZonesPage() {
 
                 {/* Active toggle */}
                 <div className="flex items-center gap-3">
-                  <label className="text-sm font-medium">Status:</label>
+                  <label className="text-sm font-medium">{t('dashboard.common.status')}:</label>
                   <button
                     onClick={() => setFormActive((v) => !v)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -332,14 +332,14 @@ export default function ZonesPage() {
                     />
                   </button>
                   <span className="text-sm text-muted-foreground">
-                    {formActive ? "Active" : "Inactive"}
+                    {formActive ? t('dashboard.common.active') : t('dashboard.common.inactive')}
                   </span>
                 </div>
 
                 {/* Zone map */}
                 <div className="space-y-3">
                   <label className="text-sm font-medium">
-                    Zone Boundary
+                    {t('dashboard.zones.zoneBoundary')}
                   </label>
                   <ZoneMap
                     zones={zones.filter((z) => z.id !== editingZoneId)}
@@ -355,8 +355,8 @@ export default function ZonesPage() {
                     <div className="rounded-md border">
                       <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-x-4 px-3 py-2 border-b text-xs font-medium text-muted-foreground">
                         <span>#</span>
-                        <span>Latitude</span>
-                        <span>Longitude</span>
+                        <span>{t('dashboard.zones.latitude')}</span>
+                        <span>{t('dashboard.zones.longitude')}</span>
                         <span />
                       </div>
                       <div className="max-h-[200px] overflow-y-auto">
@@ -377,7 +377,7 @@ export default function ZonesPage() {
                             <button
                               onClick={() => handleRemovePoint(i)}
                               className="text-muted-foreground hover:text-destructive"
-                              title="Remove point"
+                              title={t('dashboard.zones.removePoint')}
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -402,8 +402,7 @@ export default function ZonesPage() {
 
                   {formPoints.length === 0 && (
                     <p className="text-xs text-muted-foreground italic">
-                      No points added yet. Click on the map to add at least 3
-                      points to define a polygon.
+                      {t('dashboard.zones.noPoints')}
                     </p>
                   )}
                 </div>
@@ -412,13 +411,13 @@ export default function ZonesPage() {
                 <div className="flex items-center gap-2">
                   <Button onClick={handleSave} disabled={saving || !formName.trim()}>
                     {saving
-                      ? "Saving..."
+                      ? t('dashboard.common.saving')
                       : isCreating
-                      ? "Create Zone"
-                      : "Save Changes"}
+                      ? t('dashboard.zones.createZone')
+                      : t('dashboard.common.save')}
                   </Button>
                   <Button variant="ghost" onClick={resetForm}>
-                    Cancel
+                    {t('dashboard.common.cancel')}
                   </Button>
                 </div>
 
@@ -427,21 +426,21 @@ export default function ZonesPage() {
                     {deleteConfirmId === editingZoneId ? (
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-destructive">
-                          Delete this zone?
+                          {t('dashboard.zones.deleteConfirm')}
                         </span>
                         <Button
                           variant="destructive"
                           size="sm"
                           onClick={() => handleDelete(deleteConfirmId!)}
                         >
-                          Confirm
+                          {t('dashboard.common.confirm')}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setDeleteConfirmId(null)}
                         >
-                          Cancel
+                          {t('dashboard.common.cancel')}
                         </Button>
                       </div>
                     ) : (
@@ -451,7 +450,7 @@ export default function ZonesPage() {
                         className="text-destructive hover:text-destructive"
                         onClick={() => setDeleteConfirmId(editingZoneId)}
                       >
-                        Delete Zone
+                        {t('dashboard.zones.deleteZone')}
                       </Button>
                     )}
                   </div>

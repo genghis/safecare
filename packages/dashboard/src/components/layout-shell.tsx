@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
+import { LocaleProvider } from "@/lib/locale";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -34,7 +35,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   }, [pathname, noAuth, router]);
 
   if (noAuth) {
-    return <main>{children}</main>;
+    return <LocaleProvider><main>{children}</main></LocaleProvider>;
   }
 
   // Don't render protected content until auth is verified
@@ -47,11 +48,11 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
+    <LocaleProvider>
       <Sidebar />
       <main className="pl-64">
         <div className="min-h-screen p-8">{children}</div>
       </main>
-    </>
+    </LocaleProvider>
   );
 }

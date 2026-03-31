@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiGet, apiPost } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 const QR_PREFIX = "safecare-dek:";
 
 export default function UnlockPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const [mode, setMode] = useState<"scan" | "manual">("scan");
   const [manualKey, setManualKey] = useState("");
   const [error, setError] = useState("");
@@ -109,7 +111,7 @@ export default function UnlockPage() {
 
   async function submitKey(dek: string) {
     if (!/^[0-9a-f]{64}$/i.test(dek)) {
-      setError("Invalid key format. Must be 64 hex characters.");
+      setError(t('dashboard.unlock.invalidKeyFormat'));
       return;
     }
 
@@ -128,7 +130,7 @@ export default function UnlockPage() {
       }
     } else {
       setError(
-        res.error || "Invalid encryption key. Check your QR code and try again."
+        res.error || t('dashboard.unlock.invalidKey')
       );
       setLoading(false);
     }
@@ -137,7 +139,7 @@ export default function UnlockPage() {
   if (checking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Checking...</div>
+        <div className="animate-pulse text-muted-foreground">{t('dashboard.common.checking')}</div>
       </div>
     );
   }
@@ -162,9 +164,9 @@ export default function UnlockPage() {
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </div>
-          <CardTitle className="text-2xl">SafeCare is Locked</CardTitle>
+          <CardTitle className="text-2xl">{t('dashboard.unlock.title')}</CardTitle>
           <p className="mt-2 text-sm text-muted-foreground">
-            Scan your encryption key QR code to unlock the system.
+            {t('dashboard.unlock.subtitle')}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -187,7 +189,7 @@ export default function UnlockPage() {
               </div>
               <canvas ref={canvasRef} className="hidden" />
               <p className="text-center text-xs text-muted-foreground">
-                Point your camera at the QR code you saved during setup.
+                {t('dashboard.unlock.cameraPrompt')}
               </p>
               <button
                 onClick={() => {
@@ -196,7 +198,7 @@ export default function UnlockPage() {
                 }}
                 className="w-full text-center text-sm font-medium text-primary hover:underline"
               >
-                Enter key manually instead
+                {t('dashboard.unlock.enterManually')}
               </button>
             </>
           )}
@@ -208,7 +210,7 @@ export default function UnlockPage() {
                   htmlFor="dek-input"
                   className="mb-2 block text-sm font-medium"
                 >
-                  Encryption Key (64 hex characters)
+                  {t('dashboard.unlock.encryptionKeyLabel')}
                 </label>
                 <Input
                   id="dek-input"
@@ -225,7 +227,7 @@ export default function UnlockPage() {
                   spellCheck={false}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {manualKey.length}/64 characters
+                  {t('dashboard.unlock.characters', { count: String(manualKey.length) })}
                 </p>
               </div>
               <Button
@@ -233,13 +235,13 @@ export default function UnlockPage() {
                 disabled={manualKey.length !== 64 || loading}
                 className="w-full"
               >
-                {loading ? "Unlocking..." : "Unlock"}
+                {loading ? t('dashboard.unlock.unlocking') : t('dashboard.unlock.unlock')}
               </Button>
               <button
                 onClick={() => setMode("scan")}
                 className="w-full text-center text-sm font-medium text-primary hover:underline"
               >
-                Scan QR code instead
+                {t('dashboard.unlock.scanQr')}
               </button>
             </>
           )}

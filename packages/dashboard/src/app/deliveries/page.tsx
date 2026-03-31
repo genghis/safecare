@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
 import { apiGet, apiPost } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 interface Delivery {
   id: string;
@@ -42,6 +43,7 @@ const STATUS_FILTERS = [
 ] as const;
 
 export default function DeliveriesPage() {
+  const { t } = useLocale();
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [search, setSearch] = useState("");
@@ -83,7 +85,7 @@ export default function DeliveriesPage() {
             ? {
                 ...d,
                 driverId: selectedDriverId,
-                driverName: driver?.name || "Assigned",
+                driverName: driver?.name || t('dashboard.common.assigned'),
                 status: "assigned",
               }
             : d
@@ -117,9 +119,9 @@ export default function DeliveriesPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Deliveries</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.deliveries.title')}</h1>
         <p className="text-muted-foreground mt-1">
-          View and manage all deliveries, assign drivers, and track status.
+          {t('dashboard.deliveries.subtitle')}
         </p>
       </div>
 
@@ -159,7 +161,7 @@ export default function DeliveriesPage() {
 
       <div className="mb-4">
         <Input
-          placeholder="Search by recipient, address, or driver..."
+          placeholder={t('dashboard.deliveries.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
@@ -170,12 +172,12 @@ export default function DeliveriesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Recipient</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead>Driver</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Scheduled</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>{t('dashboard.deliveries.colRecipient')}</TableHead>
+              <TableHead>{t('dashboard.deliveries.colAddress')}</TableHead>
+              <TableHead>{t('dashboard.deliveries.colDriver')}</TableHead>
+              <TableHead>{t('dashboard.deliveries.colStatus')}</TableHead>
+              <TableHead>{t('dashboard.deliveries.colScheduled')}</TableHead>
+              <TableHead>{t('dashboard.deliveries.colActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -185,7 +187,7 @@ export default function DeliveriesPage() {
                   colSpan={6}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  Loading deliveries...
+                  {t('dashboard.deliveries.loadingDeliveries')}
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
@@ -195,8 +197,8 @@ export default function DeliveriesPage() {
                   className="h-24 text-center text-muted-foreground"
                 >
                   {search || statusFilter !== "all"
-                    ? "No deliveries match your filters."
-                    : "No deliveries found."}
+                    ? t('dashboard.deliveries.noMatch')
+                    : t('dashboard.deliveries.noDeliveries')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -218,7 +220,7 @@ export default function DeliveriesPage() {
                           }
                           className="h-8 rounded-md border border-input bg-background px-2 text-sm"
                         >
-                          <option value="">Select driver</option>
+                          <option value="">{t('dashboard.common.selectDriver')}</option>
                           {drivers.map((driver) => (
                             <option key={driver.id} value={driver.id}>
                               {driver.name}
@@ -230,7 +232,7 @@ export default function DeliveriesPage() {
                           onClick={() => handleAssign(delivery.id)}
                           disabled={!selectedDriverId}
                         >
-                          OK
+                          {t('dashboard.common.ok')}
                         </Button>
                         <Button
                           size="sm"
@@ -240,7 +242,7 @@ export default function DeliveriesPage() {
                             setSelectedDriverId("");
                           }}
                         >
-                          Cancel
+                          {t('dashboard.common.cancel')}
                         </Button>
                       </div>
                     ) : (
@@ -251,7 +253,7 @@ export default function DeliveriesPage() {
                             : "text-muted-foreground italic"
                         }
                       >
-                        {delivery.driverName || "Unassigned"}
+                        {delivery.driverName || t('dashboard.common.unassigned')}
                       </span>
                     )}
                   </TableCell>
@@ -269,7 +271,7 @@ export default function DeliveriesPage() {
                           variant="outline"
                           onClick={() => setAssigningId(delivery.id)}
                         >
-                          Assign
+                          {t('dashboard.deliveries.assign')}
                         </Button>
                       )}
                   </TableCell>
