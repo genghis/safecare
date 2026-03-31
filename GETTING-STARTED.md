@@ -30,7 +30,7 @@ A Raspberry Pi 4 (4GB) also works for metro-area deployments. The 8GB Pi 5 is re
 
 1. On your regular computer (not the Pi), download and install **Raspberry Pi Imager** from [raspberrypi.com/software](https://www.raspberrypi.com/software/). It's free and works on Windows, Mac, and Linux.
 
-2. Download the **SafeCare SD card image** from [safecare.app](https://safecare.app). It's a `.img.xz` file, about 2-3 GB.
+2. Download the **SafeCare SD card image** from [safecare.app/download](https://safecare.app/download). It's a `.img.xz` file, about 2-3 GB.
 
 3. Insert your microSD card into your computer (you may need an adapter).
 

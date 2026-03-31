@@ -15,6 +15,10 @@ coverage/
 .DS_Store
 __pycache__/
 *.pyc
+scripts/rpi/build/pi-gen/
+scripts/rpi/build/output/
+*.img
+*.img.xz
 docker/nominatim-data/
 
 # Terraform

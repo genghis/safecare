@@ -16,7 +16,7 @@ All geocoding, routing, and maps are self-hosted. No addresses leave your networ
 
 ### Option A: Raspberry Pi (recommended for deployment)
 
-1. Flash the SafeCare SD card image with [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
+1. Download the image from [safecare.app/download](https://safecare.app/download) and flash it with [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
 2. Insert the card, plug in the Pi
 3. Connect your phone to the **SafeCare-Setup** WiFi network
 4. Walk through the setup wizard: WiFi, device password, encryption key (photograph the QR code!)

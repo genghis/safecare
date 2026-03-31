@@ -4,6 +4,11 @@
     "ignore": ["firebase.json", "**/.*"],
     "redirects": [
       {
+        "source": "/download",
+        "destination": "https://storage.googleapis.com/safecare-maps-osrm/images/safecare-latest.img.xz",
+        "type": 302
+      },
+      {
         "source": "/us/**",
         "destination": "https://storage.googleapis.com/safecare-maps-osrm/us/:splat",
         "type": 302
