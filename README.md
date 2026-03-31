@@ -64,14 +64,15 @@ Open **http://localhost:3000** — a setup wizard walks you through creating you
 
 - **Guided setup wizard** — 3-step first-run experience, no technical knowledge needed
 - **Self-hosted maps** — OpenStreetMap data provisioned to your operating region
-- **Address autocomplete** — house-number-level accuracy with TIGER data
+- **Address autocomplete** — self-hosted Nominatim geocoding with house-number search
 - **Offline driver navigation** — map tiles and routes pre-cached on phones
 - **Airplane mode prompts** — privacy reminder near delivery areas with loud audio alert at 500 m
-- **6 languages** — English, Spanish, Arabic, Somali, French, Chinese
+- **6 languages** — English, Spanish, Arabic, Somali, French, Chinese (recipient notifications; dashboard/driver UI is English-only)
 - **3 notification channels** — Signal (free, E2E), SMS (Twilio), WhatsApp (Twilio)
 - **Field-level encryption** — recipient PII encrypted with pgcrypto
 - **Driver phone encryption** — route data AES-GCM-256 encrypted in IndexedDB, key never on disk
-- **Remote wipe + panic erase** — admin can revoke routes; drivers can instantly erase all data
+- **Panic erase** — drivers can instantly erase all local data with a long-press button
+- **Remote wipe API** — backend endpoint to revoke driver routes (dashboard button not yet built)
 - **Automatic data purge** — delivery records deleted + VACUUMed within 24 hours
 - **Emergency destroy** — `scripts/destroy.sh` shreds everything
 

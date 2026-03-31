@@ -50,7 +50,7 @@ Last updated: 2026-03-30
 | **Exclusion zones (draw + OSRM edge-weighting)** | **Not done** | Zones page handles delivery zones, not exclusion zones |
 | **Route variation between delivery cycles** | **Not done** | Same route every time currently |
 | PWA client-side encryption | Done | Server generates session key on route download, client derives AES-GCM-256 via HKDF. Key in sessionStorage (volatile). Route data encrypted in IndexedDB. QR backup for offline recovery. |
-| Remote wipe (admin spike) | Done | Admin revokes session key in Redis. Driver status poll detects revocation, triggers instant local purge. |
+| Remote wipe (admin spike) | Partial | Backend API + driver-side detection + emergency purge implemented. **Dashboard "Revoke Routes" button NOT built** — admin must call API directly. |
 | Panic erase (driver) | Done | Long-press "Erase" button on Dashboard. Instant local destroy — no network, no confirmation. |
 | Session key re-issue | Done | `GET /api/driver/session-key` re-issues from Redis after tab close (online recovery). |
 | Off-disk DEK (server encryption key) | Done | DEK never written to .env or disk. Loaded into memory via QR code unlock on each boot. Seized server = unreadable database. |
@@ -66,7 +66,7 @@ Last updated: 2026-03-30
 |---------|--------|-------|
 | Unified notification service | Done | Channel-agnostic: SMS, WhatsApp, Signal with fallback |
 | Recipient notifications ("on the way" / "delivered") | Done | Fired async on driver sync status updates |
-| i18n / localized messages | Done | 6 languages: en, es, ar, so, fr, zh |
+| i18n / localized messages | Partial | 6 languages for **recipient notifications only** (en, es, ar, so, fr, zh). Dashboard and driver PWA UI are English-only. |
 | Twilio SMS send/receive | Done | REST API integration with SID tracking |
 | WhatsApp via Twilio | Done | Sends when recipient opts in, falls back to SMS otherwise |
 | Signal via signal-cli | Done | Self-hosted container, E2E encrypted, free |
@@ -147,14 +147,16 @@ See [tests/README.md](tests/README.md) for details.
 
 ## i18n Coverage
 
-| Locale | Language | Status |
-|--------|----------|--------|
-| en | English | Complete |
-| es | Español | Complete |
-| ar | العربية (Arabic) | Complete |
-| so | Soomaali (Somali) | Complete |
-| fr | Français (French) | Complete |
-| zh | 中文 (Chinese) | Complete |
+Recipient-facing notification messages are translated to all 6 languages. The admin dashboard and driver PWA UI are English-only.
+
+| Locale | Language | Notifications | Dashboard UI | Driver PWA UI |
+|--------|----------|--------------|-------------|--------------|
+| en | English | Complete | Complete | Complete |
+| es | Español | Complete | Not done | Not done |
+| ar | العربية (Arabic) | Complete | Not done | Not done |
+| so | Soomaali (Somali) | Complete | Not done | Not done |
+| fr | Français (French) | Complete | Not done | Not done |
+| zh | 中文 (Chinese) | Complete | Not done | Not done |
 
 ## Cross-Cutting Gaps
 
