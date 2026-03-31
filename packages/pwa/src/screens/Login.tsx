@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { requestOtp, verifyOtp, setToken } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 import InstallPrompt from "@/components/InstallPrompt";
 
 type Stage = "phone" | "otp";
 
 export default function Login() {
+  const { t } = useLocale();
   const navigate = useNavigate();
   const [stage, setStage] = useState<Stage>("phone");
   const [phone, setPhone] = useState("");
@@ -17,7 +19,7 @@ export default function Login() {
   const handleRequestOtp = async () => {
     setError("");
     if (phone.length < 10) {
-      setError("Enter a valid phone number.");
+      setError(t('driver.login.errorPhone'));
       return;
     }
     setLoading(true);
@@ -29,7 +31,7 @@ export default function Login() {
       }
       setStage("otp");
     } catch {
-      setError("Could not request OTP. Is this phone number registered as a driver?");
+      setError(t('driver.login.errorOtpRequest'));
     } finally {
       setLoading(false);
     }
@@ -38,7 +40,7 @@ export default function Login() {
   const handleVerifyOtp = async () => {
     setError("");
     if (otpCode.length < 6) {
-      setError("Enter the 6-digit code.");
+      setError(t('driver.login.errorOtp'));
       return;
     }
     setLoading(true);
@@ -49,7 +51,7 @@ export default function Login() {
       // at which point it's persisted to encrypted IndexedDB.
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError("Invalid or expired code. Please try again.");
+      setError(t('driver.login.errorOtpInvalid'));
       console.error("Login failed:", err);
     } finally {
       setLoading(false);
@@ -79,7 +81,7 @@ export default function Login() {
             margin: 0,
           }}
         >
-          SafeCare
+          {t('driver.login.appName')}
         </h1>
         <p
           style={{
@@ -88,7 +90,7 @@ export default function Login() {
             marginTop: 4,
           }}
         >
-          Driver Delivery App
+          {t('driver.login.subtitle')}
         </p>
       </div>
 
@@ -114,7 +116,7 @@ export default function Login() {
       {stage === "phone" ? (
         <>
           <label className="label" htmlFor="phone">
-            Phone Number
+            {t('driver.login.phoneLabel')}
           </label>
           <input
             id="phone"
@@ -133,15 +135,15 @@ export default function Login() {
             onClick={handleRequestOtp}
             disabled={loading || phone.length < 10}
           >
-            {loading ? <span className="spinner" /> : "Send Verification Code"}
+            {loading ? <span className="spinner" /> : t('driver.login.sendCode')}
           </button>
         </>
       ) : (
         <>
           <label className="label" htmlFor="otp">
-            Enter Verification Code
+            {t('driver.login.otpLabel')}
           </label>
-          <p className="hint">A 6-digit code was sent to {phone}</p>
+          <p className="hint">{t('driver.login.otpHint', { phone })}</p>
 
           {/* Show OTP in dev mode */}
           {devOtp && (
@@ -157,7 +159,7 @@ export default function Login() {
                 textAlign: "center",
               }}
             >
-              Dev mode — your code is: <strong>{devOtp}</strong>
+              {t('driver.login.devOtp')} <strong>{devOtp}</strong>
             </div>
           )}
 
@@ -183,7 +185,7 @@ export default function Login() {
             onClick={handleVerifyOtp}
             disabled={loading || otpCode.length < 6}
           >
-            {loading ? <span className="spinner" /> : "Verify & Sign In"}
+            {loading ? <span className="spinner" /> : t('driver.login.verify')}
           </button>
 
           <button
@@ -205,7 +207,7 @@ export default function Login() {
               setError("");
             }}
           >
-            Back
+            {t('driver.login.back')}
           </button>
         </>
       )}

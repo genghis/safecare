@@ -8,6 +8,7 @@
 
 import { useRef, useState, useCallback } from "react";
 import { emergencyPurge } from "@/lib/db";
+import { useLocale } from "@/lib/locale";
 
 const HOLD_DURATION_MS = 500;
 
@@ -16,6 +17,7 @@ interface PanicButtonProps {
 }
 
 export default function PanicButton({ onPurged }: PanicButtonProps) {
+  const { t } = useLocale();
   const [holding, setHolding] = useState(false);
   const [progress, setProgress] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -68,7 +70,7 @@ export default function PanicButton({ onPurged }: PanicButtonProps) {
       onTouchStart={startHold}
       onTouchEnd={cancelHold}
       onTouchCancel={cancelHold}
-      aria-label="Emergency erase — hold to activate"
+      aria-label={t('driver.panic.ariaLabel')}
       style={{
         position: "relative",
         overflow: "hidden",
@@ -104,7 +106,7 @@ export default function PanicButton({ onPurged }: PanicButtonProps) {
         />
       )}
       <span style={{ position: "relative", zIndex: 1 }}>
-        {holding ? "Erasing..." : "Erase"}
+        {holding ? t('driver.panic.erasing') : t('driver.panic.erase')}
       </span>
     </button>
   );

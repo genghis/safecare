@@ -5,6 +5,7 @@
  */
 
 import { QRCodeSVG } from "qrcode.react";
+import { useLocale } from "@/lib/locale";
 
 interface BackupKeyOverlayProps {
   sessionKey: string;
@@ -15,6 +16,7 @@ export default function BackupKeyOverlay({
   sessionKey,
   onDismiss,
 }: BackupKeyOverlayProps) {
+  const { t } = useLocale();
   const qrValue = `safecare-v1:${sessionKey}`;
 
   return (
@@ -49,7 +51,7 @@ export default function BackupKeyOverlay({
             margin: "0 0 8px 0",
           }}
         >
-          Save Backup Key
+          {t('driver.backup.title')}
         </h2>
 
         <p
@@ -60,8 +62,7 @@ export default function BackupKeyOverlay({
             margin: "0 0 24px 0",
           }}
         >
-          Take a photo of this code. If the app closes while you're
-          offline, scan it to restore your routes.
+          {t('driver.backup.description')}
         </p>
 
         <div
@@ -97,7 +98,7 @@ export default function BackupKeyOverlay({
             minHeight: 56,
           }}
         >
-          I've Saved It
+          {t('driver.backup.dismiss')}
         </button>
       </div>
     </div>

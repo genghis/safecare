@@ -1,20 +1,22 @@
 import { useState, useEffect } from "react";
 import { useOnlineStatus } from "@/lib/hooks";
 import { getPendingCount } from "@/lib/sync";
+import { useLocale } from "@/lib/locale";
 
 interface StatusBarProps {
   sessionStatus: string;
 }
 
-const SESSION_LABELS: Record<string, string> = {
-  idle: "Not checked in",
-  checked_in: "Checked in — waiting for routes",
-  routes_released: "Routes active",
-  shift_ended: "Shift ended",
-};
-
 export default function StatusBar({ sessionStatus }: StatusBarProps) {
+  const { t } = useLocale();
   const isOnline = useOnlineStatus();
+
+  const SESSION_LABELS: Record<string, string> = {
+    idle: t('driver.status.idle'),
+    checked_in: t('driver.statusBar.checkedIn'),
+    routes_released: t('driver.statusBar.routesActive'),
+    shift_ended: t('driver.statusBar.shiftEnded'),
+  };
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function StatusBar({ sessionStatus }: StatusBarProps) {
     <div className="status-bar">
       <span
         className={`status-dot ${isOnline ? "status-dot-online" : "status-dot-offline"}`}
-        aria-label={isOnline ? "Online" : "Offline"}
+        aria-label={isOnline ? t('driver.statusBar.online') : t('driver.statusBar.offline')}
       />
 
       <span
@@ -42,7 +44,7 @@ export default function StatusBar({ sessionStatus }: StatusBarProps) {
       >
         {isOnline
           ? SESSION_LABELS[sessionStatus] ?? sessionStatus
-          : "You are offline — updates will sync when reconnected"}
+          : t('driver.statusBar.offlineMessage')}
       </span>
 
       {pendingCount > 0 && (
@@ -50,7 +52,7 @@ export default function StatusBar({ sessionStatus }: StatusBarProps) {
           className="badge badge-orange"
           style={{ fontSize: 12, padding: "2px 8px" }}
         >
-          {pendingCount} pending
+          {t('driver.statusBar.pending', { count: String(pendingCount) })}
         </span>
       )}
     </div>

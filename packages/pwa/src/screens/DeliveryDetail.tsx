@@ -3,9 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import StatusBar from "@/components/StatusBar";
 import { readEncrypted, storeEncrypted } from "@/lib/db";
 import { enqueueUpdate } from "@/lib/sync";
+import { useLocale } from "@/lib/locale";
 import type { Delivery } from "./Dashboard";
 
 export default function DeliveryDetail() {
+  const { t } = useLocale();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [delivery, setDelivery] = useState<Delivery | null>(null);
@@ -101,13 +103,13 @@ export default function DeliveryDetail() {
                 marginBottom: 16,
               }}
             >
-              Delivery not found.
+              {t('driver.delivery.notFound')}
             </p>
             <button
               className="btn btn-primary"
               onClick={() => navigate("/dashboard", { replace: true })}
             >
-              Go Back
+              {t('driver.delivery.goBack')}
             </button>
           </div>
         </div>
@@ -117,10 +119,10 @@ export default function DeliveryDetail() {
 
   const statusLabel =
     delivery.status === "delivered"
-      ? "Delivered"
+      ? t('driver.delivery.statusDelivered')
       : delivery.status === "in_transit"
-        ? "In Transit"
-        : "Pending";
+        ? t('driver.delivery.statusInTransit')
+        : t('driver.delivery.statusPending');
 
   const statusClass =
     delivery.status === "delivered"
@@ -135,8 +137,7 @@ export default function DeliveryDetail() {
 
       {/* Airplane mode warning */}
       <div className="banner-warning">
-        Turn on Airplane Mode when approaching the delivery address to minimize
-        location tracking.
+        {t('driver.delivery.airplaneWarning')}
       </div>
 
       {/* Back button */}
@@ -157,7 +158,7 @@ export default function DeliveryDetail() {
           }}
           onClick={() => navigate("/dashboard")}
         >
-          &#8592; Back to Dashboard
+          &#8592; {t('driver.delivery.backToDashboard')}
         </button>
       </div>
 
@@ -187,7 +188,7 @@ export default function DeliveryDetail() {
         </div>
 
         {/* Address */}
-        <p className="section-label">Address</p>
+        <p className="section-label">{t('driver.delivery.addressLabel')}</p>
         <div className="card-static" style={{ marginBottom: 4 }}>
           <p
             style={{
@@ -204,7 +205,7 @@ export default function DeliveryDetail() {
         {/* Notes */}
         {delivery.notes ? (
           <>
-            <p className="section-label">Notes</p>
+            <p className="section-label">{t('driver.delivery.notesLabel')}</p>
             <div className="card-static" style={{ marginBottom: 4 }}>
               <p
                 style={{
@@ -220,7 +221,7 @@ export default function DeliveryDetail() {
         ) : null}
 
         {/* Status */}
-        <p className="section-label">Status</p>
+        <p className="section-label">{t('driver.delivery.statusLabel')}</p>
         <span
           className={`badge ${statusClass}`}
           style={{ padding: "8px 20px", fontSize: 15 }}
@@ -236,7 +237,7 @@ export default function DeliveryDetail() {
               style={{ minHeight: 64, fontSize: 20 }}
               onClick={handleHeadingToRoute}
             >
-              Heading to Route
+              {t('driver.delivery.headingToRoute')}
             </button>
           )}
 
@@ -247,13 +248,13 @@ export default function DeliveryDetail() {
               style={{ minHeight: 64, fontSize: 20 }}
               onClick={handleDelivered}
             >
-              Delivered
+              {t('driver.delivery.markDelivered')}
             </button>
           )}
 
           {delivery.status === "delivered" && (
             <div className="banner-success">
-              Delivery completed
+              {t('driver.delivery.completed')}
             </div>
           )}
         </div>

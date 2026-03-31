@@ -5,10 +5,11 @@ import DeliveryDetail from "@/screens/DeliveryDetail";
 import Profile from "@/screens/Profile";
 import RestoreKey from "@/screens/RestoreKey";
 import InstallPrompt from "@/components/InstallPrompt";
+import { LocaleProvider } from "@/lib/locale";
 
 export function App() {
   return (
-    <>
+    <LocaleProvider>
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -18,6 +19,6 @@ export function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <InstallPrompt />
-    </>
+    </LocaleProvider>
   );
 }

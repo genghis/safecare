@@ -1,3 +1,5 @@
+import { useLocale } from "@/lib/locale";
+
 type DeliveryStatus = "pending" | "in_transit" | "delivered";
 
 interface Delivery {
@@ -13,16 +15,18 @@ interface DeliveryCardProps {
   onPress: () => void;
 }
 
-const STATUS_CONFIG: Record<
-  DeliveryStatus,
-  { label: string; className: string }
-> = {
-  pending: { label: "Pending", className: "badge badge-gray" },
-  in_transit: { label: "In Transit", className: "badge badge-orange" },
-  delivered: { label: "Delivered", className: "badge badge-green" },
-};
-
 export default function DeliveryCard({ delivery, onPress }: DeliveryCardProps) {
+  const { t } = useLocale();
+
+  const STATUS_CONFIG: Record<
+    DeliveryStatus,
+    { label: string; className: string }
+  > = {
+    pending: { label: t('driver.delivery.statusPending'), className: "badge badge-gray" },
+    in_transit: { label: t('driver.delivery.statusInTransit'), className: "badge badge-orange" },
+    delivered: { label: t('driver.delivery.statusDelivered'), className: "badge badge-green" },
+  };
+
   const status = STATUS_CONFIG[delivery.status];
 
   return (

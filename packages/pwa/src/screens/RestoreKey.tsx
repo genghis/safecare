@@ -13,11 +13,13 @@ import { deriveKey, storeSessionKey } from "@/lib/crypto";
 import { purgeAll } from "@/lib/db";
 import { clearToken } from "@/lib/api";
 import { clearTileCache } from "@/lib/tile-cache";
+import { useLocale } from "@/lib/locale";
 
 const QR_PREFIX = "safecare-v1:";
 const SCANNER_ID = "qr-scanner-region";
 
 export default function RestoreKey() {
+  const { t } = useLocale();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -50,13 +52,13 @@ export default function RestoreKey() {
           setScanning(false);
 
           if (!decodedText.startsWith(QR_PREFIX)) {
-            setError("Invalid QR code. Please scan the SafeCare backup key.");
+            setError(t('driver.restore.errorInvalidQr'));
             return;
           }
 
           const sessionKey = decodedText.slice(QR_PREFIX.length);
           if (sessionKey.length !== 64 || !/^[0-9a-f]+$/i.test(sessionKey)) {
-            setError("Invalid key format in QR code.");
+            setError(t('driver.restore.errorInvalidKey'));
             return;
           }
 
@@ -65,7 +67,7 @@ export default function RestoreKey() {
             storeSessionKey(sessionKey);
             navigate("/dashboard", { replace: true });
           } catch {
-            setError("Failed to restore encryption key. Try again.");
+            setError(t('driver.restore.errorRestore'));
           }
         },
         () => {
@@ -74,9 +76,7 @@ export default function RestoreKey() {
       );
     } catch {
       setScanning(false);
-      setError(
-        "Could not access camera. Please allow camera permission and try again.",
-      );
+      setError(t('driver.restore.errorCamera'));
     }
   };
 
@@ -110,7 +110,7 @@ export default function RestoreKey() {
             margin: "0 0 8px 0",
           }}
         >
-          Restore Routes
+          {t('driver.restore.title')}
         </h1>
         <p
           style={{
@@ -120,8 +120,7 @@ export default function RestoreKey() {
             margin: 0,
           }}
         >
-          Your routes are encrypted on this device. Scan your backup QR
-          code to unlock them.
+          {t('driver.restore.description')}
         </p>
       </div>
 
@@ -161,7 +160,7 @@ export default function RestoreKey() {
           style={{ minHeight: 56, fontSize: 18, marginBottom: 16 }}
           onClick={startScanning}
         >
-          Scan QR Code
+          {t('driver.restore.scanQr')}
         </button>
       )}
 
@@ -179,7 +178,7 @@ export default function RestoreKey() {
         }}
         onClick={handleSkip}
       >
-        Skip &amp; Start Fresh
+        {t('driver.restore.skipFresh')}
       </button>
 
       <p
@@ -191,7 +190,7 @@ export default function RestoreKey() {
           lineHeight: 1.4,
         }}
       >
-        "Start Fresh" will erase all cached routes and return to login.
+        {t('driver.restore.skipWarning')}
       </p>
     </div>
   );

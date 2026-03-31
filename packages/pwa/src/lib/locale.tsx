@@ -10,7 +10,7 @@
 
 import { createContext, useContext, useState, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
-import { t as translate, type SupportedLocale, LOCALE_LABELS } from "@safecare/shared";
+import { t as translate, type SupportedLocale, LOCALE_LABELS } from "../../../shared/src/i18n";
 
 const LOCALE_STORAGE_KEY = "safecare_locale";
 

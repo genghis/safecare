@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useLocale } from "@/lib/locale";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -157,6 +158,7 @@ export default function AirplaneModeReminder({
   stops,
   currentLocation,
 }: AirplaneModeReminderProps) {
+  const { t } = useLocale();
   const [dismissed, setDismissed] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [insideZone, setInsideZone] = useState(false);
@@ -300,7 +302,7 @@ export default function AirplaneModeReminder({
               lineHeight: 1.4,
             }}
           >
-            Approaching delivery address — enable airplane mode now!
+            {t('driver.airplaneMode.stopAlert')}
           </span>
         </div>
       )}
@@ -344,8 +346,7 @@ export default function AirplaneModeReminder({
               lineHeight: 1.4,
             }}
           >
-            You are approaching the delivery area. Consider enabling airplane
-            mode for privacy.
+            {t('driver.airplaneMode.approaching')}
           </span>
 
           <button
@@ -406,7 +407,7 @@ export default function AirplaneModeReminder({
               color: "var(--color-primary)",
             }}
           >
-            Airplane mode recommended
+            {t('driver.airplaneMode.recommended')}
           </span>
         </div>
       )}
