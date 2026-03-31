@@ -29,7 +29,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | Field-level encryption (pgp_sym_encrypt) | Implemented | All PII columns encrypted. Raw database files show ciphertext. |
 | DEK never on disk | Implemented | DEK is NOT stored in `.env` or anywhere on the filesystem. It exists only in backend process memory after admin scans the QR code on each boot. Seized server (powered off) = no DEK = unreadable database. |
 | HMAC hashes for lookups | Implemented | Phone dedup uses HMAC-SHA256, not reversible to plaintext. |
-| PostgreSQL log_statement=none | Implemented | `log_statement=none`, `log_min_error_statement=PANIC`, `log_min_duration_statement=-1`. Prevents the DEK or plaintext PII from leaking into Postgres logs on disk. |
+| PostgreSQL query logging disabled | Implemented | `log_statement=none`, `log_min_error_statement=PANIC`, `log_min_duration_statement=-1`. **Critical:** every `pgp_sym_decrypt(column, DEK)` call passes the DEK as a query parameter. Without these settings, a query error or slow query log would write the DEK in plaintext to the Postgres log file on the Docker volume — defeating the off-disk DEK model entirely. |
 | Delivery records auto-deleted | Implemented | Records hard-deleted + VACUUMed within 24 hours. A seized server likely has no delivery history. |
 | Emergency destroy script | Implemented | If you know seizure is coming: `scripts/destroy.sh` shreds keys, wipes volumes, removes images. |
 
@@ -113,18 +113,26 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | bcrypt password hashing | Implemented | Passwords not stored in plaintext. |
 | JWT with 24-hour expiry | Implemented | Stolen token expires in 24 hours. |
 | Rate limiting (100 req/min) | Implemented | Slows brute-force attempts. |
-| TOTP 2FA | Planned | Second factor would prevent password-only attacks. |
-| Session management with explicit logout | Planned | Revoke all sessions on password change. |
-| Admin audit log | Planned | Track who accessed what, when. |
-| Tailscale-only access | Planned | Dashboard only accessible on private tailnet, not the internet. |
+| TOTP 2FA (backend) | Implemented | All 6 endpoints work: setup, enable, disable, verify, status, login-with-TOTP. |
+| TOTP 2FA (dashboard) | Implemented | Settings page enable/disable flow, login page TOTP step, 2FA setup nudge banner. |
+| **Dashboard route protection** | **NOT IMPLEMENTED** | Dashboard pages don't check for a valid token before rendering. API endpoints reject invalid JWTs, but the frontend itself loads without auth. Anyone on the network can view dashboard pages (data won't load, but the UI is visible). |
+| **Logout** | **NOT IMPLEMENTED** | No logout button in the sidebar. `clearToken()` is never called. Token persists in localStorage until manually cleared or expired. |
+| Session management with explicit logout | Not done | No server-side session revocation on password change. |
+| Admin audit log | Not done | Track who accessed what, when. |
+| Tailscale-only access | Not done | Dashboard only accessible on private tailnet, not the internet. |
 
 **This is the highest-impact threat.** An attacker with admin access sees everything. Mitigations:
 
-1. **Enable 2FA** (when implemented) — prevents password-only attacks
+1. **Enable 2FA** in Settings — prevents password-only attacks (backend + UI both work)
 2. **Use Tailscale** — dashboard never on the public internet, can't be reached without tailnet membership
 3. **Strong unique password** — minimum 12 characters, not reused
 4. **Limit admin accounts** — only people who need it. Review access regularly.
 5. **Don't use the admin account on public WiFi** — use a VPN or tailnet
+
+**Critical gaps remaining:**
+- Dashboard has no client-side auth guard — pages render without checking for a token (API calls fail with 401 but the page loads)
+- No logout button — token sits in localStorage until it expires
+- No backup/recovery codes for TOTP — if you lose your authenticator, you're locked out
 
 ---
 
@@ -266,7 +274,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | Signal E2E notifications | **Implemented** |
 | Emergency destroy script | **Implemented** |
 | Vetting workflow | **Implemented** |
-| TOTP 2FA for admin | Planned |
+| TOTP 2FA for admin | **Implemented** (backend + dashboard UI, but no route guards or logout) |
 | Hardware-backed key storage (mobile) | Planned |
 | Remote wipe via push | Planned |
 | Tailscale networking | Planned |
