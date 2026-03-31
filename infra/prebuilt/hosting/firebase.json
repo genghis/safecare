@@ -1,11 +1,14 @@
 {
   "hosting": {
     "public": "public",
-    "ignore": ["firebase.json", "**/.*"],
+    "ignore": [
+      "firebase.json",
+      "**/.*"
+    ],
     "redirects": [
       {
         "source": "/download",
-        "destination": "https://storage.googleapis.com/safecare-maps-osrm/images/safecare-latest.img.xz",
+        "destination": "https://storage.googleapis.com/safecare-maps-osrm/images/safecare-20260331.zip",
         "type": 302
       },
       {
@@ -23,8 +26,14 @@
       {
         "source": "**",
         "headers": [
-          { "key": "Access-Control-Allow-Origin", "value": "*" },
-          { "key": "Cache-Control", "value": "public, max-age=86400" }
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=86400"
+          }
         ]
       }
     ]
