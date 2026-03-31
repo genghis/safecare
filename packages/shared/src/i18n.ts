@@ -253,6 +253,90 @@ const STRINGS: Record<string, StringEntry> = {
     fr: 'Signal',
     zh: 'Signal',
   },
+
+  // --- Login screen ---
+  'driver.login.appName': { en: 'SafeCare', es: 'SafeCare', ar: 'SafeCare', so: 'SafeCare', fr: 'SafeCare', zh: 'SafeCare' },
+  'driver.login.subtitle': { en: 'Driver Delivery App', es: 'Aplicación de Entregas para Conductores', ar: 'تطبيق توصيل السائق', so: 'Barnaamijka Gaadiidka Darawalka', fr: 'Application de livraison chauffeur', zh: '司机配送应用' },
+  'driver.login.phoneLabel': { en: 'Phone Number', es: 'Número de Teléfono', ar: 'رقم الهاتف', so: 'Lambarka Telefoonka', fr: 'Numéro de téléphone', zh: '电话号码' },
+  'driver.login.sendCode': { en: 'Send Verification Code', es: 'Enviar Código de Verificación', ar: 'إرسال رمز التحقق', so: 'Dir Koodhka Xaqiijinta', fr: 'Envoyer le code de vérification', zh: '发送验证码' },
+  'driver.login.otpLabel': { en: 'Enter Verification Code', es: 'Ingrese el Código de Verificación', ar: 'أدخل رمز التحقق', so: 'Geli Koodhka Xaqiijinta', fr: 'Entrez le code de vérification', zh: '输入验证码' },
+  'driver.login.otpHint': { en: 'A 6-digit code was sent to {{phone}}', es: 'Se envió un código de 6 dígitos a {{phone}}', ar: 'تم إرسال رمز مكون من 6 أرقام إلى {{phone}}', so: 'Koodh 6 lambar ah ayaa loo diray {{phone}}', fr: 'Un code à 6 chiffres a été envoyé au {{phone}}', zh: '已向 {{phone}} 发送6位验证码' },
+  'driver.login.verify': { en: 'Verify & Sign In', es: 'Verificar e Iniciar Sesión', ar: 'تحقق وسجل الدخول', so: 'Xaqiiji oo Gal', fr: 'Vérifier et se connecter', zh: '验证并登录' },
+  'driver.login.back': { en: 'Back', es: 'Volver', ar: 'رجوع', so: 'Dib u noqo', fr: 'Retour', zh: '返回' },
+  'driver.login.errorPhone': { en: 'Enter a valid phone number.', es: 'Ingrese un número de teléfono válido.', ar: 'أدخل رقم هاتف صالح.', so: 'Geli lambar telefoon sax ah.', fr: 'Entrez un numéro de téléphone valide.', zh: '请输入有效的电话号码。' },
+  'driver.login.errorOtp': { en: 'Enter the 6-digit code.', es: 'Ingrese el código de 6 dígitos.', ar: 'أدخل الرمز المكون من 6 أرقام.', so: 'Geli koodhka 6 lambar.', fr: 'Entrez le code à 6 chiffres.', zh: '请输入6位验证码。' },
+  'driver.login.errorOtpRequest': { en: 'Could not request OTP. Is this phone number registered as a driver?', es: '¿No se pudo solicitar el código. ¿Este número de teléfono está registrado como conductor?', ar: 'تعذر طلب رمز التحقق. هل هذا الرقم مسجل كسائق؟', so: 'Ma la codsan karin koodhka. Lambarkani ma u diiwaangashan yahay darawal?', fr: 'Impossible de demander le code. Ce numéro est-il enregistré en tant que chauffeur ?', zh: '无法请求验证码。此电话号码是否已注册为司机？' },
+  'driver.login.errorOtpInvalid': { en: 'Invalid or expired code. Please try again.', es: 'Código inválido o expirado. Por favor intente de nuevo.', ar: 'رمز غير صالح أو منتهي الصلاحية. يرجى المحاولة مرة أخرى.', so: 'Koodh aan sax ahayn ama uu dhacay. Fadlan isku day mar kale.', fr: 'Code invalide ou expiré. Veuillez réessayer.', zh: '验证码无效或已过期。请重试。' },
+  'driver.login.devOtp': { en: 'Dev mode — your code is:', es: 'Modo desarrollo — su código es:', ar: 'وضع التطوير — رمزك هو:', so: 'Habka horumarinta — koodhkaagu waa:', fr: 'Mode développement — votre code est :', zh: '开发模式 — 您的验证码是：' },
+
+  // --- Dashboard screen ---
+  'driver.dashboard.myProfile': { en: 'My Profile', es: 'Mi Perfil', ar: 'ملفي الشخصي', so: 'Bogaygga', fr: 'Mon profil', zh: '我的资料' },
+  'driver.dashboard.readyPrompt': { en: 'Ready to start your shift?', es: '¿Listo para comenzar su turno?', ar: 'هل أنت جاهز لبدء ورديتك؟', so: 'Ma u diyaar tahay inaad bilowdo wareegaaga?', fr: 'Prêt à commencer votre service ?', zh: '准备好开始您的班次了吗？' },
+  'driver.dashboard.waitingForRoutes': { en: 'Waiting for routes to be released...', es: 'Esperando que se liberen las rutas...', ar: 'في انتظار إصدار المسارات...', so: 'La sugayo in waddooyinka la sii daayo...', fr: 'En attente de la publication des routes...', zh: '等待路线发布...' },
+  'driver.dashboard.checkForRoutes': { en: 'Check for Routes', es: 'Buscar Rutas', ar: 'التحقق من المسارات', so: 'Hubi Waddooyinka', fr: 'Vérifier les routes', zh: '检查路线' },
+  'driver.dashboard.remaining': { en: 'Remaining', es: 'Restantes', ar: 'متبقية', so: 'Haray', fr: 'Restantes', zh: '剩余' },
+  'driver.dashboard.delivered': { en: 'Delivered', es: 'Entregadas', ar: 'تم التوصيل', so: 'La gaarsiiyay', fr: 'Livrées', zh: '已送达' },
+  'driver.dashboard.total': { en: 'Total', es: 'Total', ar: 'الإجمالي', so: 'Wadarta', fr: 'Total', zh: '总计' },
+  'driver.dashboard.refresh': { en: 'Refresh', es: 'Actualizar', ar: 'تحديث', so: 'Cusboonaysii', fr: 'Actualiser', zh: '刷新' },
+  'driver.dashboard.refreshing': { en: 'Refreshing...', es: 'Actualizando...', ar: 'جارٍ التحديث...', so: 'Waa la cusboonaysiinayaa...', fr: 'Actualisation...', zh: '正在刷新...' },
+  'driver.dashboard.availableOffline': { en: 'Available offline', es: 'Disponible sin conexión', ar: 'متاح بدون اتصال', so: 'Waa la heli karaa offline', fr: 'Disponible hors ligne', zh: '可离线使用' },
+  'driver.dashboard.errorCheckIn': { en: 'Could not check in. Please try again.', es: 'No se pudo registrar. Por favor intente de nuevo.', ar: 'تعذر تسجيل الدخول. يرجى المحاولة مرة أخرى.', so: 'Ma la diiwaangelin karin. Fadlan isku day mar kale.', fr: "Impossible de s'enregistrer. Veuillez réessayer.", zh: '无法签到。请重试。' },
+  'driver.dashboard.errorRoutesNotReleased': { en: 'Routes have not been released yet. Try again shortly.', es: 'Las rutas aún no se han liberado. Intente de nuevo en breve.', ar: 'لم يتم إصدار المسارات بعد. حاول مرة أخرى قريباً.', so: 'Waddooyinka wali lama sii dayin. Isku day mar kale dhowaan.', fr: "Les routes n'ont pas encore été publiées. Réessayez sous peu.", zh: '路线尚未发布。请稍后再试。' },
+  'driver.dashboard.errorFetchRoutes': { en: 'Could not fetch routes. Check your connection.', es: 'No se pudieron obtener las rutas. Verifique su conexión.', ar: 'تعذر جلب المسارات. تحقق من اتصالك.', so: 'Ma la soo qaadan karin waddooyinka. Hubi xiriirkaaga.', fr: 'Impossible de récupérer les routes. Vérifiez votre connexion.', zh: '无法获取路线。请检查您的网络连接。' },
+  'driver.dashboard.errorEndShift': { en: 'Could not end shift. Try again when online.', es: 'No se pudo terminar el turno. Intente cuando esté en línea.', ar: 'تعذر إنهاء الوردية. حاول مرة أخرى عندما تكون متصلاً.', so: 'Ma la dhammayn karin wareegga. Isku day markii aad ku xiran tahay.', fr: 'Impossible de terminer le service. Réessayez en ligne.', zh: '无法结束班次。请在联网时重试。' },
+  'driver.dashboard.endShiftTitle': { en: 'End Shift', es: 'Terminar Turno', ar: 'إنهاء الوردية', so: 'Dhamee Wareegga', fr: 'Fin de service', zh: '结束班次' },
+  'driver.dashboard.endShiftMessage': { en: 'This will sync remaining updates and clear all local data. This action cannot be undone.', es: 'Esto sincronizará las actualizaciones restantes y borrará todos los datos locales. Esta acción no se puede deshacer.', ar: 'سيؤدي هذا إلى مزامنة التحديثات المتبقية ومسح جميع البيانات المحلية. لا يمكن التراجع عن هذا الإجراء.', so: 'Tani waxay isku dubbaridi doontaa cusboonaysiinta haray waxayna tirtiri doontaa dhammaan xogta maxalliga. Tallaabadan dib looma noqon karo.', fr: 'Cela synchronisera les mises à jour restantes et effacera toutes les données locales. Cette action est irréversible.', zh: '这将同步剩余更新并清除所有本地数据。此操作无法撤销。' },
+
+  // --- DeliveryDetail screen ---
+  'driver.delivery.notFound': { en: 'Delivery not found.', es: 'Entrega no encontrada.', ar: 'لم يتم العثور على التوصيل.', so: 'Gaadiidka lama helin.', fr: 'Livraison introuvable.', zh: '未找到配送。' },
+  'driver.delivery.goBack': { en: 'Go Back', es: 'Volver', ar: 'رجوع', so: 'Dib u noqo', fr: 'Retour', zh: '返回' },
+  'driver.delivery.airplaneWarning': { en: 'Turn on Airplane Mode when approaching the delivery address to minimize location tracking.', es: 'Active el Modo Avión al acercarse a la dirección de entrega para minimizar el rastreo de ubicación.', ar: 'قم بتشغيل وضع الطيران عند الاقتراب من عنوان التوصيل لتقليل تتبع الموقع.', so: 'Shid Habka Diyaaradda markaad u soo dhowdahay cinwaanka gaadiidka si loo yareeyo la socodka goobta.', fr: "Activez le mode avion en approchant de l'adresse de livraison pour limiter le suivi de localisation.", zh: '接近配送地址时请开启飞行模式以减少位置追踪。' },
+  'driver.delivery.backToDashboard': { en: 'Back to Dashboard', es: 'Volver al Panel', ar: 'العودة إلى لوحة التحكم', so: 'Ku noqo Dashboard-ka', fr: 'Retour au tableau de bord', zh: '返回仪表板' },
+  'driver.delivery.addressLabel': { en: 'Address', es: 'Dirección', ar: 'العنوان', so: 'Cinwaanka', fr: 'Adresse', zh: '地址' },
+  'driver.delivery.notesLabel': { en: 'Notes', es: 'Notas', ar: 'ملاحظات', so: 'Qoraallo', fr: 'Notes', zh: '备注' },
+  'driver.delivery.statusLabel': { en: 'Status', es: 'Estado', ar: 'الحالة', so: 'Xaalada', fr: 'Statut', zh: '状态' },
+  'driver.delivery.statusDelivered': { en: 'Delivered', es: 'Entregado', ar: 'تم التوصيل', so: 'La gaarsiiyay', fr: 'Livré', zh: '已送达' },
+  'driver.delivery.statusInTransit': { en: 'In Transit', es: 'En Tránsito', ar: 'قيد التوصيل', so: 'Waa la qaadayaa', fr: 'En transit', zh: '运输中' },
+  'driver.delivery.statusPending': { en: 'Pending', es: 'Pendiente', ar: 'قيد الانتظار', so: 'La sugayo', fr: 'En attente', zh: '待处理' },
+  'driver.delivery.headingToRoute': { en: 'Heading to Route', es: 'Rumbo a la Ruta', ar: 'متوجه إلى المسار', so: 'U socda Waddada', fr: 'En route vers la livraison', zh: '前往路线' },
+  'driver.delivery.completed': { en: 'Delivery completed', es: 'Entrega completada', ar: 'اكتملت التوصيلة', so: 'Gaadiidku wuu dhammaadey', fr: 'Livraison effectuée', zh: '配送已完成' },
+
+  // --- RestoreKey screen ---
+  'driver.restore.title': { en: 'Restore Routes', es: 'Restaurar Rutas', ar: 'استعادة المسارات', so: 'Soo Celi Waddooyinka', fr: 'Restaurer les routes', zh: '恢复路线' },
+  'driver.restore.description': { en: 'Your routes are encrypted on this device. Scan your backup QR code to unlock them.', es: 'Sus rutas están cifradas en este dispositivo. Escanee su código QR de respaldo para desbloquearlas.', ar: 'مساراتك مشفرة على هذا الجهاز. امسح رمز QR الاحتياطي لفتحها.', so: 'Waddooyinkaagu waxay ku xidhan yihiin qalabkan. Sawir koodhka QR-ka kaydka si aad u furtid.', fr: 'Vos routes sont chiffrées sur cet appareil. Scannez votre code QR de sauvegarde pour les déverrouiller.', zh: '您的路线已在此设备上加密。扫描您的备份二维码以解锁。' },
+  'driver.restore.scanQr': { en: 'Scan QR Code', es: 'Escanear Código QR', ar: 'مسح رمز QR', so: 'Sawir Koodhka QR', fr: 'Scanner le code QR', zh: '扫描二维码' },
+  'driver.restore.skipFresh': { en: 'Skip & Start Fresh', es: 'Omitir y Empezar de Nuevo', ar: 'تخطي والبدء من جديد', so: 'Ka bood oo Dib u bilow', fr: 'Ignorer et recommencer', zh: '跳过并重新开始' },
+  'driver.restore.skipWarning': { en: '"Start Fresh" will erase all cached routes and return to login.', es: '"Empezar de Nuevo" borrará todas las rutas guardadas y volverá al inicio de sesión.', ar: '"البدء من جديد" سيمسح جميع المسارات المخزنة ويعود إلى تسجيل الدخول.', so: '"Dib u bilow" waxay tirtiri doontaa dhammaan waddooyinka la kaydiyay waxayna ku celin doontaa gelitaanka.', fr: '"Recommencer" effacera toutes les routes en cache et reviendra à la connexion.', zh: '"重新开始"将删除所有缓存路线并返回登录页面。' },
+  'driver.restore.errorInvalidQr': { en: 'Invalid QR code. Please scan the SafeCare backup key.', es: 'Código QR inválido. Por favor escanee la clave de respaldo de SafeCare.', ar: 'رمز QR غير صالح. يرجى مسح مفتاح النسخ الاحتياطي لـ SafeCare.', so: 'Koodhka QR-ka ma sax aha. Fadlan sawir furaha kaydka SafeCare.', fr: 'Code QR invalide. Veuillez scanner la clé de sauvegarde SafeCare.', zh: '无效的二维码。请扫描SafeCare备份密钥。' },
+  'driver.restore.errorInvalidKey': { en: 'Invalid key format in QR code.', es: 'Formato de clave inválido en el código QR.', ar: 'تنسيق مفتاح غير صالح في رمز QR.', so: 'Qaabka furaha ee koodhka QR-ka ma sax aha.', fr: 'Format de clé invalide dans le code QR.', zh: '二维码中的密钥格式无效。' },
+  'driver.restore.errorRestore': { en: 'Failed to restore encryption key. Try again.', es: 'Error al restaurar la clave de cifrado. Intente de nuevo.', ar: 'فشل في استعادة مفتاح التشفير. حاول مرة أخرى.', so: 'Waa lagu guul daraystay soo celinta furaha sirta. Isku day mar kale.', fr: 'Échec de la restauration de la clé de chiffrement. Réessayez.', zh: '恢复加密密钥失败。请重试。' },
+  'driver.restore.errorCamera': { en: 'Could not access camera. Please allow camera permission and try again.', es: 'No se pudo acceder a la cámara. Permita el acceso a la cámara e intente de nuevo.', ar: 'تعذر الوصول إلى الكاميرا. يرجى السماح بإذن الكاميرا والمحاولة مرة أخرى.', so: 'Ma la geli karin kaamiradda. Fadlan ogolow oggolaanshaha kaamiradda oo isku day mar kale.', fr: "Impossible d'accéder à la caméra. Veuillez autoriser l'accès et réessayer.", zh: '无法访问摄像头。请允许摄像头权限后重试。' },
+
+  // --- BackupKeyOverlay ---
+  'driver.backup.title': { en: 'Save Backup Key', es: 'Guardar Clave de Respaldo', ar: 'حفظ مفتاح النسخ الاحتياطي', so: 'Kaydi Furaha Kaydka', fr: 'Enregistrer la clé de sauvegarde', zh: '保存备份密钥' },
+  'driver.backup.description': { en: "Take a photo of this code. If the app closes while you're offline, scan it to restore your routes.", es: 'Tome una foto de este código. Si la aplicación se cierra mientras está sin conexión, escanéelo para restaurar sus rutas.', ar: 'التقط صورة لهذا الرمز. إذا أُغلق التطبيق أثناء عدم الاتصال، امسحه لاستعادة مساراتك.', so: 'Ka sawir koodhkan. Haddii barnaamijka uu xirmo adoo offline ah, sawir si aad u soo celiso waddooyinkaaga.', fr: "Prenez une photo de ce code. Si l'application se ferme hors ligne, scannez-le pour restaurer vos routes.", zh: '拍下此二维码的照片。如果应用在离线时关闭，扫描它即可恢复您的路线。' },
+  'driver.backup.dismiss': { en: "I've Saved It", es: 'Ya lo Guardé', ar: 'لقد حفظته', so: 'Waan Kaydiyay', fr: "C'est enregistré", zh: '我已保存' },
+
+  // --- PanicButton ---
+  'driver.panic.erase': { en: 'Erase', es: 'Borrar', ar: 'مسح', so: 'Tirtir', fr: 'Effacer', zh: '清除' },
+  'driver.panic.erasing': { en: 'Erasing...', es: 'Borrando...', ar: 'جارٍ المسح...', so: 'Waa la tirtirayaa...', fr: 'Suppression...', zh: '正在清除...' },
+  'driver.panic.ariaLabel': { en: 'Emergency erase — hold to activate', es: 'Borrado de emergencia — mantenga presionado para activar', ar: 'مسح طوارئ — اضغط مع الاستمرار للتفعيل', so: 'Tirtir degdeg — hay si aad u hawlgeliso', fr: "Effacement d'urgence — maintenez pour activer", zh: '紧急清除 — 长按以激活' },
+
+  // --- ConfirmDialog ---
+  'driver.confirm.confirm': { en: 'Confirm', es: 'Confirmar', ar: 'تأكيد', so: 'Xaqiiji', fr: 'Confirmer', zh: '确认' },
+  'driver.confirm.cancel': { en: 'Cancel', es: 'Cancelar', ar: 'إلغاء', so: 'Ka noqo', fr: 'Annuler', zh: '取消' },
+
+  // --- StatusBar ---
+  'driver.statusBar.checkedIn': { en: 'Checked in — waiting for routes', es: 'Registrado — esperando rutas', ar: 'تم تسجيل الدخول — في انتظار المسارات', so: 'Waa la diiwaangeliyay — sugitaanka waddooyinka', fr: 'Enregistré — en attente des routes', zh: '已签到 — 等待路线' },
+  'driver.statusBar.routesActive': { en: 'Routes active', es: 'Rutas activas', ar: 'المسارات نشطة', so: 'Waddooyinku way shaqaynayaan', fr: 'Routes actives', zh: '路线已激活' },
+  'driver.statusBar.shiftEnded': { en: 'Shift ended', es: 'Turno terminado', ar: 'انتهت الوردية', so: 'Wareegga waa dhammaadey', fr: 'Service terminé', zh: '班次已结束' },
+  'driver.statusBar.online': { en: 'Online', es: 'En línea', ar: 'متصل', so: 'Ku xiran', fr: 'En ligne', zh: '在线' },
+  'driver.statusBar.offline': { en: 'Offline', es: 'Sin conexión', ar: 'غير متصل', so: 'Ka baxsan', fr: 'Hors ligne', zh: '离线' },
+  'driver.statusBar.offlineMessage': { en: 'You are offline — updates will sync when reconnected', es: 'Está sin conexión — las actualizaciones se sincronizarán al reconectarse', ar: 'أنت غير متصل — ستتم مزامنة التحديثات عند إعادة الاتصال', so: 'Waad ka baxsan tahay — cusboonaysiintu waxay isku dubbaridaan markaad dib u xiran tahay', fr: 'Vous êtes hors ligne — les mises à jour seront synchronisées à la reconnexion', zh: '您已离线 — 重新连接后将同步更新' },
+  'driver.statusBar.pending': { en: '{{count}} pending', es: '{{count}} pendientes', ar: '{{count}} قيد الانتظار', so: '{{count}} la sugayo', fr: '{{count}} en attente', zh: '{{count}} 待处理' },
+
+  // --- AirplaneModeReminder (stop-level alert) ---
+  'driver.airplaneMode.stopAlert': { en: 'Approaching delivery address — enable airplane mode now!', es: 'Acercándose a la dirección de entrega — ¡active el modo avión ahora!', ar: 'تقترب من عنوان التوصيل — قم بتفعيل وضع الطيران الآن!', so: 'Waad u soo dhowdahay cinwaanka gaadiidka — shid habka diyaaradda hadda!', fr: "Approche de l'adresse de livraison — activez le mode avion maintenant !", zh: '正在接近配送地址 — 请立即开启飞行模式！' },
 };
 
 // ---------------------------------------------------------------------------
