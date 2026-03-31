@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SafeCare — Mutual Aid Delivery System</title>
-  <meta name="description" content="A secure, privacy-first logistics platform for managing volunteer food deliveries to at-risk families.">
+  <meta name="description" content="A secure, privacy-first logistics platform for managing volunteer food deliveries to at-risk families. Flash an SD card, plug in a Raspberry Pi, and go.">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -19,123 +19,38 @@
       background: linear-gradient(135deg, #0f4c2e 0%, #1a6b3c 100%);
       color: white;
     }
-    .hero h1 {
-      font-size: 48px;
-      font-weight: 800;
-      margin-bottom: 16px;
-    }
-    .hero p {
-      font-size: 20px;
-      opacity: 0.9;
-      max-width: 600px;
-      margin: 0 auto 32px;
-    }
-    .hero .badges {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    .badge {
-      display: inline-block;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 600;
-      background: rgba(255,255,255,0.15);
-    }
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 60px 24px;
-    }
-    h2 {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 24px;
-      color: #0f4c2e;
-    }
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 24px;
-      margin-bottom: 48px;
-    }
-    .feature {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      border: 1px solid #e8e8e0;
-    }
-    .feature h3 {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 8px;
-      color: #1a6b3c;
-    }
-    .feature p {
-      font-size: 15px;
-      color: #666;
-    }
-    .cta {
-      text-align: center;
-      padding: 48px 24px;
-      background: #f0f0e8;
-      border-radius: 16px;
-      margin-bottom: 48px;
-    }
+    .hero h1 { font-size: 48px; font-weight: 800; margin-bottom: 16px; }
+    .hero p { font-size: 20px; opacity: 0.9; max-width: 640px; margin: 0 auto 32px; }
+    .hero .badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
+    .badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; background: rgba(255,255,255,0.15); }
+    .hero-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .container { max-width: 900px; margin: 0 auto; padding: 60px 24px; }
+    h2 { font-size: 28px; font-weight: 700; margin-bottom: 24px; color: #0f4c2e; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 48px; }
+    .feature { background: white; border-radius: 12px; padding: 24px; border: 1px solid #e8e8e0; }
+    .feature h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #1a6b3c; }
+    .feature p { font-size: 15px; color: #666; }
+    .steps { margin-bottom: 48px; }
+    .step { display: flex; gap: 20px; padding: 20px 0; border-bottom: 1px solid #e8e8e0; }
+    .step:last-child { border-bottom: none; }
+    .step-num { width: 40px; height: 40px; background: #1a6b3c; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; flex-shrink: 0; }
+    .step-text h3 { font-size: 17px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+    .step-text p { font-size: 15px; color: #666; }
+    .cta { text-align: center; padding: 48px 24px; background: #f0f0e8; border-radius: 16px; margin-bottom: 48px; }
     .cta h2 { margin-bottom: 16px; }
     .cta p { margin-bottom: 24px; color: #666; }
-    .btn {
-      display: inline-block;
-      padding: 14px 32px;
-      background: #1a6b3c;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 16px;
-      transition: background 0.2s;
-    }
+    .btn { display: inline-block; padding: 14px 32px; background: #1a6b3c; color: white; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 16px; transition: background 0.2s; }
     .btn:hover { background: #0f4c2e; }
-    .btn-outline {
-      background: transparent;
-      color: #1a6b3c;
-      border: 2px solid #1a6b3c;
-    }
+    .btn-outline { background: transparent; color: #1a6b3c; border: 2px solid #1a6b3c; }
     .btn-outline:hover { background: #1a6b3c; color: white; }
-    .privacy {
-      background: white;
-      border-radius: 12px;
-      padding: 32px;
-      border: 1px solid #e8e8e0;
-      margin-bottom: 48px;
-    }
-    .privacy ul {
-      list-style: none;
-      padding: 0;
-    }
-    .privacy li {
-      padding: 8px 0;
-      font-size: 15px;
-      color: #444;
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-    }
-    .privacy li::before {
-      content: "✓";
-      color: #1a6b3c;
-      font-weight: 800;
-      flex-shrink: 0;
-    }
-    footer {
-      text-align: center;
-      padding: 32px;
-      color: #999;
-      font-size: 14px;
-      border-top: 1px solid #e8e8e0;
-    }
+    .btn-large { padding: 18px 40px; font-size: 18px; }
+    .privacy { background: white; border-radius: 12px; padding: 32px; border: 1px solid #e8e8e0; margin-bottom: 48px; }
+    .privacy ul { list-style: none; padding: 0; }
+    .privacy li { padding: 8px 0; font-size: 15px; color: #444; display: flex; align-items: flex-start; gap: 10px; }
+    .privacy li::before { content: "\2713"; color: #1a6b3c; font-weight: 800; flex-shrink: 0; }
+    .highlight { background: #dcfce7; border: 2px solid #16a34a; }
+    .highlight li::before { color: #16a34a; }
+    footer { text-align: center; padding: 32px; color: #999; font-size: 14px; border-top: 1px solid #e8e8e0; }
     footer a { color: #1a6b3c; text-decoration: none; }
   </style>
 </head>
@@ -146,13 +61,50 @@
   <p>A secure, privacy-first logistics platform for managing volunteer food deliveries to at-risk families.</p>
   <div class="badges">
     <span class="badge">Self-Hosted</span>
-    <span class="badge">End-to-End Encrypted</span>
+    <span class="badge">Encryption Key Never on Device</span>
     <span class="badge">Runs on Raspberry Pi</span>
     <span class="badge">Open Source</span>
+  </div>
+  <div class="hero-buttons">
+    <a href="/download" class="btn btn-large">Download SD Card Image</a>
+    <a href="https://github.com/jasontitus/safecare/blob/main/GETTING-STARTED.md" class="btn btn-outline" style="border-color:rgba(255,255,255,0.5); color:white;">Setup Guide</a>
   </div>
 </div>
 
 <div class="container">
+
+  <h2>Flash. Plug In. Set Up from Your Phone.</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        <h3>Flash the SD card</h3>
+        <p>Download the image and write it to a microSD card with Raspberry Pi Imager. No terminal needed.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        <h3>Plug in the Pi and connect to its WiFi</h3>
+        <p>The Pi broadcasts "SafeCare-Setup". Connect from your phone. A setup page opens automatically.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        <h3>Walk through the setup wizard</h3>
+        <p>Connect to your WiFi, set a device password, and photograph your encryption key QR code. This key is the ONLY way to unlock your data.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text">
+        <h3>Create your account and define your region</h3>
+        <p>Open safecare.local in your browser, scan the QR to unlock, create your admin account, and pick your operating area on a map. Map data downloads automatically.</p>
+      </div>
+    </div>
+  </div>
+
   <h2>Built for Mutual Aid</h2>
   <div class="features">
     <div class="feature">
@@ -161,7 +113,7 @@
     </div>
     <div class="feature">
       <h3>Driver App (PWA)</h3>
-      <p>Offline maps, GPS-guided routing, automatic tile caching. Works on any phone — no app store needed.</p>
+      <p>Offline maps, GPS-guided routing, automatic tile caching. Audio alert near delivery addresses. Works on any phone.</p>
     </div>
     <div class="feature">
       <h3>Recipient Notifications</h3>
@@ -172,38 +124,50 @@
       <p>Geocoding and routing run on your hardware. No addresses sent to Google, Mapbox, or any external service.</p>
     </div>
     <div class="feature">
-      <h3>Privacy by Design</h3>
-      <p>Field-level encryption, automatic data purge, HMAC hashes, airplane mode prompts for drivers.</p>
+      <h3>Remote Wipe + Panic Erase</h3>
+      <p>Admin can revoke a driver's routes remotely. Drivers can instantly erase all data with a long-press button. No network needed.</p>
     </div>
     <div class="feature">
-      <h3>Runs Anywhere</h3>
-      <p>Raspberry Pi (4GB+), home PC, or VPS. Docker Compose. Setup wizard — no technical experience needed.</p>
+      <h3>WiFi Recovery</h3>
+      <p>If your WiFi changes, the Pi automatically creates a recovery network. Reconnect from your phone. No SSH needed.</p>
     </div>
   </div>
 
-  <div class="privacy">
-    <h2>Privacy & Security</h2>
+  <div class="privacy highlight">
+    <h2>Security: Encryption Key Never on the Device</h2>
     <ul>
-      <li>Recipient names, addresses, and phone numbers encrypted at rest (pgcrypto)</li>
-      <li>Delivery records automatically deleted and VACUUMed within 24 hours</li>
-      <li>Driver phones auto-purge route data at end of shift (8-hour TTL)</li>
-      <li>Self-hosted geocoding — address searches never leave your network</li>
-      <li>Signal notifications are end-to-end encrypted</li>
-      <li>Two-factor authentication for admin accounts</li>
-      <li>Emergency destroy script shreds all data in seconds</li>
+      <li>The data encryption key (DEK) exists only in memory and on a physical QR code printout. It is never written to disk.</li>
+      <li>If the Raspberry Pi is seized while powered off, the database is unreadable. There is no key to find.</li>
+      <li>On every reboot, an admin scans the QR code to unlock. No QR = no data access.</li>
+      <li>Driver phones encrypt route data with a session key that lives only in volatile memory (sessionStorage). Tab closed = key gone.</li>
+      <li>Recipient PII encrypted at rest with pgcrypto. Delivery records auto-deleted within 24 hours.</li>
+      <li>PostgreSQL query logging disabled to prevent the encryption key from leaking into log files.</li>
+      <li>Two-factor authentication with backup recovery codes for admin accounts.</li>
+      <li>Admin sessions tracked in Redis with explicit logout and server-side revocation.</li>
+      <li>All admin actions audited: login, logout, dispatch, driver revocation.</li>
+      <li>Emergency destroy script shreds all data in seconds.</li>
     </ul>
   </div>
 
   <div class="cta">
     <h2>Get Started</h2>
-    <p>Three commands to install. A setup wizard handles the rest.</p>
-    <a href="https://github.com/safecare-project/safecare" class="btn">View on GitHub</a>
-    <a href="https://github.com/safecare-project/safecare/blob/main/GETTING-STARTED.md" class="btn btn-outline" style="margin-left: 12px;">Getting Started Guide</a>
+    <p>Flash the SD card image to a Raspberry Pi. A setup wizard handles everything else from your phone.</p>
+    <a href="/download" class="btn btn-large">Download Image (678 MB)</a>
+    <a href="https://github.com/jasontitus/safecare" class="btn btn-outline" style="margin-left: 12px;">View on GitHub</a>
   </div>
+
+  <h2>Hardware</h2>
+  <p style="color:#666; margin-bottom:16px;">
+    A Raspberry Pi 5 (8GB, ~$80) with a microSD card and USB-C power supply is all you need.
+    A Pi 4 (4GB) also works for metro-area deployments. The setup wizard shows a RAM estimate based on your region size.
+  </p>
+  <p style="color:#666; margin-bottom:48px;">
+    Monthly cost: $0 with Signal notifications, or ~$6/month with Twilio SMS.
+  </p>
 
   <h2>Pre-Built Map Data</h2>
   <p style="color:#666; margin-bottom:16px;">
-    SafeCare provides pre-built OSRM routing data for all 50 US states and 50 metro areas.
+    Pre-built OSRM routing data for all 50 US states and 50 metro areas.
     Each deployment downloads only what it needs based on its operating region.
   </p>
   <p style="margin-bottom:8px;"><a href="/manifest.json" style="color:#1a6b3c; font-weight:600;">manifest.json</a> — Index of all available regions</p>
@@ -211,7 +175,7 @@
 </div>
 
 <footer>
-  <p>SafeCare is open source software. <a href="https://github.com/safecare-project/safecare">GitHub</a> · <a href="mailto:info@safecare.app">info@safecare.app</a></p>
+  <p>SafeCare is open source software. <a href="https://github.com/jasontitus/safecare">GitHub</a> · <a href="https://github.com/jasontitus/safecare/blob/main/GETTING-STARTED.md">Setup Guide</a> · <a href="mailto:info@safecare.app">info@safecare.app</a></p>
 </footer>
 
 </body>
