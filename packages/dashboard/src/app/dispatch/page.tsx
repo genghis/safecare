@@ -53,6 +53,7 @@ export default function DispatchPage() {
     () => new Date().toISOString().split("T")[0]
   );
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [revokingDriver, setRevokingDriver] = useState<string | null>(null);
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchSession = useCallback(async () => {
@@ -125,6 +126,21 @@ export default function DispatchPage() {
       await fetchSession();
     }
     setReleasing(false);
+  }
+
+  async function handleRevokeDriver(driverId: string, driverName: string) {
+    if (!session) return;
+    if (!confirm(`Revoke routes for ${driverName}? This will erase all delivery data from their phone the next time it connects.`)) return;
+
+    setRevokingDriver(driverId);
+    const res = await apiPost(
+      `/api/dispatch/sessions/${session.id}/revoke-driver`,
+      { driverId }
+    );
+    if (res.ok) {
+      await fetchSession();
+    }
+    setRevokingDriver(null);
   }
 
   function toggleDriver(id: string) {
@@ -417,9 +433,25 @@ export default function DispatchPage() {
                             </p>
                           </div>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(checkIn.checkedInAt).toLocaleTimeString()}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(checkIn.checkedInAt).toLocaleTimeString()}
+                          </span>
+                          {session.status === "active" && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              disabled={revokingDriver === checkIn.driverId}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRevokeDriver(checkIn.driverId, checkIn.driverName);
+                              }}
+                            >
+                              {revokingDriver === checkIn.driverId ? "Revoking..." : "Revoke"}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

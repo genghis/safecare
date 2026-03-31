@@ -50,7 +50,7 @@ Last updated: 2026-03-30
 | **Exclusion zones (draw + OSRM edge-weighting)** | **Not done** | Zones page handles delivery zones, not exclusion zones |
 | **Route variation between delivery cycles** | **Not done** | Same route every time currently |
 | PWA client-side encryption | Done | Server generates session key on route download, client derives AES-GCM-256 via HKDF. Key in sessionStorage (volatile). Route data encrypted in IndexedDB. QR backup for offline recovery. |
-| Remote wipe (admin spike) | Partial | Backend API + driver-side detection + emergency purge implemented. **Dashboard "Revoke Routes" button NOT built** — admin must call API directly. |
+| Remote wipe (admin spike) | Done | Backend API + driver-side detection + emergency purge + dashboard "Revoke" button per driver in dispatch view. |
 | Panic erase (driver) | Done | Long-press "Erase" button on Dashboard. Instant local destroy — no network, no confirmation. |
 | Session key re-issue | Done | `GET /api/driver/session-key` re-issues from Redis after tab close (online recovery). |
 | Off-disk DEK (server encryption key) | Done | DEK never written to .env or disk. Loaded into memory via QR code unlock on each boot. Seized server = unreadable database. |
