@@ -57,6 +57,11 @@ export async function api<T = unknown>(
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
+      // Auto-redirect to login on auth failure
+      if (response.status === 401 && typeof window !== "undefined") {
+        clearToken();
+        window.location.replace("/login");
+      }
       return {
         data: data as T,
         ok: false,

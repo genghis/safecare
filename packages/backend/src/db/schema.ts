@@ -74,6 +74,7 @@ export const adminUsers = pgTable('admin_users', {
   passwordHash: text('password_hash').notNull(),
   role: text('role').default('admin'),
   totpSecret: text('totp_secret'),
+  totpBackupCodes: text('totp_backup_codes').array().default([]),
   createdAt: timestamp('created_at').defaultNow(),
 });
 

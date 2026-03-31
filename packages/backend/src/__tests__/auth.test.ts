@@ -35,6 +35,8 @@ const {
   mockLimit,
   mockFrom,
   mockSelect,
+  mockUpdate,
+  mockUpdateSet,
 } = vi.hoisted(() => {
   const dbState = {
     insertReturnValue: [] as any[],
@@ -49,13 +51,19 @@ const {
   const mockFrom = vi.fn(() => ({ where: mockWhere, limit: mockLimit }));
   const mockSelect = vi.fn(() => ({ from: mockFrom }));
 
-  return { dbState, mockReturning, mockValues, mockInsert, mockWhere, mockLimit, mockFrom, mockSelect };
+  // Update mock chain
+  const mockUpdateWhere = vi.fn(() => ({}));
+  const mockUpdateSet = vi.fn(() => ({ where: mockUpdateWhere }));
+  const mockUpdate = vi.fn(() => ({ set: mockUpdateSet }));
+
+  return { dbState, mockReturning, mockValues, mockInsert, mockWhere, mockLimit, mockFrom, mockSelect, mockUpdate, mockUpdateSet };
 });
 
 vi.mock('../db/index.js', () => ({
   db: {
     insert: mockInsert,
     select: mockSelect,
+    update: mockUpdate,
   },
 }));
 
@@ -323,6 +331,121 @@ describe('AuthService — Driver OTP Authentication', () => {
         signJwt,
       );
       expect(second).toBeNull();
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TOTP Backup Codes
+// ---------------------------------------------------------------------------
+
+describe('AuthService — TOTP Backup Codes', () => {
+  let authService: AuthService;
+
+  beforeEach(() => {
+    authService = new AuthService();
+    vi.clearAllMocks();
+    dbState.insertReturnValue = [];
+    dbState.selectReturnValue = [];
+  });
+
+  describe('enableTotp', () => {
+    it('returns 8 backup codes on successful enable', async () => {
+      // Generate a valid TOTP secret and token
+      const { secret, uri } = authService.generateTotpSecret('test@example.com');
+      const { TOTP, Secret } = await import('otpauth');
+      const totp = new TOTP({
+        issuer: 'SafeCare',
+        label: 'test@example.com',
+        algorithm: 'SHA1',
+        digits: 6,
+        period: 30,
+        secret: Secret.fromBase32(secret),
+      });
+      const validToken = totp.generate();
+
+      const result = await authService.enableTotp('admin-1', secret, validToken);
+
+      expect(result).not.toBeNull();
+      expect(result!.backupCodes).toHaveLength(8);
+      // Each code should be 8 hex chars
+      for (const code of result!.backupCodes) {
+        expect(code).toMatch(/^[0-9a-f]{8}$/);
+      }
+    });
+
+    it('returns null on invalid TOTP token', async () => {
+      const { secret } = authService.generateTotpSecret('test@example.com');
+      const result = await authService.enableTotp('admin-1', secret, '000000');
+      expect(result).toBeNull();
+    });
+
+    it('stores bcrypt-hashed backup codes in the database', async () => {
+      const { secret } = authService.generateTotpSecret('test@example.com');
+      const { TOTP, Secret } = await import('otpauth');
+      const totp = new TOTP({
+        issuer: 'SafeCare',
+        label: '',
+        algorithm: 'SHA1',
+        digits: 6,
+        period: 30,
+        secret: Secret.fromBase32(secret),
+      });
+
+      await authService.enableTotp('admin-1', secret, totp.generate());
+
+      // Check that db.update was called with hashed backup codes
+      expect(mockUpdateSet).toHaveBeenCalled();
+      const setArg = mockUpdateSet.mock.calls[0][0];
+      expect(setArg.totpSecret).toBe(secret);
+      expect(setArg.totpBackupCodes).toHaveLength(8);
+      // Hashes should be bcrypt format, not plaintext
+      for (const hash of setArg.totpBackupCodes) {
+        expect(hash).toMatch(/^\$2[aby]?\$/);
+      }
+    });
+  });
+
+  describe('verifyTotp with backup codes', () => {
+    it('accepts a valid backup code and consumes it', async () => {
+      const backupCode = 'abcd1234';
+      const backupHash = await bcrypt.hash(backupCode, 12);
+
+      // Mock the DB to return an admin with TOTP + backup codes
+      dbState.selectReturnValue = [{
+        totpSecret: 'JBSWY3DPEHPK3PXP', // dummy base32 secret
+        totpBackupCodes: [backupHash],
+      }];
+
+      const result = await authService.verifyTotp('admin-1', backupCode);
+      expect(result).toBe(true);
+
+      // Verify the backup code was consumed (update called with empty array)
+      expect(mockUpdateSet).toHaveBeenCalled();
+      const setArg = mockUpdateSet.mock.calls[0][0];
+      expect(setArg.totpBackupCodes).toHaveLength(0);
+    });
+
+    it('rejects an invalid backup code', async () => {
+      const backupHash = await bcrypt.hash('realcode', 12);
+
+      dbState.selectReturnValue = [{
+        totpSecret: 'JBSWY3DPEHPK3PXP',
+        totpBackupCodes: [backupHash],
+      }];
+
+      const result = await authService.verifyTotp('admin-1', 'wrongcode');
+      expect(result).toBe(false);
+    });
+
+    it('rejects when no backup codes remain', async () => {
+      dbState.selectReturnValue = [{
+        totpSecret: 'JBSWY3DPEHPK3PXP',
+        totpBackupCodes: [],
+      }];
+
+      const result = await authService.verifyTotp('admin-1', 'anything');
+      expect(result).toBe(false);
     });
   });
 });

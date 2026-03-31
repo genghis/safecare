@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
   password_hash TEXT NOT NULL,
   role TEXT DEFAULT 'admin',
   totp_secret TEXT,
+  totp_backup_codes TEXT[] DEFAULT '{}',
   created_at TIMESTAMP DEFAULT now()
 );
 

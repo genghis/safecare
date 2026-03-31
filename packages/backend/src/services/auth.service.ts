@@ -13,6 +13,7 @@ const redis = new Redis(config.REDIS_URL);
 const SALT_ROUNDS = 12;
 const OTP_TTL_SECONDS = 300; // 5 minutes
 const OTP_PREFIX = 'otp:';
+const BACKUP_CODE_COUNT = 8;
 const TOTP_TEMP_PREFIX = 'totp_temp:';
 
 export class AuthService {
@@ -131,9 +132,25 @@ export class AuthService {
   }
 
   /**
-   * Enable TOTP for an admin by verifying the token against the secret and saving it.
+   * Generate a set of single-use backup codes (8 codes, 8 alphanumeric chars each).
+   * Returns both plaintext (shown to user once) and bcrypt hashes (stored in DB).
    */
-  async enableTotp(adminId: string, secret: string, token: string): Promise<boolean> {
+  private async generateBackupCodes(): Promise<{ plaintext: string[]; hashes: string[] }> {
+    const plaintext: string[] = [];
+    const hashes: string[] = [];
+    for (let i = 0; i < BACKUP_CODE_COUNT; i++) {
+      const code = crypto.randomBytes(4).toString('hex'); // 8 hex chars
+      plaintext.push(code);
+      hashes.push(await bcrypt.hash(code, SALT_ROUNDS));
+    }
+    return { plaintext, hashes };
+  }
+
+  /**
+   * Enable TOTP for an admin by verifying the token against the secret and saving it.
+   * Returns backup codes on success (shown to user once, never retrievable again).
+   */
+  async enableTotp(adminId: string, secret: string, token: string): Promise<{ backupCodes: string[] } | null> {
     const totp = new TOTP({
       issuer: 'SafeCare',
       label: '',
@@ -144,28 +161,39 @@ export class AuthService {
     });
 
     const delta = totp.validate({ token, window: 1 });
-    if (delta === null) return false;
+    if (delta === null) return null;
+
+    const { plaintext, hashes } = await this.generateBackupCodes();
 
     await db
       .update(adminUsers)
-      .set({ totpSecret: secret })
+      .set({
+        totpSecret: secret,
+        totpBackupCodes: hashes,
+      })
       .where(eq(adminUsers.id, adminId));
 
-    return true;
+    return { backupCodes: plaintext };
   }
 
   /**
    * Verify a TOTP token for an admin.
+   * First tries the standard TOTP code, then falls back to backup codes.
+   * Backup codes are single-use — consumed on successful match.
    */
   async verifyTotp(adminId: string, token: string): Promise<boolean> {
     const rows = await db
-      .select({ totpSecret: adminUsers.totpSecret })
+      .select({
+        totpSecret: adminUsers.totpSecret,
+        totpBackupCodes: adminUsers.totpBackupCodes,
+      })
       .from(adminUsers)
       .where(eq(adminUsers.id, adminId));
 
     const admin = rows[0];
     if (!admin?.totpSecret) return false;
 
+    // Try standard TOTP first
     const totp = new TOTP({
       issuer: 'SafeCare',
       label: '',
@@ -176,7 +204,27 @@ export class AuthService {
     });
 
     const delta = totp.validate({ token, window: 1 });
-    return delta !== null;
+    if (delta !== null) return true;
+
+    // Fall back to backup codes (8-char hex strings)
+    const backupHashes = admin.totpBackupCodes ?? [];
+    if (backupHashes.length === 0) return false;
+
+    for (let i = 0; i < backupHashes.length; i++) {
+      const match = await bcrypt.compare(token, backupHashes[i]);
+      if (match) {
+        // Consume the backup code (remove from array)
+        const remaining = [...backupHashes];
+        remaining.splice(i, 1);
+        await db
+          .update(adminUsers)
+          .set({ totpBackupCodes: remaining })
+          .where(eq(adminUsers.id, adminId));
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -196,7 +244,7 @@ export class AuthService {
 
     await db
       .update(adminUsers)
-      .set({ totpSecret: null })
+      .set({ totpSecret: null, totpBackupCodes: [] })
       .where(eq(adminUsers.id, adminId));
 
     return true;

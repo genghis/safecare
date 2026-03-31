@@ -279,9 +279,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
       const { sub: adminId } = request.user;
       const { secret, token } = parsed.data;
-      const enabled = await authService.enableTotp(adminId, secret, token);
+      const result = await authService.enableTotp(adminId, secret, token);
 
-      if (!enabled) {
+      if (!result) {
         return reply.code(400).send({
           success: false,
           error: 'Invalid verification code. Please try again.',
@@ -290,7 +290,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
       return reply.send({
         success: true,
-        data: { enabled: true },
+        data: { enabled: true, backupCodes: result.backupCodes },
       });
     },
   );

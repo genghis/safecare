@@ -97,9 +97,9 @@ Last updated: 2026-03-30
 | Purge confirmation loop | Done | 12h window, Redis tracking, dashboard warnings |
 | Dashboard purge warnings endpoint | Done | GET /api/dashboard/purge-warnings |
 | Emergency destroy script | Done | Cross-platform (Linux + macOS), shreds secrets, wipes volumes |
-| TOTP 2FA for admin accounts | Done | Backend endpoints + dashboard settings UI + login TOTP step + nudge banner. No backup/recovery codes. |
-| **Dashboard auth guard** | **NOT DONE** | Dashboard pages don't check for valid token before rendering. API rejects unauthorized calls but UI loads freely. |
-| **Logout button** | **NOT DONE** | No logout in sidebar. clearToken() never called. Token persists in localStorage until expired. |
+| TOTP 2FA for admin accounts | Done | Backend + dashboard UI + login step + nudge + 8 single-use backup recovery codes |
+| Dashboard auth guard | Done | LayoutShell checks for token before rendering protected pages. Redirects to /login if missing. |
+| Logout button | Done | Sidebar "Logout" button clears token and redirects to /login. API auto-redirects on 401. |
 | Threat model documentation | Done | docs/THREAT-MODEL.md, 8 scenarios analyzed |
 | CI/CD (GitHub Actions) | Done | Lint, typecheck, test, build on push/PR |
 | E2E smoke tests | Done | 35 API tests, full flow verification |

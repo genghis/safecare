@@ -113,10 +113,10 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | bcrypt password hashing | Implemented | Passwords not stored in plaintext. |
 | JWT with 24-hour expiry | Implemented | Stolen token expires in 24 hours. |
 | Rate limiting (100 req/min) | Implemented | Slows brute-force attempts. |
-| TOTP 2FA (backend) | Implemented | All 6 endpoints work: setup, enable, disable, verify, status, login-with-TOTP. |
+| TOTP 2FA (backend) | Implemented | All 6 endpoints + backup recovery codes (8 single-use codes generated on enable, bcrypt-hashed in DB). |
 | TOTP 2FA (dashboard) | Implemented | Settings page enable/disable flow, login page TOTP step, 2FA setup nudge banner. |
-| **Dashboard route protection** | **NOT IMPLEMENTED** | Dashboard pages don't check for a valid token before rendering. API endpoints reject invalid JWTs, but the frontend itself loads without auth. Anyone on the network can view dashboard pages (data won't load, but the UI is visible). |
-| **Logout** | **NOT IMPLEMENTED** | No logout button in the sidebar. `clearToken()` is never called. Token persists in localStorage until manually cleared or expired. |
+| Dashboard route protection | Implemented | LayoutShell auth guard checks for token before rendering any sidebar page. Redirects to /login if no token. API client auto-redirects on 401. |
+| Logout | Implemented | Sidebar "Logout" button clears token from localStorage and redirects to /login. |
 | Session management with explicit logout | Not done | No server-side session revocation on password change. |
 | Admin audit log | Not done | Track who accessed what, when. |
 | Tailscale-only access | Not done | Dashboard only accessible on private tailnet, not the internet. |
@@ -129,10 +129,8 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 4. **Limit admin accounts** — only people who need it. Review access regularly.
 5. **Don't use the admin account on public WiFi** — use a VPN or tailnet
 
-**Critical gaps remaining:**
-- Dashboard has no client-side auth guard — pages render without checking for a token (API calls fail with 401 but the page loads)
-- No logout button — token sits in localStorage until it expires
-- No backup/recovery codes for TOTP — if you lose your authenticator, you're locked out
+**Remaining gap:**
+- No server-side session revocation — changing password doesn't invalidate existing JWTs (they expire in 24h)
 
 ---
 
@@ -274,7 +272,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | Signal E2E notifications | **Implemented** |
 | Emergency destroy script | **Implemented** |
 | Vetting workflow | **Implemented** |
-| TOTP 2FA for admin | **Implemented** (backend + dashboard UI, but no route guards or logout) |
+| TOTP 2FA for admin | **Implemented** (backend + dashboard + backup codes + auth guard + logout) |
 | Hardware-backed key storage (mobile) | Planned |
 | Remote wipe via push | Planned |
 | Tailscale networking | Planned |
