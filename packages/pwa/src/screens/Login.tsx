@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { requestOtp, verifyOtp, setToken, persistToken } from "@/lib/api";
+import { requestOtp, verifyOtp, setToken } from "@/lib/api";
 import InstallPrompt from "@/components/InstallPrompt";
 
 type Stage = "phone" | "otp";
@@ -45,7 +45,8 @@ export default function Login() {
     try {
       const result = await verifyOtp(phone, otpCode);
       setToken(result.token);
-      try { await persistToken(result.token); } catch { /* crypto not ready, token in memory only */ }
+      // JWT stays in memory only until route download provides the encryption key,
+      // at which point it's persisted to encrypted IndexedDB.
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError("Invalid or expired code. Please try again.");

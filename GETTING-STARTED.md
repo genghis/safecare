@@ -202,7 +202,7 @@ If your service area expands or changes:
 
 SafeCare is designed to protect recipient privacy:
 
-- **Addresses and phone numbers** are encrypted in the database -- even if someone steals the hard drive, they can't read them without the encryption key
+- **Addresses and phone numbers** are encrypted in the database -- even if someone steals the hard drive, they can't read them without the encryption key (DEK). **Note:** by default the DEK is stored in the `.env` file on the server. For stronger protection, run the optional SOPS + age setup during installation and keep the age private key physically separate from the server.
 - **Map data and address search** run on your hardware -- no addresses are sent to Google, Mapbox, or any external service
 - **Delivery records are deleted** within 24 hours after delivery
 - **Driver phones** purge all route data at end of shift

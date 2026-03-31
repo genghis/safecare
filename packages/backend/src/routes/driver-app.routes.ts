@@ -124,6 +124,11 @@ export default async function driverAppRoutes(fastify: FastifyInstance) {
             downloadToken = token;
           }
 
+          // Check if session has been revoked by admin
+          const revoked = checkIn
+            ? await dispatchService.isSessionRevoked(driverId, session.id)
+            : false;
+
           return reply.send({
             success: true,
             data: {
@@ -134,7 +139,51 @@ export default async function driverAppRoutes(fastify: FastifyInstance) {
               routeDownloaded: !!checkIn?.routeDownloadedAt,
               purgeConfirmed: !!checkIn?.purgeConfirmedAt,
               downloadToken,
+              revoked,
             },
+          });
+        },
+      );
+
+      /**
+       * GET /api/driver/session-key
+       * Re-issue the session encryption key (e.g. after tab close/browser kill).
+       * Only works while the dispatch session is active and key hasn't expired in Redis.
+       */
+      scoped.get(
+        '/api/driver/session-key',
+        { preHandler: [fastify.requireDriver] },
+        async (request: FastifyRequest, reply: FastifyReply) => {
+          const driverId = request.user.sub;
+
+          const session = await dispatchService.getActiveSession();
+          if (!session) {
+            return reply.code(404).send({
+              success: false,
+              error: 'No active dispatch session',
+            });
+          }
+
+          // Check if revoked
+          const revoked = await dispatchService.isSessionRevoked(driverId, session.id);
+          if (revoked) {
+            return reply.code(403).send({
+              success: false,
+              error: 'Session has been revoked',
+            });
+          }
+
+          const sessionKey = await dispatchService.getSessionKey(driverId, session.id);
+          if (!sessionKey) {
+            return reply.code(404).send({
+              success: false,
+              error: 'No session key found (expired or not yet downloaded)',
+            });
+          }
+
+          return reply.send({
+            success: true,
+            data: { sessionKey },
           });
         },
       );

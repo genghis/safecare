@@ -25,16 +25,23 @@ let jwt: string | null = null;
 
 export function setToken(token: string): void {
   jwt = token;
-  // Fallback: store in localStorage when crypto isn't ready
-  try { localStorage.setItem('safecare_driver_token', token); } catch {}
+  // NOTE: JWT is stored in memory only. Once the encryption key is available
+  // (after route download), the JWT is persisted to encrypted IndexedDB.
+  // localStorage is NOT used — it is readable by forensic tools on a seized device.
 }
 
 export function getToken(): string | null {
   if (jwt) return jwt;
-  // Restore from localStorage
+  // Migration fallback: read from localStorage if it was stored there previously.
+  // New sessions never write to localStorage. This path will be removed in a future release.
   try {
     const stored = localStorage.getItem('safecare_driver_token');
-    if (stored) { jwt = stored; return stored; }
+    if (stored) {
+      jwt = stored;
+      // Clean it up immediately — don't leave it in plaintext storage
+      localStorage.removeItem('safecare_driver_token');
+      return stored;
+    }
   } catch {}
   return null;
 }
@@ -42,6 +49,7 @@ export function getToken(): string | null {
 export function clearToken(): void {
   jwt = null;
   try { localStorage.removeItem('safecare_driver_token'); } catch {}
+  try { localStorage.removeItem('safecare_install_dismissed'); } catch {}
 }
 
 /**
@@ -162,6 +170,7 @@ export function pollStatus() {
     routeReleased: boolean;
     routeDownloaded: boolean;
     downloadToken?: string;
+    revoked?: boolean;
   }>("/driver/status");
 }
 
@@ -179,6 +188,7 @@ export function downloadRoute(token: string, driverLat?: number, driverLng?: num
       sequence: number;
     }>;
     expiresAt: string;
+    sessionKey?: string;
     routeGeometry?: { type: "LineString"; coordinates: [number, number][] };
     tileBounds?: { south: number; west: number; north: number; east: number };
     tileUrls?: string[];
@@ -188,6 +198,14 @@ export function downloadRoute(token: string, driverLat?: number, driverLng?: num
     method: "POST",
     body: { token, driverLat, driverLng },
   });
+}
+
+/**
+ * Re-issue the session encryption key from the server.
+ * Used to recover after tab close / browser kill when the driver is online.
+ */
+export function getSessionKey() {
+  return request<{ sessionKey: string }>("/driver/session-key");
 }
 
 // ---------------------------------------------------------------------------

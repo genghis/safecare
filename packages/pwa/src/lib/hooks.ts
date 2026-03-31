@@ -6,6 +6,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { startAutoSync, stopAutoSync } from "@/lib/sync";
 import { checkExpiry, purgeAll } from "@/lib/db";
+import { clearSessionKey } from "@/lib/crypto";
+import { clearToken } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // useOnlineStatus
@@ -122,6 +124,8 @@ export function usePurgeCheck(): void {
         const expired = await checkExpiry();
         if (expired) {
           await purgeAll();
+          clearSessionKey();
+          clearToken();
           // Redirect to login — the app will naturally reset since there
           // is no longer a JWT or route data.
           window.location.replace("/");

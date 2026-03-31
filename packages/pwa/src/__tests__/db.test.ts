@@ -23,6 +23,15 @@ vi.mock('@/lib/crypto', () => ({
   }),
   getCurrentKey: vi.fn(() => 'mock-crypto-key'),
   destroyKey: vi.fn(),
+  clearSessionKey: vi.fn(),
+}));
+
+vi.mock('@/lib/api', () => ({
+  clearToken: vi.fn(),
+}));
+
+vi.mock('@/lib/tile-cache', () => ({
+  clearTileCache: vi.fn(async () => {}),
 }));
 
 // ---------------------------------------------------------------------------
@@ -248,25 +257,64 @@ describe('checkExpiry', () => {
     expect(expired).toBe(false);
   });
 
-  it('returns true when no session record exists', async () => {
+  it('returns false when no session record exists (nothing to expire)', async () => {
     const { getCurrentKey } = await import('@/lib/crypto');
     (getCurrentKey as Mock).mockReturnValue('mock-key');
 
-    // Empty session store — get returns null
+    // Empty session store — get returns null → no active session, nothing to purge
     const emptySession = createMockStore();
     (mockDB.transaction as Mock).mockImplementation(() => ({
       objectStore: vi.fn(() => emptySession),
     }));
 
     const expired = await db.checkExpiry();
-    expect(expired).toBe(true);
+    expect(expired).toBe(false);
   });
 
-  it('returns true when no crypto key exists', async () => {
+  it('returns false when no crypto key exists (nothing to expire)', async () => {
     const { getCurrentKey } = await import('@/lib/crypto');
     (getCurrentKey as Mock).mockReturnValue(null);
 
+    // No key means no active session → nothing to purge
     const expired = await db.checkExpiry();
-    expect(expired).toBe(true);
+    expect(expired).toBe(false);
+  });
+});
+
+describe('emergencyPurge', () => {
+  it('clears all stores, destroys key, clears sessionStorage, clears token, and deletes database', async () => {
+    const { destroyKey, clearSessionKey } = await import('@/lib/crypto');
+    const { clearToken } = await import('@/lib/api');
+    const { clearTileCache } = await import('@/lib/tile-cache');
+
+    const mockDeleteDatabase = vi.fn();
+    vi.stubGlobal('indexedDB', {
+      ...globalThis.indexedDB,
+      open: (globalThis.indexedDB as any).open,
+      deleteDatabase: mockDeleteDatabase,
+    });
+
+    await db.emergencyPurge();
+
+    // All stores should be cleared
+    expect(routesStore.clear).toHaveBeenCalled();
+    expect(syncQueueStore.clear).toHaveBeenCalled();
+    expect(profileStore.clear).toHaveBeenCalled();
+    expect(sessionStore.clear).toHaveBeenCalled();
+
+    // Crypto key destroyed
+    expect(destroyKey).toHaveBeenCalled();
+
+    // Session key cleared from sessionStorage
+    expect(clearSessionKey).toHaveBeenCalled();
+
+    // JWT cleared
+    expect(clearToken).toHaveBeenCalled();
+
+    // Tile cache cleared
+    expect(clearTileCache).toHaveBeenCalled();
+
+    // Database deletion attempted
+    expect(mockDeleteDatabase).toHaveBeenCalledWith('safecare-driver');
   });
 });

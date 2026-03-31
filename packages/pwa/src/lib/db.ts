@@ -6,7 +6,9 @@
  * cleartext is the record key (needed for IndexedDB lookups).
  */
 
-import { encrypt, decrypt, getCurrentKey, destroyKey } from "@/lib/crypto";
+import { encrypt, decrypt, getCurrentKey, destroyKey, clearSessionKey } from "@/lib/crypto";
+import { clearToken } from "@/lib/api";
+import { clearTileCache } from "@/lib/tile-cache";
 
 const DB_NAME = "safecare-driver";
 const DB_VERSION = 1;
@@ -177,6 +179,29 @@ export async function purgeAll(): Promise<void> {
   }
 
   destroyKey();
+}
+
+/**
+ * Emergency purge: destroy everything as fast as possible.
+ *
+ * Used by the panic nuke button and remote wipe. Does NOT wait for network
+ * sync or server confirmation — pure local destruction for maximum speed.
+ */
+export async function emergencyPurge(): Promise<void> {
+  // 1. Clear all IndexedDB stores and destroy the CryptoKey
+  try { await purgeAll(); } catch { /* best effort */ }
+
+  // 2. Clear session key from sessionStorage
+  clearSessionKey();
+
+  // 3. Clear JWT from memory + localStorage
+  clearToken();
+
+  // 4. Clear map tile cache
+  try { await clearTileCache(); } catch { /* best effort */ }
+
+  // 5. Nuclear: delete the entire IndexedDB database
+  try { indexedDB.deleteDatabase(DB_NAME); } catch { /* best effort */ }
 }
 
 /**

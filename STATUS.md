@@ -49,7 +49,11 @@ Last updated: 2026-03-30
 | Route packet with tile URLs + bounds | Done | Backend computes tile coverage for pre-caching |
 | **Exclusion zones (draw + OSRM edge-weighting)** | **Not done** | Zones page handles delivery zones, not exclusion zones |
 | **Route variation between delivery cycles** | **Not done** | Same route every time currently |
-| **Full client-side data purge (SQLCipher/keychain)** | **Partial** | PWA clears IndexedDB + tile cache; no hardware-backed key expiry |
+| PWA client-side encryption | Done | Server generates session key on route download, client derives AES-GCM-256 via HKDF. Key in sessionStorage (volatile). Route data encrypted in IndexedDB. QR backup for offline recovery. |
+| Remote wipe (admin spike) | Done | Admin revokes session key in Redis. Driver status poll detects revocation, triggers instant local purge. |
+| Panic erase (driver) | Done | Long-press "Erase" button on Dashboard. Instant local destroy — no network, no confirmation. |
+| Session key re-issue | Done | `GET /api/driver/session-key` re-issues from Redis after tab close (online recovery). |
+| **Full client-side data purge (SQLCipher/keychain)** | **Not done** | No hardware-backed key expiry; purge uses IndexedDB clear + sessionStorage + tile cache |
 
 ## Phase 3: Blind Communication + Acknowledgment -- IN PROGRESS
 
@@ -106,12 +110,14 @@ Last updated: 2026-03-30
 | Build VM | GCE spot (c2-standard-8) | Quarterly builds, ~$0.50/run |
 | Terraform | infra/prebuilt/ | GCS, service account, VM |
 
-## Test Suites (94 total)
+## Test Suites (117 total)
 
 | Suite | Tests | File |
 |-------|-------|------|
-| E2E Smoke | 35 | tests/e2e-smoke.sh |
-| Security Verification | 32 | tests/security-verify.sh |
+| PWA Unit Tests | 62 | packages/pwa/src/\_\_tests\_\_/ (crypto, db, api, sync, hooks) |
+| Backend Unit Tests | 108 | packages/backend/src/\_\_tests\_\_/ (auth, dispatch, session-key, etc.) |
+| E2E Smoke | 41 | tests/e2e-smoke.sh |
+| Security Verification | 36 | tests/security-verify.sh |
 | Fresh Install (Playwright) | 10 | tests/integration/fresh-install.spec.ts |
 | Full Flow - Detroit (Playwright) | 17 | tests/integration/full-flow.spec.ts |
 

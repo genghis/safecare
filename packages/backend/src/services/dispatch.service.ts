@@ -17,8 +17,12 @@ import type {
 } from '@safecare/shared';
 import {
   generateDownloadToken,
+  generateSessionKey,
   DEFAULT_DOWNLOAD_TOKEN_TTL_MINUTES,
 } from '@safecare/shared';
+import Redis from 'ioredis';
+
+const redis = new Redis(config.REDIS_URL);
 
 export interface CreateSessionInput {
   date: string;
@@ -270,6 +274,11 @@ export class DispatchService {
     const ttlHours = session[0]?.routeDataTtlHours ?? 8;
     const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000);
 
+    // Generate session key for client-side IndexedDB encryption
+    const sessionKey = generateSessionKey();
+    const redisKey = `session_key:${tokenRecord.driverId}:${tokenRecord.dispatchSessionId}`;
+    await redis.setex(redisKey, ttlHours * 3600, sessionKey);
+
     return {
       sessionId: tokenRecord.dispatchSessionId,
       driverId: tokenRecord.driverId,
@@ -283,6 +292,7 @@ export class DispatchService {
         sequence: i + 1,
       })),
       expiresAt,
+      sessionKey,
     };
   }
 
@@ -330,7 +340,35 @@ export class DispatchService {
   /**
    * Record that a driver has confirmed local data purge.
    */
+  /**
+   * Retrieve the session key for a driver from Redis (for key re-issue).
+   */
+  async getSessionKey(driverId: string, sessionId: string): Promise<string | null> {
+    return redis.get(`session_key:${driverId}:${sessionId}`);
+  }
+
+  /**
+   * Revoke a driver's session key (remote wipe). Deletes the key from Redis
+   * and sets a revoked flag so the driver's next status poll triggers a purge.
+   */
+  async revokeDriverSession(driverId: string, sessionId: string): Promise<void> {
+    await redis.del(`session_key:${driverId}:${sessionId}`);
+    // Flag lasts 24h — driver poll checks this and triggers emergency purge
+    await redis.setex(`revoked:${driverId}:${sessionId}`, 86400, '1');
+  }
+
+  /**
+   * Check if a driver's session has been revoked.
+   */
+  async isSessionRevoked(driverId: string, sessionId: string): Promise<boolean> {
+    const val = await redis.get(`revoked:${driverId}:${sessionId}`);
+    return val === '1';
+  }
+
   async confirmPurge(driverId: string, sessionId: string) {
+    // Delete session key from Redis so it can never be re-issued
+    await redis.del(`session_key:${driverId}:${sessionId}`);
+
     const result = await db
       .update(driverCheckIns)
       .set({ purgeConfirmedAt: new Date() })

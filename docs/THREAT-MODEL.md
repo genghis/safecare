@@ -27,7 +27,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | Layer | Status | Protection |
 |-------|--------|------------|
 | Field-level encryption (pgp_sym_encrypt) | Implemented | All PII columns encrypted. Raw database files show ciphertext. |
-| DEK held in process memory only | Implemented | Key loaded from SOPS-encrypted file at startup, never written to disk in plaintext. |
+| DEK in .env file (plaintext by default) | Implemented | Key loaded from `.env` at startup. **By default the DEK is plaintext on disk.** Only protected if optional SOPS + age encryption is configured (requires installing `age`). |
 | HMAC hashes for lookups | Implemented | Phone dedup uses HMAC-SHA256, not reversible to plaintext. |
 | PostgreSQL log_statement=none | Planned | Prevents SQL queries (which contain plaintext) from appearing in Postgres logs. |
 | Delivery records auto-deleted | Implemented | Records hard-deleted + VACUUMed within 24 hours. A seized server likely has no delivery history. |
@@ -59,9 +59,13 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 
 | Layer | Status | Protection |
 |-------|--------|------------|
-| Encrypted IndexedDB | Implemented | Route data encrypted with AES-GCM-256 in IndexedDB. |
-| TTL auto-purge (8 hours) | Implemented | On next app open after TTL, all data is deleted. No server contact needed. |
-| End-of-shift manual purge | Implemented | Driver taps "End Shift" → data + tile cache wiped, confirmation sent to server. |
+| Encrypted IndexedDB | Implemented | Route data encrypted with AES-GCM-256 via server-issued session key, derived through HKDF. Key held only in sessionStorage (volatile, tab-scoped, not on disk). |
+| TTL auto-purge (8 hours) | Implemented | Session expiry stored encrypted in IndexedDB. On app foreground, checks expiry and purges all data + key if expired. |
+| End-of-shift manual purge | Implemented | Flushes sync queue, clears all IndexedDB stores, destroys CryptoKey, clears sessionStorage key, clears tile cache, confirms to server. |
+| Panic erase (driver) | Implemented | Long-press "Erase" button on Dashboard. Instant destroy of all local data — no network calls, no waiting. |
+| Remote wipe (admin) | Implemented | Admin revokes session key in Redis. Driver status poll detects revocation and triggers emergency purge. |
+| QR backup key | Implemented | After route download, driver can photograph a QR code of the session key for offline recovery after tab close. |
+| Session key re-issue | Implemented | `GET /api/driver/session-key` re-issues from Redis if driver is online after tab close/crash. |
 | Purge confirmation tracking | Implemented | Admin warned if driver hasn't confirmed purge within 12 hours. |
 | Single-use download tokens | Implemented | Route download tokens expire after 5 minutes, can't be replayed. |
 | Admin-controlled route release | Implemented | Phone can't pull routes unless admin explicitly releases them. |
@@ -71,20 +75,23 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | Root/jailbreak detection | Planned | Refuse route download on compromised devices. |
 
 **What an adversary gets with an unlocked phone during an active shift:**
-- Current delivery addresses (the ones assigned to this driver, not all recipients)
-- The route map with stop locations
-- Driver's own phone number
+- Current delivery addresses IF the browser tab is still open (decrypted data is in JS memory)
+- The route map with stop locations (same condition)
 
 **What they DON'T get:**
 - Other drivers' routes
 - Recipients not assigned to this driver
 - Historical delivery data (purged)
 - The admin dashboard or server access
+- Encrypted IndexedDB data (unreadable without the session key, which is only in volatile sessionStorage)
+- The session key from persistent storage (sessionStorage is not written to disk by modern browsers)
 
 **Worst case timeline:**
-- Phone seized during active delivery → addresses visible until TTL purge (max 8 hours)
+- Phone seized during active delivery, browser open → driver can long-press "Erase" to instantly destroy all data
+- Phone seized during active delivery, browser open, no time to erase → addresses in JS memory until tab is closed; IndexedDB has encrypted data that requires the session key
+- Phone seized, browser tab closed → sessionStorage cleared (key gone), IndexedDB has only ciphertext, JWT not in localStorage
 - Phone seized after shift ended → data already purged (0 addresses)
-- Phone seized while locked → encrypted IndexedDB, needs device unlock + app access
+- Admin detects seizure → remote wipe: revokes session key, driver's next poll triggers emergency purge
 
 ---
 
@@ -247,7 +254,10 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | Twilio log scrubbing | **Implemented** |
 | Driver phone TTL auto-purge | **Implemented** |
 | Purge confirmation tracking | **Implemented** |
-| Encrypted IndexedDB (PWA) | **Implemented** |
+| Encrypted IndexedDB (PWA) | **Implemented** — AES-GCM-256, server-issued session key via HKDF, key in volatile sessionStorage |
+| Remote wipe (admin spike) | **Implemented** — admin revokes key in Redis, driver poll triggers purge |
+| Panic erase (driver) | **Implemented** — long-press button, instant local destroy |
+| QR backup key for offline recovery | **Implemented** — driver photographs QR after route download |
 | Admin-controlled route release | **Implemented** |
 | Single-use download tokens | **Implemented** |
 | Airplane mode prompts | **Implemented** |

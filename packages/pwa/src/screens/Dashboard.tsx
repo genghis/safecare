@@ -5,12 +5,16 @@ import DeliveryCard from "@/components/DeliveryCard";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import RouteMap from "@/components/RouteMap";
 import AirplaneModeReminder from "@/components/AirplaneModeReminder";
-import { checkIn, pollStatus, downloadRoute, getToken } from "@/lib/api";
+import { checkIn, pollStatus, downloadRoute, getToken, getSessionKey, clearToken } from "@/lib/api";
 import { storeEncrypted, readEncrypted, purgeAll } from "@/lib/db";
 import { flushQueue } from "@/lib/sync";
 import { useAutoSync, usePurgeCheck } from "@/lib/hooks";
-import { confirmPurge } from "@/lib/api";
+import { confirmPurge, persistToken } from "@/lib/api";
 import { cacheTiles, clearTileCache } from "@/lib/tile-cache";
+import { deriveKey, storeSessionKey, loadSessionKey, clearSessionKey, getCurrentKey } from "@/lib/crypto";
+import BackupKeyOverlay from "@/components/BackupKeyOverlay";
+import PanicButton from "@/components/PanicButton";
+import { emergencyPurge } from "@/lib/db";
 
 export type Delivery = {
   id: string;
@@ -59,6 +63,8 @@ export default function Dashboard() {
   } | null>(null);
   const [tilesCached, setTilesCached] = useState(false);
   const [showMapCachedNotice, setShowMapCachedNotice] = useState(false);
+  const [showBackupKey, setShowBackupKey] = useState(false);
+  const [currentSessionKey, setCurrentSessionKey] = useState<string | null>(null);
 
   const geoWatchRef = useRef<number | null>(null);
 
@@ -105,6 +111,30 @@ export default function Dashboard() {
   // Load cached route data on mount
   // ---------------------------------------------------------------------------
   const loadCachedRoute = useCallback(async () => {
+    // Step 1: Restore the encryption key
+    if (!getCurrentKey()) {
+      const savedKey = loadSessionKey();
+      if (savedKey) {
+        // Fast path: key is in sessionStorage (same tab, page refresh)
+        await deriveKey(savedKey);
+      } else {
+        // Slow path: try to re-issue from server
+        try {
+          const result = await getSessionKey();
+          if (result?.sessionKey) {
+            await deriveKey(result.sessionKey);
+            storeSessionKey(result.sessionKey);
+          }
+        } catch {
+          // Server unreachable or no active session key — can't decrypt cached data
+          return;
+        }
+      }
+    }
+
+    // Step 2: Read encrypted route data
+    if (!getCurrentKey()) return;
+
     try {
       const cached = (await readEncrypted("routes", "currentRoute")) as {
         deliveries: Delivery[];
@@ -136,7 +166,7 @@ export default function Dashboard() {
         if (cached.tilesCached) setTilesCached(true);
       }
     } catch {
-      // No cached data or decryption failed
+      // Decryption failed (key mismatch, corrupt data) — start fresh
     }
   }, []);
 
@@ -148,6 +178,13 @@ export default function Dashboard() {
       try {
         const status = await pollStatus();
         if (!status.sessionActive) return; // No session, stay idle
+
+        // Remote wipe: admin revoked this driver's session
+        if (status.revoked) {
+          await emergencyPurge();
+          navigate("/", { replace: true });
+          return;
+        }
 
         if (status.checkedIn) {
           setSessionStatus("checked_in");
@@ -194,6 +231,13 @@ export default function Dashboard() {
     setRefreshing(true);
     try {
       const status = await pollStatus();
+
+      // Remote wipe check
+      if (status.revoked) {
+        await emergencyPurge();
+        navigate("/", { replace: true });
+        return;
+      }
       if (status.routeReleased && status.downloadToken) {
         // Get driver's current GPS position for route optimization
         let driverLat: number | undefined;
@@ -212,6 +256,16 @@ export default function Dashboard() {
         }
 
         const route = await downloadRoute(status.downloadToken, driverLat, driverLng);
+
+        // Initialize encryption key from server-provided session key
+        if (route.sessionKey) {
+          await deriveKey(route.sessionKey);
+          storeSessionKey(route.sessionKey);
+          // Show QR backup overlay (only on fresh download, not on cached restore)
+          setCurrentSessionKey(route.sessionKey);
+          setShowBackupKey(true);
+        }
+
         const items: Delivery[] = route.stops.map((s, i) => ({
           id: s.deliveryId,
           sequence: s.sequence ?? i + 1,
@@ -239,8 +293,8 @@ export default function Dashboard() {
         if (route.routeGeometry) setRouteGeometry(route.routeGeometry);
         if (route.tileBounds) setTileBounds(route.tileBounds);
 
-        // Cache for offline restore (non-fatal if crypto not ready)
-        try {
+        // Encrypt and cache route data for offline restore
+        if (getCurrentKey()) {
           await storeEncrypted("routes", "currentRoute", {
             deliveries: items,
             sessionId: route.sessionId,
@@ -250,7 +304,13 @@ export default function Dashboard() {
             tileBounds: route.tileBounds,
             tilesCached: false,
           });
-        } catch { /* crypto not initialized yet */ }
+
+          // Persist JWT to encrypted IndexedDB (no longer in localStorage)
+          try { await persistToken(getToken()!); } catch { /* best effort */ }
+
+          // Store session expiry for TTL auto-purge
+          await storeEncrypted("session", "expiresAt", new Date(route.expiresAt).getTime());
+        }
 
         // Pre-cache tiles for offline map use
         if (route.tileUrls?.length) {
@@ -263,7 +323,7 @@ export default function Dashboard() {
             setShowMapCachedNotice(true);
 
             // Update cached data to record tile caching complete
-            try {
+            if (getCurrentKey()) {
               await storeEncrypted("routes", "currentRoute", {
                 deliveries: items,
                 sessionId: route.sessionId,
@@ -273,7 +333,7 @@ export default function Dashboard() {
                 tileBounds: route.tileBounds,
                 tilesCached: true,
               });
-            } catch { /* best effort */ }
+            }
 
             // Auto-hide the notice after 4 seconds
             setTimeout(() => setShowMapCachedNotice(false), 4000);
@@ -310,6 +370,8 @@ export default function Dashboard() {
     try {
       await flushQueue();
       await purgeAll();
+      clearSessionKey();
+      clearToken();
       await clearTileCache();
       if (sessionId) {
         try {
@@ -687,7 +749,7 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* End Shift button */}
+          {/* Bottom action bar: End Shift + Panic Erase */}
           <div
             style={{
               position: "fixed",
@@ -701,18 +763,28 @@ export default function Dashboard() {
               pointerEvents: "none",
             }}
           >
-            <button
-              className="btn btn-danger btn-block"
+            <div
               style={{
-                minHeight: 56,
-                fontSize: 18,
+                display: "flex",
+                gap: 12,
+                alignItems: "stretch",
                 pointerEvents: "auto",
               }}
-              onClick={() => setShowEndShift(true)}
-              disabled={loading}
             >
-              {loading ? <span className="spinner" /> : "End Shift"}
-            </button>
+              <button
+                className="btn btn-danger"
+                style={{
+                  flex: 1,
+                  minHeight: 56,
+                  fontSize: 18,
+                }}
+                onClick={() => setShowEndShift(true)}
+                disabled={loading}
+              >
+                {loading ? <span className="spinner" /> : "End Shift"}
+              </button>
+              <PanicButton />
+            </div>
           </div>
         </>
       )}
@@ -728,6 +800,17 @@ export default function Dashboard() {
         onConfirm={handleEndShift}
         onCancel={() => setShowEndShift(false)}
       />
+
+      {/* Backup key QR overlay — shown once after route download */}
+      {showBackupKey && currentSessionKey && (
+        <BackupKeyOverlay
+          sessionKey={currentSessionKey}
+          onDismiss={() => {
+            setShowBackupKey(false);
+            setCurrentSessionKey(null);
+          }}
+        />
+      )}
     </div>
   );
 }

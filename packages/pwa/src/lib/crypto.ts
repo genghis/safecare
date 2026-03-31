@@ -66,7 +66,7 @@ export async function deriveKey(sessionKey: string): Promise<CryptoKey> {
   // Import raw key material for HKDF
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
-    rawBytes.buffer as ArrayBuffer,
+    rawBytes,
     "HKDF",
     false,
     ["deriveKey"],
@@ -175,4 +175,45 @@ export function destroyKey(): void {
  */
 export function getCurrentKey(): CryptoKey | null {
   return currentKey;
+}
+
+// ---------------------------------------------------------------------------
+// Session key persistence (sessionStorage — volatile, tab-scoped)
+// ---------------------------------------------------------------------------
+
+const SESSION_KEY_STORAGE = "safecare_sk";
+
+/**
+ * Persist the raw session key hex to sessionStorage.
+ * Survives page refreshes within the same tab but is cleared on tab close.
+ * NOT written to disk by modern browsers — forensically resistant.
+ */
+export function storeSessionKey(key: string): void {
+  try {
+    sessionStorage.setItem(SESSION_KEY_STORAGE, key);
+  } catch {
+    // sessionStorage not available (e.g. some private browsing modes)
+  }
+}
+
+/**
+ * Load the raw session key hex from sessionStorage, or null if not present.
+ */
+export function loadSessionKey(): string | null {
+  try {
+    return sessionStorage.getItem(SESSION_KEY_STORAGE);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Remove the session key from sessionStorage.
+ */
+export function clearSessionKey(): void {
+  try {
+    sessionStorage.removeItem(SESSION_KEY_STORAGE);
+  } catch {
+    // best effort
+  }
 }

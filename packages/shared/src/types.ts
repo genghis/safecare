@@ -190,6 +190,8 @@ export interface RoutePacket {
     sequence: number;
   }>;
   expiresAt: Date;
+  /** AES-GCM-256 session key (hex) for client-side IndexedDB encryption. */
+  sessionKey?: string;
   routeGeometry?: RouteGeometry;
   tileBounds?: TileBounds;
   tileUrls?: string[];

@@ -165,7 +165,7 @@ describe('api.ts — API client', () => {
       await verifyOtp('+27821234567', '123456');
 
       const body = lastFetchBody();
-      expect(body).toEqual({ phone: '+27821234567', code: '123456' });
+      expect(body).toEqual({ phone: '+27821234567', otp: '123456' });
     });
 
     it('returns the token from the response', async () => {

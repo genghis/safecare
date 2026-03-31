@@ -201,6 +201,36 @@ export default async function dispatchRoutes(fastify: FastifyInstance) {
   );
 
   /**
+   * POST /api/dispatch/sessions/:id/revoke-driver
+   * Revoke a driver's session key (remote wipe). Destroys the encryption key
+   * in Redis so the driver's cached data becomes permanently unreadable.
+   */
+  fastify.post(
+    '/api/dispatch/sessions/:id/revoke-driver',
+    { preHandler: [fastify.requireAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
+      const parsed = z
+        .object({ driverId: z.string().uuid() })
+        .safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid request body',
+          details: parsed.error.issues,
+        });
+      }
+
+      await dispatchService.revokeDriverSession(parsed.data.driverId, id);
+
+      return reply.send({
+        success: true,
+        data: { revoked: true },
+      });
+    },
+  );
+
+  /**
    * GET /api/dispatch/sessions/:id/check-ins
    * Get check-in status for a dispatch session (admin only).
    */

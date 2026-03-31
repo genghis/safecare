@@ -680,6 +680,82 @@ fi
 echo ""
 
 # ---------------------------------------------------------------------------
+echo "--- 8. Session Key & Client Encryption ---"
+# ---------------------------------------------------------------------------
+
+# Test session key re-issue endpoint (requires driver token + active session)
+if [ -n "${DRIVER_TOKEN:-}" ] && [ -n "${SESSION_ID:-}" ]; then
+  SK_RESP=$(curl -s -w '\n%{http_code}' "$API/api/driver/session-key" \
+    -H "Authorization: Bearer $DRIVER_TOKEN" 2>&1)
+  SK_STATUS=$(echo "$SK_RESP" | tail -1)
+  SK_BODY=$(echo "$SK_RESP" | sed '$d')
+
+  if [ "$SK_STATUS" = "200" ]; then
+    SK=$(echo "$SK_BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('sessionKey',''))" 2>/dev/null || echo "")
+    if [ -n "$SK" ] && [ ${#SK} -eq 64 ]; then
+      pass "GET /api/driver/session-key returns 64-char hex key"
+    else
+      fail "GET /api/driver/session-key" "key not 64 hex chars"
+    fi
+  elif [ "$SK_STATUS" = "404" ]; then
+    pass "GET /api/driver/session-key returns 404 (no active key — expected if route not downloaded)"
+  else
+    fail "GET /api/driver/session-key" "unexpected status $SK_STATUS"
+  fi
+else
+  skip "Session key re-issue" "no driver token or session"
+fi
+
+# Test session revocation endpoint (admin only)
+if [ -n "${TOKEN:-}" ] && [ -n "${SESSION_ID:-}" ] && [ -n "${DRIVER_ID:-}" ]; then
+  REVOKE_RESP=$(curl -s -w '\n%{http_code}' -X POST "$API/api/dispatch/sessions/$SESSION_ID/revoke-driver" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN" \
+    -d "{\"driverId\":\"$DRIVER_ID\"}" 2>&1)
+  REVOKE_STATUS=$(echo "$REVOKE_RESP" | tail -1)
+
+  if [ "$REVOKE_STATUS" = "200" ]; then
+    pass "POST /api/dispatch/sessions/:id/revoke-driver"
+
+    # After revocation, driver status should show revoked=true
+    if [ -n "${DRIVER_TOKEN:-}" ]; then
+      STATUS_RESP=$(curl -s "$API/api/driver/status" -H "Authorization: Bearer $DRIVER_TOKEN" 2>&1)
+      REVOKED=$(echo "$STATUS_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('revoked',False))" 2>/dev/null || echo "")
+      if [ "$REVOKED" = "True" ]; then
+        pass "Driver status shows revoked=true after admin revocation"
+      else
+        fail "Revocation detection" "revoked flag not set in status response"
+      fi
+    fi
+
+    # Session key should be unavailable after revocation
+    SK_RESP2=$(curl -s -w '\n%{http_code}' "$API/api/driver/session-key" \
+      -H "Authorization: Bearer $DRIVER_TOKEN" 2>&1)
+    SK_STATUS2=$(echo "$SK_RESP2" | tail -1)
+    if [ "$SK_STATUS2" = "403" ] || [ "$SK_STATUS2" = "404" ]; then
+      pass "Session key unavailable after revocation (status $SK_STATUS2)"
+    else
+      fail "Post-revocation key access" "expected 403 or 404, got $SK_STATUS2"
+    fi
+  else
+    fail "Session revocation" "status $REVOKE_STATUS"
+  fi
+else
+  skip "Session revocation flow" "no admin token, session, or driver"
+fi
+
+# Unauthenticated access to session-key must be rejected
+UNAUTH_SK=$(curl -s -w '\n%{http_code}' "$API/api/driver/session-key" 2>&1)
+UNAUTH_STATUS=$(echo "$UNAUTH_SK" | tail -1)
+if [ "$UNAUTH_STATUS" = "401" ]; then
+  pass "GET /api/driver/session-key rejects unauthenticated requests"
+else
+  fail "Session key auth" "expected 401, got $UNAUTH_STATUS"
+fi
+
+echo ""
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo "=========================================="

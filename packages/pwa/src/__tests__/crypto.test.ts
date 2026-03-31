@@ -19,6 +19,9 @@ import {
   generateEphemeralKey,
   destroyKey,
   getCurrentKey,
+  storeSessionKey,
+  loadSessionKey,
+  clearSessionKey,
 } from '@/lib/crypto';
 
 // A valid 32-byte hex string (64 hex chars) to use as session key input
@@ -249,5 +252,92 @@ describe('key lifecycle', () => {
 
     destroyKey();
     expect(getCurrentKey()).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Session key persistence: storeSessionKey / loadSessionKey / clearSessionKey
+// ---------------------------------------------------------------------------
+
+describe('storeSessionKey / loadSessionKey round-trip', () => {
+  afterEach(() => {
+    sessionStorage.clear();
+  });
+
+  it('stores and retrieves a session key', () => {
+    const hex = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2';
+    storeSessionKey(hex);
+    expect(loadSessionKey()).toBe(hex);
+  });
+
+  it('overwrites a previously stored key', () => {
+    const first = 'aaaa';
+    const second = 'bbbb';
+    storeSessionKey(first);
+    storeSessionKey(second);
+    expect(loadSessionKey()).toBe(second);
+  });
+});
+
+describe('clearSessionKey', () => {
+  afterEach(() => {
+    sessionStorage.clear();
+  });
+
+  it('removes a stored session key', () => {
+    storeSessionKey('deadbeef');
+    expect(loadSessionKey()).toBe('deadbeef');
+
+    clearSessionKey();
+    expect(loadSessionKey()).toBeNull();
+  });
+
+  it('does not throw when no key is stored', () => {
+    expect(() => clearSessionKey()).not.toThrow();
+  });
+});
+
+describe('loadSessionKey edge cases', () => {
+  afterEach(() => {
+    sessionStorage.clear();
+  });
+
+  it('returns null when no key has been stored', () => {
+    expect(loadSessionKey()).toBeNull();
+  });
+
+  it('returns null after sessionStorage.clear()', () => {
+    storeSessionKey('cafebabe');
+    sessionStorage.clear();
+    expect(loadSessionKey()).toBeNull();
+  });
+});
+
+describe('session key survives within the same session', () => {
+  afterEach(() => {
+    sessionStorage.clear();
+  });
+
+  it('key persists across multiple load calls without re-storing', () => {
+    const hex = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+    storeSessionKey(hex);
+
+    // Multiple reads should all return the same value
+    expect(loadSessionKey()).toBe(hex);
+    expect(loadSessionKey()).toBe(hex);
+    expect(loadSessionKey()).toBe(hex);
+  });
+
+  it('key is independent of in-memory CryptoKey lifecycle', async () => {
+    const hex = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2';
+    storeSessionKey(hex);
+
+    // Derive and destroy the in-memory CryptoKey
+    await deriveKey(hex);
+    destroyKey();
+    expect(getCurrentKey()).toBeNull();
+
+    // sessionStorage key should still be available
+    expect(loadSessionKey()).toBe(hex);
   });
 });

@@ -58,6 +58,8 @@ Open **http://localhost:3000** — a setup wizard walks you through creating you
 - **6 languages** — English, Spanish, Arabic, Somali, French, Chinese
 - **3 notification channels** — Signal (free, E2E), SMS (Twilio), WhatsApp (Twilio)
 - **Field-level encryption** — recipient PII encrypted with pgcrypto
+- **Driver phone encryption** — route data AES-GCM-256 encrypted in IndexedDB, key never on disk
+- **Remote wipe + panic erase** — admin can revoke routes; drivers can instantly erase all data
 - **Automatic data purge** — delivery records deleted + VACUUMed within 24 hours
 - **Emergency destroy** — `scripts/destroy.sh` shreds everything
 
@@ -79,7 +81,7 @@ Monthly operating cost: $0 (Signal only) to ~$6/mo (Twilio SMS).
 - **[safecare.app](https://safecare.app)** — Project website + pre-built map data
 - **[GETTING-STARTED.md](GETTING-STARTED.md)** — Full setup guide, daily use, troubleshooting
 - **[STATUS.md](STATUS.md)** — Implementation progress against the phased plan
-- **[tests/README.md](tests/README.md)** — Test suite documentation (94 tests)
+- **[tests/README.md](tests/README.md)** — Test suite documentation
 - **[docs/THREAT-MODEL.md](docs/THREAT-MODEL.md)** — Security threat analysis
 - **[docs/CLOUD-PROVISIONING.md](docs/CLOUD-PROVISIONING.md)** — Map provisioning architecture
 - **[PLAN.md](PLAN.md)** — Product plan, security architecture, phased roadmap
