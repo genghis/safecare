@@ -48,7 +48,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 
 ## Threat 2: Driver's Phone is Seized or Stolen
 
-**Scenario:** A driver's phone is taken by law enforcement, a bad actor, or simply lost, while it may contain delivery route data.
+**Scenario:** A driver's phone is taken by a bad actor, or simply lost, while it may contain delivery route data.
 
 **What's on the phone:**
 - The PWA with cached route data (addresses, names, lat/lng)
