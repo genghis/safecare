@@ -53,6 +53,10 @@ Last updated: 2026-03-30
 | Remote wipe (admin spike) | Done | Admin revokes session key in Redis. Driver status poll detects revocation, triggers instant local purge. |
 | Panic erase (driver) | Done | Long-press "Erase" button on Dashboard. Instant local destroy — no network, no confirmation. |
 | Session key re-issue | Done | `GET /api/driver/session-key` re-issues from Redis after tab close (online recovery). |
+| Off-disk DEK (server encryption key) | Done | DEK never written to .env or disk. Loaded into memory via QR code unlock on each boot. Seized server = unreadable database. |
+| RPi appliance provisioner | Done | Flask captive portal: WiFi setup, device password, key gen + QR, Docker startup. Hands off to dashboard wizard. |
+| Dashboard unlock screen | Done | QR scanner + manual hex entry to unlock system on each boot. 423 Locked on PII endpoints until unlocked. |
+| pi-gen SD card image | Done | Custom pi-gen stage: pre-pulled Docker images, systemd services, hostapd/dnsmasq, Avahi mDNS |
 | **Full client-side data purge (SQLCipher/keychain)** | **Not done** | No hardware-backed key expiry; purge uses IndexedDB clear + sessionStorage + tile cache |
 
 ## Phase 3: Blind Communication + Acknowledgment -- IN PROGRESS

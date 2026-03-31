@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h1>Welcome to SafeCare</h1>
+  <p class="subtitle">Let's set up your mutual aid delivery system.</p>
+
+  <div class="steps-preview">
+    <div class="step-item"><span class="step-num">1</span> Connect to WiFi</div>
+    <div class="step-item"><span class="step-num">2</span> Set device password</div>
+    <div class="step-item"><span class="step-num">3</span> Generate encryption keys</div>
+    <div class="step-item"><span class="step-num">4</span> Start services</div>
+  </div>
+
+  <a href="/wifi" class="btn btn-primary btn-block">Get Started</a>
+</div>
+{% endblock %}

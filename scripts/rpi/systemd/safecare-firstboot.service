@@ -1,0 +1,12 @@
+[Unit]
+Description=SafeCare First Boot Orchestrator
+ConditionPathExists=!/opt/safecare/.provisioned
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/safecare/scripts/rpi/firstboot.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,322 @@
+/* SafeCare Provisioner — Mobile-first, system fonts, no build step */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #f5f5f7;
+  color: #1a1a1a;
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+}
+
+.container {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 40px 20px 60px;
+}
+
+.logo {
+  width: 56px;
+  height: 56px;
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 22px;
+  margin: 0 auto 32px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+h1 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s;
+  min-height: 52px;
+}
+.btn:active { opacity: 0.8; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary { background: #1a1a1a; color: #fff; }
+.btn-secondary { background: #f0f0f0; color: #1a1a1a; }
+.btn-block { display: flex; width: 100%; }
+
+.btn-link {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 10px;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input:focus { border-color: #1a1a1a; }
+
+/* Steps preview */
+.steps-preview {
+  margin: 20px 0 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #444;
+}
+.step-num {
+  width: 28px;
+  height: 28px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a1a1a;
+  flex-shrink: 0;
+}
+
+/* Network list */
+.network-list { margin-top: 16px; }
+.network-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  background: #f8f8f8;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+}
+.network-item:active { background: #eee; }
+.network-signal { font-size: 18px; letter-spacing: 2px; color: #999; }
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 360px;
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 20px 0;
+}
+.loading::before {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e0e0e0;
+  border-top-color: #1a1a1a;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin: 0 auto 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Error */
+.error {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/* Checklist */
+.checklist { margin: 16px 0; }
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  border-bottom: 1px solid #f0f0f0;
+}
+.check-item.done::before {
+  content: "\2713";
+  color: #16a34a;
+  font-size: 16px;
+  font-weight: 800;
+}
+.check-item.highlight {
+  color: #1a1a1a;
+  font-weight: 700;
+}
+.check-item.highlight::before {
+  content: "\2192";
+  color: #2563eb;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* QR container */
+.qr-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: #f8f8f8;
+  border-radius: 12px;
+  margin: 16px 0;
+}
+.qr-container img { width: 220px; height: 220px; }
+
+/* Warning */
+.warning-box {
+  background: #fffbeb;
+  border: 1.5px solid #fbbf24;
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #92400e;
+}
+
+/* Checkbox */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #1a1a1a;
+}
+
+/* Service list */
+.service-list { margin: 16px 0; }
+.service-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.service-name { flex: 1; }
+.service-note { font-size: 11px; color: #999; font-weight: 500; }
+
+.status-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-icon.pending { background: #e0e0e0; }
+.status-icon.starting { background: #fbbf24; animation: pulse 1s infinite; }
+.status-icon.running { background: #16a34a; }
+@keyframes pulse { 50% { opacity: 0.4; } }
+
+/* Success */
+.success-icon {
+  width: 64px;
+  height: 64px;
+  background: #dcfce7;
+  color: #16a34a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 auto 20px;
+}
+
+/* Hint */
+.hint {
+  font-size: 12px;
+  color: #999;
+  line-height: 1.5;
+}
+.hint code {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.hint a { color: #2563eb; }

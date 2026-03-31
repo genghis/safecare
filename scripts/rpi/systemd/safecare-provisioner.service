@@ -1,0 +1,16 @@
+[Unit]
+Description=SafeCare Provisioning Captive Portal
+ConditionPathExists=!/opt/safecare/.provisioned
+After=safecare-ap.service
+Requires=safecare-ap.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/safecare/scripts/rpi
+ExecStart=/usr/bin/python3 provisioner.py
+Restart=on-failure
+RestartSec=2
+Environment=SAFECARE_ROOT=/opt/safecare
+
+[Install]
+WantedBy=safecare-firstboot.service

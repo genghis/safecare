@@ -38,11 +38,17 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchData() {
-      // Check if initial setup is needed
+      // Check if system is locked or initial setup is needed
       const setupRes = await apiGet<any>("/api/setup/status");
-      if (setupRes.ok && !setupRes.data?.setupComplete) {
-        router.push("/setup");
-        return;
+      if (setupRes.ok) {
+        if (setupRes.data?.locked) {
+          router.push("/unlock");
+          return;
+        }
+        if (!setupRes.data?.setupComplete) {
+          router.push("/setup");
+          return;
+        }
       }
 
       const statsRes = await apiGet<DashboardStats>("/api/dashboard/stats");

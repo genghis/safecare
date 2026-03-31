@@ -46,21 +46,27 @@ async function main() {
   // --- Auth decorators ---
   await fastify.register(authPlugin);
 
-  // --- Routes ---
+  // --- Routes that work without DEK (no encryption needed) ---
   await fastify.register(authRoutes);
-  await fastify.register(recipientRoutes);
-  await fastify.register(driverRoutes);
-  await fastify.register(dispatchRoutes);
-  await fastify.register(driverAppRoutes);
-  await fastify.register(deliveryRoutes);
-  await fastify.register(zoneRoutes);
-  await fastify.register(distributionRoutes);
-  await fastify.register(dashboardRoutes);
-  await fastify.register(geocodeRoutes);
-  await fastify.register(webhookRoutes);
-  await fastify.register(notificationRoutes);
-  await fastify.register(settingsRoutes);
   await fastify.register(setupRoutes);
+  await fastify.register(settingsRoutes);
+  await fastify.register(geocodeRoutes);
+  await fastify.register(zoneRoutes);
+
+  // --- Routes that require DEK (PII encryption/decryption) ---
+  // These return 423 Locked if the system hasn't been unlocked yet.
+  await fastify.register(async function dekProtectedRoutes(scoped) {
+    scoped.addHook('preHandler', fastify.requireUnlocked);
+    await scoped.register(recipientRoutes);
+    await scoped.register(driverRoutes);
+    await scoped.register(dispatchRoutes);
+    await scoped.register(driverAppRoutes);
+    await scoped.register(deliveryRoutes);
+    await scoped.register(distributionRoutes);
+    await scoped.register(dashboardRoutes);
+    await scoped.register(webhookRoutes);
+    await scoped.register(notificationRoutes);
+  });
 
   // --- Health check ---
   fastify.get('/api/health', async () => {

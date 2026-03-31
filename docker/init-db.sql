@@ -120,6 +120,15 @@ CREATE TABLE IF NOT EXISTS download_tokens (
   created_at TIMESTAMP DEFAULT now()
 );
 
+-- ---------- dek_canary ----------
+-- Single-row table: stores pgp_sym_encrypt('safecare', DEK).
+-- Used to validate the DEK on unlock without needing any real data.
+CREATE TABLE IF NOT EXISTS dek_canary (
+  id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  encrypted_value TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT now()
+);
+
 -- ---------- audit_log ----------
 CREATE TABLE IF NOT EXISTS audit_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

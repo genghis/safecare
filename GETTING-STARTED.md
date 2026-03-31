@@ -18,19 +18,22 @@ A 4GB Raspberry Pi works well for metro-area deployments. The setup wizard shows
 
 ## Installation
 
-### Option A: Raspberry Pi
+### Option A: Raspberry Pi (recommended)
 
-*(Coming soon: a pre-built SD card image that boots directly into SafeCare)*
+1. Download the SafeCare SD card image from [safecare.app](https://safecare.app)
+2. Flash it to a microSD card using [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
+3. Insert the card into your Raspberry Pi and plug it in
+4. On your phone or laptop, connect to the **SafeCare-Setup** WiFi network
+5. A setup page opens automatically. Walk through:
+   - **Connect to WiFi** -- pick your home/office network
+   - **Set device password** -- change the default password
+   - **Save encryption key** -- photograph the QR code and store it safely (this is the ONLY backup of your encryption key)
+   - **Start services** -- watch Docker containers come up
+6. When done, open **http://safecare.local:3000** on your network
+7. Scan your encryption key QR code to unlock the dashboard
+8. Continue with the setup wizard (account, region, map download, notifications)
 
-For now, install Docker on your Pi, then:
-
-```bash
-git clone https://github.com/safecare-project/safecare.git
-cd safecare
-bash scripts/setup.sh
-cd docker
-docker compose up -d
-```
+**Important:** The QR code you photographed is your encryption key. Store the printout or photo in a safe place. If the Raspberry Pi is lost or destroyed, you need this key to recover your data. It is intentionally NOT stored on the device -- if the device is seized, recipient data is unreadable without it.
 
 ### Option B: PC / Mac / Linux
 

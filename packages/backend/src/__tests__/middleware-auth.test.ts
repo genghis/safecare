@@ -1,6 +1,17 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
 import fastifyJwt from '@fastify/jwt';
+
+vi.mock('../config.js', () => ({
+  config: {
+    JWT_SECRET: 'test-jwt-secret',
+    DEK: 'test-dek',
+    HMAC_KEY: 'test-hmac-key',
+    REDIS_URL: 'redis://localhost:6379',
+  },
+  isUnlocked: vi.fn(() => true),
+}));
+
 import authPlugin from '../middleware/auth.js';
 
 // ---------------------------------------------------------------------------

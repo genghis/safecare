@@ -1,0 +1,19 @@
+[Unit]
+Description=SafeCare Setup WiFi Access Point
+ConditionPathExists=!/opt/safecare/.provisioned
+After=network.target
+
+[Service]
+Type=forking
+ExecStartPre=/usr/bin/rfkill unblock wifi
+ExecStartPre=/usr/sbin/ip link set wlan0 up
+ExecStartPre=/usr/sbin/ip addr add 10.42.0.1/24 dev wlan0
+ExecStart=/usr/sbin/hostapd -B /opt/safecare/scripts/rpi/config/hostapd.conf
+ExecStartPost=/usr/sbin/dnsmasq --conf-file=/opt/safecare/scripts/rpi/config/dnsmasq.conf
+ExecStop=/usr/bin/killall dnsmasq
+ExecStopPost=/usr/bin/killall hostapd
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=safecare-firstboot.service

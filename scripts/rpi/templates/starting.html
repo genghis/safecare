@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h1>Starting SafeCare</h1>
+  <p class="subtitle">Starting the database, API, and application...</p>
+
+  <div id="services-list" class="service-list">
+    <div class="loading">Initializing...</div>
+  </div>
+
+  <a href="/done" id="continue-link" class="btn btn-primary btn-block" style="display:none;margin-top:20px">
+    Continue
+  </a>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const serviceNames = {
+  postgres: 'PostgreSQL Database',
+  redis: 'Redis Cache',
+  nominatim: 'Geocoding Engine',
+  osrm: 'Routing Engine',
+  signal: 'Signal Messenger',
+  backend: 'Backend API',
+  dashboard: 'Admin Dashboard',
+  pwa: 'Driver App',
+};
+
+let started = false;
+
+async function startDocker() {
+  if (started) return;
+  started = true;
+  await fetch('/api/docker/start', {method: 'POST'});
+  pollDockerStatus();
+}
+
+async function pollDockerStatus() {
+  try {
+    const res = await fetch('/api/docker/status');
+    const data = await res.json();
+    renderServices(data.services);
+
+    if (data.coreReady) {
+      document.getElementById('continue-link').style.display = 'block';
+      // Auto-redirect after 3 seconds
+      setTimeout(() => { window.location.href = '/done'; }, 3000);
+      return;
+    }
+  } catch {}
+
+  setTimeout(pollDockerStatus, 3000);
+}
+
+function renderServices(services) {
+  const list = document.getElementById('services-list');
+  const entries = Object.entries(serviceNames);
+  list.innerHTML = entries.map(([key, name]) => {
+    const svc = services[key];
+    let icon = '<span class="status-icon pending"></span>';
+    if (svc) {
+      if (svc.health === 'healthy' || svc.status === 'running') {
+        icon = '<span class="status-icon running"></span>';
+      } else if (svc.status === 'starting' || svc.status === 'created') {
+        icon = '<span class="status-icon starting"></span>';
+      }
+    }
+    let note = '';
+    if ((key === 'nominatim' || key === 'osrm') && (!svc || svc.status !== 'running')) {
+      note = '<span class="service-note">Starts after map download</span>';
+    }
+    return `<div class="service-item">${icon}<span class="service-name">${name}</span>${note}</div>`;
+  }).join('');
+}
+
+startDocker();
+</script>
+{% endblock %}

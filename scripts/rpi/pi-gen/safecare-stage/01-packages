@@ -1,0 +1,12 @@
+docker.io
+docker-compose-plugin
+python3-flask
+python3-qrcode
+python3-pil
+hostapd
+dnsmasq
+avahi-daemon
+avahi-utils
+network-manager
+curl
+jq

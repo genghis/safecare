@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" id="keys-generate">
+  <h1>Generate Encryption Keys</h1>
+  <p class="subtitle">SafeCare encrypts all recipient data. Keys will be generated now.</p>
+  <button onclick="generateKeys()" id="gen-btn" class="btn btn-primary btn-block">Generate Keys</button>
+</div>
+
+<div class="card" id="keys-display" style="display:none">
+  <h1>Save Your Encryption Key</h1>
+
+  <div class="checklist">
+    <div class="check-item done">JWT Secret (saved to device)</div>
+    <div class="check-item done">HMAC Key (saved to device)</div>
+    <div class="check-item highlight">Data Encryption Key (save the QR below)</div>
+  </div>
+
+  <div class="qr-container">
+    <img src="/api/keys/qr.png" alt="Encryption Key QR Code" id="qr-img">
+  </div>
+
+  <div class="warning-box">
+    <strong>Save this QR code now.</strong> Take a photo or screenshot.
+    This is the <strong>ONLY backup</strong> of your encryption key.
+    It is NOT stored on this device. If this device is lost or destroyed,
+    you need this key to recover your data.
+  </div>
+
+  <label class="checkbox-label" style="margin-top:20px">
+    <input type="checkbox" id="saved-checkbox" onchange="toggleContinue()">
+    <span>I have saved the QR code</span>
+  </label>
+
+  <button onclick="window.location='/starting'" id="continue-btn" class="btn btn-primary btn-block" disabled style="margin-top:16px">
+    Continue
+  </button>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function generateKeys() {
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+
+  try {
+    const res = await fetch('/api/keys/generate', {method: 'POST'});
+    if (res.ok) {
+      document.getElementById('keys-generate').style.display = 'none';
+      document.getElementById('keys-display').style.display = 'block';
+    } else {
+      btn.textContent = 'Error - Try Again';
+      btn.disabled = false;
+    }
+  } catch {
+    btn.textContent = 'Error - Try Again';
+    btn.disabled = false;
+  }
+}
+
+function toggleContinue() {
+  document.getElementById('continue-btn').disabled =
+    !document.getElementById('saved-checkbox').checked;
+}
+</script>
+{% endblock %}

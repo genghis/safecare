@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
+import { isUnlocked } from '../config.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -8,6 +9,10 @@ declare module 'fastify' {
       reply: FastifyReply,
     ) => Promise<void>;
     requireDriver: (
+      request: FastifyRequest,
+      reply: FastifyReply,
+    ) => Promise<void>;
+    requireUnlocked: (
       request: FastifyRequest,
       reply: FastifyReply,
     ) => Promise<void>;
@@ -46,6 +51,18 @@ async function authPlugin(fastify: FastifyInstance) {
         }
       } catch (err) {
         return reply.code(401).send({ success: false, error: 'Unauthorized' });
+      }
+    },
+  );
+
+  fastify.decorate(
+    'requireUnlocked',
+    async function (_request: FastifyRequest, reply: FastifyReply) {
+      if (!isUnlocked()) {
+        return reply.code(423).send({
+          success: false,
+          error: 'System is locked. Scan the encryption key QR code to unlock.',
+        });
       }
     },
   );

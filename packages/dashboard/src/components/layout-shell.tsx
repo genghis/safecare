@@ -7,7 +7,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   // Setup and login pages render without sidebar
-  const noSidebar = pathname === "/setup" || pathname === "/login";
+  const noSidebar = pathname === "/setup" || pathname === "/login" || pathname === "/unlock";
 
   if (noSidebar) {
     return <main>{children}</main>;

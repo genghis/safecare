@@ -14,13 +14,25 @@ All geocoding, routing, and maps are self-hosted. No addresses leave your networ
 
 ## Quick Start
 
+### Option A: Raspberry Pi (recommended for deployment)
+
+1. Flash the SafeCare SD card image with [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
+2. Insert the card, plug in the Pi
+3. Connect your phone to the **SafeCare-Setup** WiFi network
+4. Walk through the setup wizard: WiFi, device password, encryption key (photograph the QR code!)
+5. Open **http://safecare.local:3000** — scan your QR code to unlock, then create your account and define your region
+
+No terminal, no command line, no technical knowledge needed.
+
+### Option B: Developer setup
+
 ```bash
 git clone https://github.com/safecare-project/safecare.git && cd safecare
 bash scripts/setup.sh
 cd docker && docker compose up -d
 ```
 
-Open **http://localhost:3000** — a setup wizard walks you through creating your account, defining your operating region, and downloading map data. No command line needed after this point.
+Open **http://localhost:3000** — a setup wizard walks you through creating your account, defining your operating region, and downloading map data.
 
 **See [GETTING-STARTED.md](GETTING-STARTED.md) for the full guide** including screenshots, driver setup, notification configuration, and troubleshooting.
 
