@@ -4,42 +4,169 @@ SafeCare is a secure mutual aid food delivery system. This guide walks you throu
 
 ## What You Need
 
-**One of these to run the server:**
-- A Raspberry Pi 4 or 5 (4GB or 8GB) with a USB SSD -- ~$60-100
-- Any home PC or laptop with 4GB+ RAM
-- A small VPS ($20-40/month) if you prefer not to self-host
+### Shopping list for a Raspberry Pi setup
 
-A 4GB Raspberry Pi works well for metro-area deployments. The setup wizard shows a RAM estimate as you define your operating region so you can size it appropriately.
+| Item | Cost | Where to buy |
+|------|------|-------------|
+| Raspberry Pi 5 (8GB) | ~$80 | [raspberrypi.com](https://www.raspberrypi.com/products/raspberry-pi-5/), Amazon, Micro Center |
+| microSD card (32GB or larger) | ~$10 | Amazon, any electronics store |
+| USB-C power supply (27W for Pi 5, 15W for Pi 4) | ~$12 | Buy the official one to avoid power issues |
+| Ethernet cable (optional but recommended) | ~$5 | Faster and more reliable than WiFi for the server |
 
-**Plus:**
-- An internet connection (for initial map data download)
-- A web browser (Chrome, Firefox, Safari, or Edge)
+A Raspberry Pi 4 (4GB) also works for metro-area deployments. The 8GB Pi 5 is recommended for larger regions.
+
+**You also need:**
+- A WiFi network with internet access
+- A phone or laptop with a web browser
 - Optionally: a Twilio account (~$6/month) for SMS notifications, or a phone number for free Signal notifications
 
-## Installation
+---
 
-### Option A: Raspberry Pi (recommended)
+## Setting Up Your SafeCare Server
 
-1. Download the SafeCare SD card image from [safecare.app](https://safecare.app)
-2. Flash it to a microSD card using [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
-3. Insert the card into your Raspberry Pi and plug it in
-4. On your phone or laptop, connect to the **SafeCare-Setup** WiFi network
-5. A setup page opens automatically. Walk through:
-   - **Connect to WiFi** -- pick your home/office network
-   - **Set device password** -- change the default password
-   - **Save encryption key** -- photograph the QR code and store it safely (this is the ONLY backup of your encryption key)
-   - **Start services** -- watch Docker containers come up
-6. When done, open **http://safecare.local:3000** on your network
-7. Scan your encryption key QR code to unlock the dashboard
-8. Continue with the setup wizard (account, region, map download, notifications)
+### Step 1: Write the SafeCare image to your SD card
 
-**Important:** The QR code you photographed is your encryption key. Store the printout or photo in a safe place. If the Raspberry Pi is lost or destroyed, you need this key to recover your data. It is intentionally NOT stored on the device -- if the device is seized, recipient data is unreadable without it.
+"Flashing" just means copying SafeCare onto the SD card so the Pi can boot from it.
 
-**If your WiFi changes:** If you change your WiFi password, replace your router, or move the Pi to a new location, the Pi will automatically detect that it can't connect. After 60 seconds, it starts a **SafeCare-Recovery** WiFi network. Connect to it with your phone, pick the correct network, and SafeCare reconnects automatically. No terminal or SSH needed.
+1. On your regular computer (not the Pi), download and install **Raspberry Pi Imager** from [raspberrypi.com/software](https://www.raspberrypi.com/software/). It's free and works on Windows, Mac, and Linux.
 
-**On every reboot:** The dashboard will show a lock screen. Scan your encryption key QR code to unlock. This is by design -- it means a seized or stolen device cannot access recipient data.
+2. Download the **SafeCare SD card image** from [safecare.app](https://safecare.app). It's a `.img.xz` file, about 2-3 GB.
 
-### Option B: PC / Mac / Linux
+3. Insert your microSD card into your computer (you may need an adapter).
+
+4. Open Raspberry Pi Imager:
+   - Click **Choose OS** -> scroll down to **Use custom** -> select the SafeCare `.img.xz` file you downloaded
+   - Click **Choose Storage** -> select your microSD card (be careful to pick the right drive!)
+   - Click **Write** and wait for it to finish (about 5-10 minutes)
+
+5. When it says "Write successful", remove the SD card from your computer.
+
+### Step 2: Start the Pi
+
+1. Insert the SD card into the Raspberry Pi (the slot is on the bottom of the board)
+2. If you have an ethernet cable, plug it into the Pi and your router now (this makes map downloads faster later, but it's optional)
+3. Plug in the power supply
+
+The Pi will boot up. You don't need a monitor or keyboard -- everything is done from your phone.
+
+### Step 3: Connect to the setup WiFi
+
+1. On your **phone**, go to your WiFi settings
+2. Look for a network called **SafeCare-Setup** -- it will appear within 1-2 minutes of plugging in the Pi
+3. Connect to it (no password needed)
+4. A setup page should open automatically in your browser
+
+**If the setup page doesn't open automatically:**
+- On iPhone: it usually opens as a popup -- look for a notification
+- On Android: you may see a "Sign in to network" notification -- tap it
+- If nothing happens: open your browser and go to **http://10.42.0.1**
+
+### Step 4: Connect the Pi to your WiFi
+
+The setup page shows "Welcome to SafeCare" with a **Get Started** button.
+
+1. Tap **Get Started**
+2. You'll see a list of WiFi networks that the Pi can detect
+3. Tap your home/office WiFi network
+4. Enter your WiFi password and tap **Connect**
+5. Wait about 15-30 seconds -- your phone may briefly disconnect while the Pi switches networks. That's normal.
+6. Once connected, the page advances automatically
+
+**If it fails:** The Pi restarts the setup WiFi. Reconnect to **SafeCare-Setup** and try again. Double-check your WiFi password.
+
+### Step 5: Set a device password
+
+1. Choose a password for the Pi itself (at least 8 characters)
+2. You'll only need this if you ever SSH into the server for maintenance -- most people never will
+3. Tap **Set Password** (or **Skip for now** if you want to do this later)
+
+### Step 6: Save your encryption key (CRITICAL)
+
+This is the most important step. SafeCare generates an encryption key that protects all recipient data. **This key is NOT stored on the Pi** -- if someone takes the Pi, they cannot read your data without it.
+
+1. The screen shows a QR code -- this IS your encryption key
+2. **Take a photo of the QR code with your phone's camera** (not a screenshot of this page -- use the actual camera app)
+3. **Print the QR code** if you can, and store the printout in a safe or locked drawer
+4. Check the "I have saved the QR code" box
+5. Tap **Continue**
+
+**You will need this QR code every time the Pi restarts.** Without it, SafeCare cannot access recipient data. This is a security feature -- treat the QR code like you would treat a key to a filing cabinet full of addresses.
+
+### Step 7: Wait for services to start
+
+The setup page shows a list of services starting up (database, search engine, etc.). This takes about 1-3 minutes.
+
+When you see green checkmarks next to "Backend API" and "Admin Dashboard", tap **Continue**.
+
+### Step 8: Open the SafeCare dashboard
+
+1. On your phone or any computer connected to the same WiFi, open a browser
+2. Go to **http://safecare.local:3000**
+
+**If safecare.local doesn't work:**
+- The setup page shows a fallback IP address (like http://192.168.1.42:3000) -- try that instead
+- On some Android devices, `.local` addresses don't work. The IP address always works.
+
+### Step 9: Unlock and finish setup
+
+1. The dashboard shows a lock screen -- **scan your encryption key QR code** (the photo you took in Step 6)
+2. If you can't scan, tap "Enter key manually" and type the 64-character code from the QR
+3. After unlocking, the setup wizard guides you through:
+   - **Create your admin account** (email + password)
+   - **Define your operating region** (search for your city, pan/zoom the map)
+   - **Download map data** (5-30 minutes depending on region size and internet speed)
+   - **Configure notifications** (Twilio for SMS, or Signal for free E2E encrypted messages)
+   - **Security briefing** (explains what SafeCare does to protect data)
+
+After the wizard completes, you're ready to add recipients and drivers.
+
+---
+
+## After Setup: Daily Use
+
+Every time the Pi restarts (power outage, intentional reboot, etc.):
+
+1. Wait 1-2 minutes for services to start
+2. Open **http://safecare.local:3000**
+3. Scan your encryption key QR code to unlock
+4. Use SafeCare normally
+
+The QR unlock takes 5 seconds and is what keeps the data safe if the Pi is seized.
+
+---
+
+## Troubleshooting
+
+### "SafeCare-Setup WiFi doesn't appear"
+- Wait 2 minutes after plugging in the Pi
+- Make sure the Pi has power (look for a green or red light on the board)
+- If using a Pi 4, make sure the SD card is fully inserted
+
+### "I can't reach safecare.local"
+- Try the IP address shown on the setup completion page
+- Make sure your phone/computer is on the same WiFi as the Pi
+- On Android, try `http://safecare:3000` or the IP address directly
+
+### "I lost my encryption key QR code"
+- If SafeCare is currently unlocked, you can still use it normally
+- **There is no way to recover the key** -- this is intentional for security
+- If the Pi is destroyed and you don't have the key, the encrypted data is permanently unreadable
+- Going forward: print the QR code and store it in a safe
+
+### "My WiFi changed and I can't access SafeCare"
+- Wait 60 seconds after the Pi boots
+- A new WiFi network called **SafeCare-Recovery** will appear
+- Connect to it and select your new WiFi network
+- SafeCare reconnects automatically
+
+### "Map data is still downloading"
+- Large regions (whole states) can take 30-60 minutes on a Pi
+- You can close the browser and come back later -- the download continues
+- Check progress at **http://safecare.local:3000/settings**
+
+---
+
+## For Developers: Option B (PC / Mac / Linux)
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 2. Open a terminal and run:
