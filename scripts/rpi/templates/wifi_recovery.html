@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <div class="warning-box" style="margin-bottom:20px">
+    <strong>WiFi Connection Lost</strong><br>
+    SafeCare could not connect to your WiFi network. Select a network below to reconnect.
+  </div>
+
+  <h1>Reconnect to WiFi</h1>
+
+  <div id="wifi-list" class="network-list">
+    <div class="loading">Scanning for networks...</div>
+  </div>
+
+  <button onclick="scanNetworks()" class="btn btn-secondary btn-block" style="margin-top:12px">
+    Refresh
+  </button>
+
+  <!-- Password modal -->
+  <div id="wifi-modal" class="modal" style="display:none">
+    <div class="modal-content">
+      <h2 id="wifi-ssid-label">Network</h2>
+      <input type="password" id="wifi-password" placeholder="WiFi password" class="input" autocomplete="off">
+      <div id="wifi-error" class="error" style="display:none"></div>
+      <div id="wifi-connecting" class="loading" style="display:none">Connecting...</div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button onclick="closeModal()" class="btn btn-secondary" style="flex:1">Cancel</button>
+        <button onclick="connectWifi()" id="wifi-connect-btn" class="btn btn-primary" style="flex:1">Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success state -->
+  <div id="wifi-success" style="display:none">
+    <div class="card" style="text-align:center">
+      <div class="success-icon">&#10003;</div>
+      <h1>WiFi Reconnected</h1>
+      <p class="subtitle">
+        SafeCare is restarting. This page will close automatically.
+        Open <strong>safecare.local:3000</strong> to access the dashboard.
+      </p>
+    </div>
+  </div>
+
+  <!-- Transition state -->
+  <div id="wifi-transition" style="display:none">
+    <div class="card">
+      <div class="loading">Switching networks...</div>
+      <p class="subtitle">If your phone disconnects, reconnect to your WiFi network.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let selectedSSID = '';
+
+async function scanNetworks() {
+  const list = document.getElementById('wifi-list');
+  list.innerHTML = '<div class="loading">Scanning...</div>';
+  try {
+    const res = await fetch('/api/wifi/scan');
+    const networks = await res.json();
+    if (!networks.length) {
+      list.innerHTML = '<p class="subtitle">No networks found. Try again.</p>';
+      return;
+    }
+    list.innerHTML = networks.map(n => `
+      <button class="network-item" onclick="selectNetwork('${n.ssid.replace(/'/g, "\\'")}', '${n.security}')">
+        <span class="network-name">${n.ssid}</span>
+        <span class="network-signal">${signalBars(n.signal)}</span>
+      </button>
+    `).join('');
+  } catch {
+    list.innerHTML = '<p class="error">Could not scan. Try again.</p>';
+  }
+}
+
+function signalBars(signal) {
+  if (signal > 70) return '\u2581\u2583\u2585\u2587';
+  if (signal > 50) return '\u2581\u2583\u2585\u2007';
+  if (signal > 30) return '\u2581\u2583\u2007\u2007';
+  return '\u2581\u2007\u2007\u2007';
+}
+
+function selectNetwork(ssid, security) {
+  selectedSSID = ssid;
+  document.getElementById('wifi-ssid-label').textContent = ssid;
+  document.getElementById('wifi-password').value = '';
+  document.getElementById('wifi-error').style.display = 'none';
+  document.getElementById('wifi-connecting').style.display = 'none';
+  document.getElementById('wifi-connect-btn').disabled = false;
+  if (!security || security === 'Open') {
+    connectWifi();
+    return;
+  }
+  document.getElementById('wifi-modal').style.display = 'flex';
+  document.getElementById('wifi-password').focus();
+}
+
+function closeModal() {
+  document.getElementById('wifi-modal').style.display = 'none';
+}
+
+async function connectWifi() {
+  const password = document.getElementById('wifi-password').value;
+  document.getElementById('wifi-error').style.display = 'none';
+  document.getElementById('wifi-connecting').style.display = 'block';
+  document.getElementById('wifi-connect-btn').disabled = true;
+
+  await fetch('/api/wifi/connect', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ssid: selectedSSID, password}),
+  });
+
+  document.getElementById('wifi-modal').style.display = 'none';
+  document.getElementById('wifi-transition').style.display = 'block';
+  document.querySelector('.card').style.display = 'none';
+
+  pollWifiStatus();
+}
+
+async function pollWifiStatus() {
+  const start = Date.now();
+  async function poll() {
+    try {
+      const res = await fetch('/api/wifi/status', {signal: AbortSignal.timeout(3000)});
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'connected') {
+          document.getElementById('wifi-transition').style.display = 'none';
+          document.getElementById('wifi-success').style.display = 'block';
+          return;
+        }
+        if (data.status === 'failed') {
+          document.getElementById('wifi-transition').style.display = 'none';
+          document.querySelector('.card').style.display = 'block';
+          document.getElementById('wifi-error').textContent = data.error || 'Connection failed. Try again.';
+          document.getElementById('wifi-error').style.display = 'block';
+          document.getElementById('wifi-connecting').style.display = 'none';
+          document.getElementById('wifi-connect-btn').disabled = false;
+          return;
+        }
+      }
+    } catch {}
+    if (Date.now() - start > 60000) {
+      document.getElementById('wifi-transition').innerHTML =
+        '<div class="card"><p class="error">Connection timed out. Try again.</p></div>';
+      setTimeout(() => location.reload(), 3000);
+      return;
+    }
+    setTimeout(poll, 2000);
+  }
+  poll();
+}
+
+scanNetworks();
+</script>
+{% endblock %}

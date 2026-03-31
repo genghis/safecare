@@ -24,6 +24,7 @@ from io import BytesIO
 
 SAFECARE_ROOT = os.environ.get("SAFECARE_ROOT", "/opt/safecare")
 MOCK_MODE = os.environ.get("SAFECARE_MOCK", "") == "1"
+RECOVERY_MODE = os.environ.get("SAFECARE_RECOVERY", "") == "1"
 
 app = Flask(__name__)
 app.config["WIFI_STATUS"] = "idle"
@@ -42,6 +43,8 @@ app.config["DOCKER_STATUS"] = "idle"
 @app.route("/redirect")
 @app.route("/success.txt")
 def captive_detect():
+    if RECOVERY_MODE:
+        return redirect("/wifi-recovery", code=302)
     return redirect("/welcome", code=302)
 
 
@@ -49,12 +52,19 @@ def captive_detect():
 
 @app.route("/")
 def index():
+    if RECOVERY_MODE:
+        return redirect("/wifi-recovery")
     return redirect("/welcome")
 
 
 @app.route("/welcome")
 def welcome():
     return render_template("welcome.html")
+
+
+@app.route("/wifi-recovery")
+def wifi_recovery_page():
+    return render_template("wifi_recovery.html")
 
 
 @app.route("/wifi")
@@ -287,9 +297,17 @@ def docker_status():
 
 def _connect_wifi(ssid, password):
     try:
-        subprocess.run(["systemctl", "stop", "safecare-ap"], timeout=10,
-                       capture_output=True)
-        time.sleep(2)
+        if not RECOVERY_MODE:
+            subprocess.run(["systemctl", "stop", "safecare-ap"], timeout=10,
+                           capture_output=True)
+            time.sleep(2)
+        else:
+            # In recovery mode, stop hostapd/dnsmasq directly
+            subprocess.run(["killall", "hostapd"], timeout=5, capture_output=True)
+            subprocess.run(["killall", "dnsmasq"], timeout=5, capture_output=True)
+            subprocess.run(["ip", "addr", "flush", "dev", "wlan0"], timeout=5,
+                           capture_output=True)
+            time.sleep(2)
 
         cmd = ["nmcli", "device", "wifi", "connect", ssid, "ifname", "wlan0"]
         if password:
@@ -317,8 +335,18 @@ def _connect_wifi(ssid, password):
     except Exception as e:
         app.config["WIFI_STATUS"] = "failed"
         app.config["WIFI_ERROR"] = str(e)
-        subprocess.run(["systemctl", "start", "safecare-ap"],
-                       timeout=10, capture_output=True)
+        if not RECOVERY_MODE:
+            subprocess.run(["systemctl", "start", "safecare-ap"],
+                           timeout=10, capture_output=True)
+        else:
+            # In recovery, restart the AP inline
+            subprocess.run(["ip", "addr", "add", "10.42.0.1/24", "dev", "wlan0"],
+                           timeout=5, capture_output=True)
+            subprocess.run(["hostapd", "-B", "/tmp/hostapd-recovery.conf"],
+                           timeout=5, capture_output=True)
+            subprocess.run(["dnsmasq", "--conf-file",
+                            f"{SAFECARE_ROOT}/scripts/rpi/config/dnsmasq.conf"],
+                           timeout=5, capture_output=True)
 
 
 def _start_docker():

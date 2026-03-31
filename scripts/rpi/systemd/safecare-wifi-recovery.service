@@ -1,0 +1,15 @@
+[Unit]
+Description=SafeCare WiFi Recovery (fallback AP if WiFi is unreachable)
+ConditionPathExists=/opt/safecare/.provisioned
+After=network.target
+Before=safecare-docker.service
+
+[Service]
+Type=simple
+ExecStart=/opt/safecare/scripts/rpi/wifi-recovery.sh
+Environment=SAFECARE_ROOT=/opt/safecare
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

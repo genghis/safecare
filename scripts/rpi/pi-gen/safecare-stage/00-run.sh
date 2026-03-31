@@ -34,9 +34,11 @@ cp /opt/safecare/scripts/rpi/systemd/safecare-firstboot.service /etc/systemd/sys
 cp /opt/safecare/scripts/rpi/systemd/safecare-ap.service /etc/systemd/system/
 cp /opt/safecare/scripts/rpi/systemd/safecare-provisioner.service /etc/systemd/system/
 cp /opt/safecare/scripts/rpi/systemd/safecare-docker.service /etc/systemd/system/
+cp /opt/safecare/scripts/rpi/systemd/safecare-wifi-recovery.service /etc/systemd/system/
 
 systemctl enable safecare-firstboot.service
 systemctl enable safecare-docker.service
+systemctl enable safecare-wifi-recovery.service
 
 # 7. Set timezone to UTC (user can change later)
 ln -sf /usr/share/zoneinfo/UTC /etc/localtime
