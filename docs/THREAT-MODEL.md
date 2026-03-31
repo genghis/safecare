@@ -281,12 +281,14 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 ## Recommendations for Deploying Orgs
 
 1. **Use Signal, not SMS** — eliminates the Twilio exposure entirely
-2. **Enable full-disk encryption** on the server (LUKS on Linux, FileVault on Mac, BitLocker on Windows)
-3. **Keep the age private key physically separate** from the server (print it, store in a safe)
-4. **Use Tailscale** so the dashboard is never on the public internet
-5. **Vet every driver** before approving them
-6. **Review purge warnings** regularly
-7. **Don't screenshot** recipient lists or export data
-8. **Rotate your admin password** quarterly
-9. **Limit admin accounts** to people who absolutely need them
-10. **Know where the destroy script is** — `scripts/destroy.sh`
+2. **Store the encryption key QR code in a safe** — this is the only copy of the DEK; print it and lock it up
+3. **Scan the QR to unlock after every reboot** — the system is locked by design; this protects data if seized
+4. **Enable full-disk encryption** on the server (LUKS on Linux, FileVault on Mac, BitLocker on Windows)
+5. **Use Tailscale** so the dashboard is never on the public internet
+6. **Vet every driver** before approving them
+7. **Review purge warnings** regularly
+8. **Don't screenshot** recipient lists or export data
+9. **Rotate your admin password** quarterly
+10. **Limit admin accounts** to people who absolutely need them
+11. **Know where the destroy script is** — `scripts/destroy.sh`
+12. **If WiFi changes** — the Pi auto-starts a SafeCare-Recovery network after 60 seconds; connect to reconfigure

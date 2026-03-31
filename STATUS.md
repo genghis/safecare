@@ -56,6 +56,7 @@ Last updated: 2026-03-30
 | Off-disk DEK (server encryption key) | Done | DEK never written to .env or disk. Loaded into memory via QR code unlock on each boot. Seized server = unreadable database. |
 | RPi appliance provisioner | Done | Flask captive portal: WiFi setup, device password, key gen + QR, Docker startup. Hands off to dashboard wizard. |
 | Dashboard unlock screen | Done | QR scanner + manual hex entry to unlock system on each boot. 423 Locked on PII endpoints until unlocked. |
+| WiFi recovery AP | Done | Auto-detects lost WiFi on boot. After 60s, starts SafeCare-Recovery AP for reconfiguration. No SSH needed. |
 | pi-gen SD card image | Done | Custom pi-gen stage: pre-pulled Docker images, systemd services, hostapd/dnsmasq, Avahi mDNS |
 | **Full client-side data purge (SQLCipher/keychain)** | **Not done** | No hardware-backed key expiry; purge uses IndexedDB clear + sessionStorage + tile cache |
 

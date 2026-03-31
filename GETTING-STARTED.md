@@ -35,6 +35,10 @@ A 4GB Raspberry Pi works well for metro-area deployments. The setup wizard shows
 
 **Important:** The QR code you photographed is your encryption key. Store the printout or photo in a safe place. If the Raspberry Pi is lost or destroyed, you need this key to recover your data. It is intentionally NOT stored on the device -- if the device is seized, recipient data is unreadable without it.
 
+**If your WiFi changes:** If you change your WiFi password, replace your router, or move the Pi to a new location, the Pi will automatically detect that it can't connect. After 60 seconds, it starts a **SafeCare-Recovery** WiFi network. Connect to it with your phone, pick the correct network, and SafeCare reconnects automatically. No terminal or SSH needed.
+
+**On every reboot:** The dashboard will show a lock screen. Scan your encryption key QR code to unlock. This is by design -- it means a seized or stolen device cannot access recipient data.
+
 ### Option B: PC / Mac / Linux
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)

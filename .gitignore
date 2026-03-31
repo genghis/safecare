@@ -13,6 +13,8 @@ secrets/*.yaml
 coverage/
 *.log
 .DS_Store
+__pycache__/
+*.pyc
 docker/nominatim-data/
 
 # Terraform
