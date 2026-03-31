@@ -29,7 +29,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | Field-level encryption (pgp_sym_encrypt) | Implemented | All PII columns encrypted. Raw database files show ciphertext. |
 | DEK never on disk | Implemented | DEK is NOT stored in `.env` or anywhere on the filesystem. It exists only in backend process memory after admin scans the QR code on each boot. Seized server (powered off) = no DEK = unreadable database. |
 | HMAC hashes for lookups | Implemented | Phone dedup uses HMAC-SHA256, not reversible to plaintext. |
-| PostgreSQL log_statement=none | Planned | Prevents SQL queries (which contain plaintext) from appearing in Postgres logs. |
+| PostgreSQL log_statement=none | Implemented | `log_statement=none`, `log_min_error_statement=PANIC`, `log_min_duration_statement=-1`. Prevents the DEK or plaintext PII from leaking into Postgres logs on disk. |
 | Delivery records auto-deleted | Implemented | Records hard-deleted + VACUUMed within 24 hours. A seized server likely has no delivery history. |
 | Emergency destroy script | Implemented | If you know seizure is coming: `scripts/destroy.sh` shreds keys, wipes volumes, removes images. |
 
@@ -271,7 +271,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | Remote wipe via push | Planned |
 | Tailscale networking | Planned |
 | Full-disk encryption docs | Planned |
-| PostgreSQL log_statement=none | Planned |
+| PostgreSQL log_statement=none | **Implemented** |
 | Route variation between cycles | Planned |
 | Root/jailbreak detection | Planned |
 | Backup encryption | Planned |
