@@ -160,8 +160,13 @@ See [tests/README.md](tests/README.md) for details.
 
 | Gap | Priority | Notes |
 |-----|----------|-------|
-| Communication proxy (blind number pool) | Medium | Twilio proxy for driver-recipient messaging |
-| Exclusion zones | Medium | Draw on map, OSRM edge-weighting |
-| Key rotation tooling | Low | Scripted DEK re-encryption |
-| Remote wipe | Low | Push notification to destroy route data |
-| Route variation | Low | Vary routes between delivery cycles |
+| Exclusion zones | High | Draw "avoid" areas on map, OSRM edge-weighting. Currently zones are delivery-only. |
+| Communication proxy (blind number pool) | High | Twilio proxy so drivers/recipients never see each other's real numbers. Schema exists, no proxy logic. |
+| Tailscale networking | High | Optional Tailscale-only admin access + Funnel for driver API. Dashboard currently accessible on local network. |
+| Password change endpoint | High | No way for admins to change password. `revokeAllSessions()` ready to wire in. |
+| Route variation | Medium | Same driver gets same route pattern every time. |
+| Push notification remote wipe | Medium | Current wipe uses polling. Push would be instant even with app backgrounded. |
+| Key rotation tooling | Medium | Scripted DEK re-encryption of existing data. |
+| Docker image SHA pinning | Low | Some images use `:latest` tag. |
+| Backup encryption (pg_dump + age) | Low | |
+| Team gamification | Low | Fun team names for morale. |
