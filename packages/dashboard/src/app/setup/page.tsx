@@ -13,6 +13,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { apiPost, apiPut, apiGet, setToken } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 const SettingsMap = dynamic(() => import("@/components/settings-map"), {
   ssr: false,
@@ -41,11 +42,11 @@ interface ProvisionStatus {
 // ---------------------------------------------------------------------------
 
 const STEPS = [
-  { num: 1, label: "Account" },
-  { num: 2, label: "Region" },
-  { num: 3, label: "Maps" },
-  { num: 4, label: "Notifications" },
-  { num: 5, label: "Security" },
+  { num: 1, labelKey: "dashboard.setup.stepAccount" },
+  { num: 2, labelKey: "dashboard.setup.stepRegion" },
+  { num: 3, labelKey: "dashboard.setup.stepMaps" },
+  { num: 4, labelKey: "dashboard.setup.stepNotifications" },
+  { num: 5, labelKey: "dashboard.setup.stepSecurity" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -53,6 +54,7 @@ const STEPS = [
 // ---------------------------------------------------------------------------
 
 export default function SetupPage() {
+  const { t } = useLocale();
   const router = useRouter();
   const [step, setStep] = useState(1);
 
@@ -145,19 +147,19 @@ export default function SetupPage() {
   // Step 1: Create account
   async function handleCreateAccount() {
     setAccountError("");
-    if (password !== confirmPassword) { setAccountError("Passwords do not match."); return; }
-    if (password.length < 8) { setAccountError("Password must be at least 8 characters."); return; }
+    if (password !== confirmPassword) { setAccountError(t('dashboard.setup.passwordsDoNotMatch')); return; }
+    if (password.length < 8) { setAccountError(t('dashboard.setup.passwordTooShort')); return; }
     setCreatingAccount(true);
 
     const regRes = await apiPost<any>("/api/auth/admin/register", { email, password });
-    if (!regRes.ok) { setAccountError(regRes.error || "Failed to create account."); setCreatingAccount(false); return; }
+    if (!regRes.ok) { setAccountError(regRes.error || t('dashboard.common.failed')); setCreatingAccount(false); return; }
 
     const loginRes = await apiPost<{ token: string }>("/api/auth/admin/login", { email, password });
     if (loginRes.ok && loginRes.data?.token) {
       setToken(loginRes.data.token);
       setStep(2);
     } else {
-      setAccountError("Account created but login failed. Try the login page.");
+      setAccountError(t('dashboard.setup.accountCreatedLoginFailed'));
     }
     setCreatingAccount(false);
   }
@@ -228,9 +230,9 @@ export default function SetupPage() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-xl">
             SC
           </div>
-          <h1 className="text-3xl font-bold">SafeCare Setup</h1>
+          <h1 className="text-3xl font-bold">{t('dashboard.setup.title')}</h1>
           <p className="text-muted-foreground mt-2">
-            Let&apos;s get your mutual aid delivery system running.
+            {t('dashboard.setup.subtitle')}
           </p>
         </div>
 
@@ -247,7 +249,7 @@ export default function SetupPage() {
               </div>
               <span className={`text-xs hidden sm:inline ${
                 s.num === step ? "font-medium" : "text-muted-foreground"
-              }`}>{s.label}</span>
+              }`}>{t(s.labelKey)}</span>
               {s.num < STEPS.length && <div className="w-4 h-px bg-border hidden sm:block" />}
             </div>
           ))}
@@ -259,9 +261,9 @@ export default function SetupPage() {
         {step === 1 && (
           <Card>
             <CardHeader>
-              <CardTitle>Create Your Admin Account</CardTitle>
+              <CardTitle>{t('dashboard.setup.createAdminAccount')}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                This will be the administrator account for managing deliveries, drivers, and recipients.
+                {t('dashboard.setup.adminAccountDesc')}
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -269,25 +271,25 @@ export default function SetupPage() {
                 <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">{accountError}</div>
               )}
               <div className="space-y-1">
-                <label className="text-sm font-medium">Organization Name</label>
-                <Input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="e.g., Minneapolis Mutual Aid" />
+                <label className="text-sm font-medium">{t('dashboard.setup.orgNameLabel')}</label>
+                <Input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder={t('dashboard.setup.orgNamePlaceholder')} />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium">Email</label>
+                <label className="text-sm font-medium">{t('dashboard.common.email')}</label>
                 <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@example.com" />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium">Password</label>
-                <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
+                <label className="text-sm font-medium">{t('dashboard.setup.password')}</label>
+                <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('dashboard.setup.passwordPlaceholder')} />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium">Confirm Password</label>
-                <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Type password again" />
+                <label className="text-sm font-medium">{t('dashboard.setup.confirmPassword')}</label>
+                <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder={t('dashboard.setup.confirmPasswordPlaceholder')} />
               </div>
             </CardContent>
             <CardFooter>
               <Button onClick={handleCreateAccount} disabled={creatingAccount || !email || !password || !confirmPassword} className="w-full" size="lg">
-                {creatingAccount ? "Creating Account..." : "Create Account & Continue"}
+                {creatingAccount ? t('dashboard.setup.creatingAccount') : t('dashboard.setup.createAndContinue')}
               </Button>
             </CardFooter>
           </Card>
@@ -299,24 +301,24 @@ export default function SetupPage() {
         {step === 2 && (
           <Card>
             <CardHeader>
-              <CardTitle>Define Your Operating Region</CardTitle>
+              <CardTitle>{t('dashboard.setup.defineOperatingRegion')}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Search for your city, then pan and zoom the map so the visible area covers:
+                {t('dashboard.setup.regionDesc')}
               </p>
               <ul className="text-sm text-muted-foreground mt-2 space-y-1 list-disc list-inside">
-                <li><strong>Delivery neighborhoods</strong> where recipients live</li>
-                <li><strong>Driver areas</strong> where your volunteers come from</li>
-                <li><strong>Routes between them</strong> -- drivers may need directions from home to the delivery area</li>
+                <li>{t('dashboard.setup.deliveryNeighborhoods')}</li>
+                <li>{t('dashboard.setup.driverAreas')}</li>
+                <li>{t('dashboard.setup.routesBetween')}</li>
               </ul>
               <p className="text-sm text-muted-foreground mt-2">
-                You&apos;ll define specific delivery zones later. This is the broader region for maps and routing.
+                {t('dashboard.setup.defineZonesLater')}
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative z-[10000]" ref={resultsRef}>
                 <Input value={searchQuery} onChange={(e) => handleSearchInput(e.target.value)}
                   onFocus={() => searchResults.length > 0 && setShowResults(true)}
-                  placeholder="Search for your city..." />
+                  placeholder={t('dashboard.setup.searchCityPlaceholder')} />
                 {searching && <div className="absolute right-3 top-3 h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />}
                 {showResults && searchResults.length > 0 && (
                   <div className="absolute z-[10001] mt-1 w-full rounded-md border bg-card text-card-foreground shadow-xl max-h-60 overflow-y-auto">
@@ -342,20 +344,20 @@ export default function SetupPage() {
                 return (
                   <div className="rounded-md border bg-muted/50 px-4 py-3 space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Estimated size:</span>
+                      <span className="text-muted-foreground">{t('dashboard.settings.estimatedSize')}</span>
                       <span className={`font-medium ${est.isVeryLarge ? "text-destructive" : est.isLarge ? "text-amber-500" : "text-emerald-600"}`}>
                         ~{est.estMB < 1 ? '<1' : est.estMB} MB download, ~{est.estRAM < 100 ? '<100' : est.estRAM} MB RAM
                       </span>
                     </div>
-                    {est.isVeryLarge && <p className="text-xs text-destructive">This region may require 4+ GB RAM. Zoom in for smaller hardware.</p>}
-                    {est.isLarge && !est.isVeryLarge && <p className="text-xs text-amber-500">Fine for 8GB, tight for 4GB hardware.</p>}
+                    {est.isVeryLarge && <p className="text-xs text-destructive">{t('dashboard.settings.largeRegionWarning')}</p>}
+                    {est.isLarge && !est.isVeryLarge && <p className="text-xs text-amber-500">{t('dashboard.settings.mediumRegionNote')}</p>}
                   </div>
                 );
               })()}
             </CardContent>
             <CardFooter>
               <Button onClick={handleSaveRegion} disabled={savingRegion || !bounds} className="w-full" size="lg">
-                {savingRegion ? "Saving..." : "Save Region & Continue"}
+                {savingRegion ? t('dashboard.common.saving') : t('dashboard.setup.saveRegionAndContinue')}
               </Button>
             </CardFooter>
           </Card>
@@ -368,18 +370,18 @@ export default function SetupPage() {
           <Card>
             <CardHeader>
               <CardTitle>
-                {provisionStatus.status === "ready" ? "Maps Ready!" : "Download Map Data"}
+                {provisionStatus.status === "ready" ? t('dashboard.setup.mapsReady') : t('dashboard.setup.downloadMapData')}
               </CardTitle>
               {provisionStatus.status !== "ready" && provisionStatus.status !== "downloading" && provisionStatus.status !== "importing" && (
                 <p className="text-sm text-muted-foreground">
-                  SafeCare needs map data for your region. This enables address search, driving directions, and offline maps for drivers. It&apos;s a one-time download.
+                  {t('dashboard.setup.mapDataDesc')}
                 </p>
               )}
             </CardHeader>
             <CardContent className="space-y-4">
               {provisionStatus.status === "not_started" && (
                 <Button onClick={handleProvision} disabled={provisioning} className="w-full" size="lg">
-                  {provisioning ? "Starting..." : "Download Map Data"}
+                  {provisioning ? t('dashboard.common.starting') : t('dashboard.setup.downloadMapData')}
                 </Button>
               )}
 
@@ -387,7 +389,7 @@ export default function SetupPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent flex-shrink-0" />
-                    <span>{provisionStatus.message || "Downloading..."}</span>
+                    <span>{provisionStatus.message || t('dashboard.setup.downloading')}</span>
                   </div>
                   {(provisionStatus as any).progress != null && (
                     <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
@@ -402,7 +404,7 @@ export default function SetupPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent flex-shrink-0" />
-                    <span className="font-medium">{provisionStatus.message || "Importing..."}</span>
+                    <span className="font-medium">{provisionStatus.message || t('dashboard.setup.importing')}</span>
                   </div>
                   {provisionStatus.importProgress != null && (
                     <div className="space-y-1">
@@ -415,11 +417,11 @@ export default function SetupPage() {
                   )}
                   <div className="rounded-md bg-muted/50 p-3">
                     <p className="text-sm text-muted-foreground">
-                      Maps are importing in the background. You can continue setting up while this runs.
+                      {t('dashboard.setup.mapsImportingBackground')}
                     </p>
                   </div>
                   <Button onClick={() => setStep(4)} className="w-full" size="lg">
-                    Continue Setup While Maps Import
+                    {t('dashboard.setup.continueWhileImporting')}
                   </Button>
                 </div>
               )}
@@ -429,16 +431,16 @@ export default function SetupPage() {
                   <div className="mx-auto h-16 w-16 rounded-full bg-emerald-600/20 flex items-center justify-center">
                     <span className="text-3xl text-emerald-600">&#10003;</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">Address search, routing, and offline maps are ready.</p>
-                  <Button onClick={() => setStep(4)} className="w-full" size="lg">Continue</Button>
+                  <p className="text-sm text-muted-foreground">{t('dashboard.setup.mapsReadyDesc')}</p>
+                  <Button onClick={() => setStep(4)} className="w-full" size="lg">{t('dashboard.common.continue')}</Button>
                 </div>
               )}
 
               {provisionStatus.status === "error" && (
                 <div className="space-y-3">
-                  <p className="text-sm text-destructive">{provisionStatus.message || "Something went wrong."}</p>
-                  <Button onClick={handleProvision} disabled={provisioning} variant="outline">Retry</Button>
-                  <Button onClick={() => setStep(4)} variant="ghost" className="ml-2">Skip for Now</Button>
+                  <p className="text-sm text-destructive">{provisionStatus.message || t('dashboard.common.error')}</p>
+                  <Button onClick={handleProvision} disabled={provisioning} variant="outline">{t('dashboard.common.retry')}</Button>
+                  <Button onClick={() => setStep(4)} variant="ghost" className="ml-2">{t('dashboard.setup.skipForNow')}</Button>
                 </div>
               )}
             </CardContent>
@@ -451,10 +453,9 @@ export default function SetupPage() {
         {step === 4 && (
           <Card>
             <CardHeader>
-              <CardTitle>Set Up Notifications</CardTitle>
+              <CardTitle>{t('dashboard.setup.setupNotifications')}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Recipients are notified when deliveries are on the way and when they arrive.
-                Configure at least one channel. You can always add more later in Settings.
+                {t('dashboard.setup.notificationsDesc')}
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -462,13 +463,13 @@ export default function SetupPage() {
               <div className="rounded-md border p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold">Signal (Recommended)</h3>
-                    <p className="text-xs text-muted-foreground">Free, end-to-end encrypted. Messages never leave your control.</p>
+                    <h3 className="text-sm font-semibold">{t('dashboard.setup.signalRecommended')}</h3>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.setup.signalDesc')}</p>
                   </div>
-                  <span className="text-xs bg-emerald-600/20 text-emerald-600 px-2 py-1 rounded-md font-medium">Free</span>
+                  <span className="text-xs bg-emerald-600/20 text-emerald-600 px-2 py-1 rounded-md font-medium">{t('dashboard.common.free')}</span>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Signal Phone Number (register at http://localhost:8089)</label>
+                  <label className="text-xs text-muted-foreground">{t('dashboard.setup.signalPhoneLabel')}</label>
                   <Input value={signalPhone} onChange={(e) => setSignalPhone(e.target.value)} placeholder="+1234567890" className="text-sm" />
                 </div>
               </div>
@@ -477,23 +478,23 @@ export default function SetupPage() {
               <div className="rounded-md border p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold">SMS via Twilio</h3>
-                    <p className="text-xs text-muted-foreground">Works on any phone. ~$0.01 per message.</p>
+                    <h3 className="text-sm font-semibold">{t('dashboard.setup.twilioSms')}</h3>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.setup.twilioDesc')}</p>
                   </div>
-                  <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-md">Optional</span>
+                  <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-md">{t('dashboard.common.optional')}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">Account SID</label>
+                    <label className="text-xs text-muted-foreground">{t('dashboard.setup.accountSid')}</label>
                     <Input value={twilioSid} onChange={(e) => setTwilioSid(e.target.value)} placeholder="AC..." className="text-sm" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">Auth Token</label>
+                    <label className="text-xs text-muted-foreground">{t('dashboard.setup.authToken')}</label>
                     <Input type="password" value={twilioToken} onChange={(e) => setTwilioToken(e.target.value)} placeholder="Token" className="text-sm" />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Twilio Phone Number</label>
+                  <label className="text-xs text-muted-foreground">{t('dashboard.setup.twilioPhoneLabel')}</label>
                   <Input value={twilioPhone} onChange={(e) => setTwilioPhone(e.target.value)} placeholder="+1234567890" className="text-sm" />
                 </div>
               </div>
@@ -502,13 +503,13 @@ export default function SetupPage() {
               {provisionStatus.status === "importing" && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground rounded-md bg-muted/50 p-2">
                   <div className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent flex-shrink-0" />
-                  Maps still importing... {provisionStatus.importProgress != null && `(~${provisionStatus.importProgress}%)`}
+                  {t('dashboard.setup.mapsStillImporting')} {provisionStatus.importProgress != null && `(~${provisionStatus.importProgress}%)`}
                 </div>
               )}
             </CardContent>
             <CardFooter className="flex gap-2">
-              <Button variant="ghost" onClick={() => setStep(5)}>Skip for Now</Button>
-              <Button onClick={() => setStep(5)} className="flex-1" size="lg">Continue</Button>
+              <Button variant="ghost" onClick={() => setStep(5)}>{t('dashboard.setup.skipForNow')}</Button>
+              <Button onClick={() => setStep(5)} className="flex-1" size="lg">{t('dashboard.common.continue')}</Button>
             </CardFooter>
           </Card>
         )}
@@ -519,9 +520,9 @@ export default function SetupPage() {
         {step === 5 && (
           <Card>
             <CardHeader>
-              <CardTitle>Protecting Recipient Privacy</CardTitle>
+              <CardTitle>{t('dashboard.setup.protectingPrivacy')}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                SafeCare is built to protect the people you serve. Here&apos;s how it works and what you need to know.
+                {t('dashboard.setup.privacyDesc')}
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -529,52 +530,52 @@ export default function SetupPage() {
                 <div className="flex gap-3 rounded-md bg-muted/50 p-3">
                   <span className="text-lg flex-shrink-0">&#128274;</span>
                   <div>
-                    <p className="text-sm font-medium">Addresses are encrypted</p>
-                    <p className="text-xs text-muted-foreground">Recipient names, addresses, and phone numbers are encrypted in the database. Even if someone accesses the server, they can&apos;t read the data without the encryption key.</p>
+                    <p className="text-sm font-medium">{t('dashboard.setup.addressesEncrypted')}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.setup.addressesEncryptedDesc')}</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3 rounded-md bg-muted/50 p-3">
                   <span className="text-lg flex-shrink-0">&#128241;</span>
                   <div>
-                    <p className="text-sm font-medium">Driver phones auto-purge</p>
-                    <p className="text-xs text-muted-foreground">Route data on driver phones is automatically deleted after each shift. If a driver doesn&apos;t end their shift, data self-destructs after 8 hours. You&apos;ll be alerted if a driver hasn&apos;t confirmed deletion.</p>
+                    <p className="text-sm font-medium">{t('dashboard.setup.driverPhonesAutoPurge')}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.setup.driverPhonesAutoPurgeDesc')}</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3 rounded-md bg-muted/50 p-3">
                   <span className="text-lg flex-shrink-0">&#128506;</span>
                   <div>
-                    <p className="text-sm font-medium">Maps and geocoding are self-hosted</p>
-                    <p className="text-xs text-muted-foreground">Address searches run on this device, not Google or any external service. No recipient addresses ever leave your network.</p>
+                    <p className="text-sm font-medium">{t('dashboard.setup.mapsSelfHosted')}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.setup.mapsSelfHostedDesc')}</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3 rounded-md bg-muted/50 p-3">
                   <span className="text-lg flex-shrink-0">&#128336;</span>
                   <div>
-                    <p className="text-sm font-medium">Delivery records are deleted daily</p>
-                    <p className="text-xs text-muted-foreground">Delivery records (which addresses got deliveries) are hard-deleted within 24 hours. Only anonymous audit counts are kept.</p>
+                    <p className="text-sm font-medium">{t('dashboard.setup.recordsDeletedDaily')}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.setup.recordsDeletedDailyDesc')}</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3 rounded-md bg-muted/50 p-3">
                   <span className="text-lg flex-shrink-0">&#9992;&#65039;</span>
                   <div>
-                    <p className="text-sm font-medium">Airplane mode for drivers</p>
-                    <p className="text-xs text-muted-foreground">Drivers are prompted to enable airplane mode near delivery areas. This prevents their phone from broadcasting location data to cell towers while they&apos;re near recipients&apos; homes.</p>
+                    <p className="text-sm font-medium">{t('dashboard.setup.airplaneModeForDrivers')}</p>
+                    <p className="text-xs text-muted-foreground">{t('dashboard.setup.airplaneModeDesc')}</p>
                   </div>
                 </div>
               </div>
 
               <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 space-y-2">
-                <p className="text-sm font-medium text-amber-500">Your responsibilities</p>
+                <p className="text-sm font-medium text-amber-500">{t('dashboard.setup.yourResponsibilities')}</p>
                 <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Vet drivers before approving them to receive routes</li>
-                  <li>Don&apos;t screenshot or export recipient lists</li>
-                  <li>Limit who has admin access to this dashboard</li>
-                  <li>Review the purge warnings regularly (Settings page)</li>
-                  <li>If a device is lost or compromised, use the emergency destroy script</li>
+                  <li>{t('dashboard.setup.vetDrivers')}</li>
+                  <li>{t('dashboard.setup.noScreenshot')}</li>
+                  <li>{t('dashboard.setup.limitAccess')}</li>
+                  <li>{t('dashboard.setup.reviewPurgeWarnings')}</li>
+                  <li>{t('dashboard.setup.emergencyDestroy')}</li>
                 </ul>
               </div>
 
@@ -582,13 +583,13 @@ export default function SetupPage() {
               {provisionStatus.status === "importing" && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground rounded-md bg-muted/50 p-2">
                   <div className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent flex-shrink-0" />
-                  Maps still importing... {provisionStatus.importProgress != null && `(~${provisionStatus.importProgress}%)`}
+                  {t('dashboard.setup.mapsStillImporting')} {provisionStatus.importProgress != null && `(~${provisionStatus.importProgress}%)`}
                 </div>
               )}
             </CardContent>
             <CardFooter>
               <Button onClick={() => router.push("/")} className="w-full" size="lg">
-                Go to Dashboard
+                {t('dashboard.setup.goToDashboard')}
               </Button>
             </CardFooter>
           </Card>

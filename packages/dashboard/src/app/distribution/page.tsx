@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { apiGet, apiPost } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -108,6 +109,7 @@ function loadColor(pct: number): string {
 // ---------------------------------------------------------------------------
 
 export default function DistributionPage() {
+  const { t } = useLocale();
   const [drivers, setDriversRaw] = useState<DistributionDriver[]>([]);
 
   // Normalize API response fields to match frontend expectations
@@ -206,7 +208,7 @@ export default function DistributionPage() {
       setUnassigned(res.data.unassigned || []);
       setWarnings(res.data.warnings || []);
     } else {
-      alert(res.error || "Auto-distribute failed. Make sure a session is selected.");
+      alert(res.error || t('dashboard.distribution.autoDistributeFailed'));
     }
     setDistributing(false);
   }
@@ -296,7 +298,7 @@ export default function DistributionPage() {
     if (res.ok) {
       window.location.href = "/dispatch";
     } else {
-      alert(res.error || "Failed to confirm assignments.");
+      alert(res.error || t('dashboard.distribution.confirmFailed'));
     }
     setConfirming(false);
   }
@@ -309,10 +311,10 @@ export default function DistributionPage() {
     return (
       <div>
         <h1 className="text-3xl font-bold tracking-tight mb-8">
-          Distribution Planner
+          {t('dashboard.distribution.title')}
         </h1>
         <div className="flex items-center justify-center h-64 text-muted-foreground">
-          Loading distribution data...
+          {t('dashboard.distribution.loadingData')}
         </div>
       </div>
     );
@@ -324,10 +326,10 @@ export default function DistributionPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">
-          Distribution Planner
+          {t('dashboard.distribution.title')}
         </h1>
         <p className="text-muted-foreground mt-1">
-          Assign deliveries to drivers by zone and capacity.
+          {t('dashboard.distribution.subtitle')}
         </p>
       </div>
 
@@ -338,7 +340,7 @@ export default function DistributionPage() {
         <div className="w-[40%] flex flex-col gap-4 overflow-y-auto pr-2">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">
-              Drivers{" "}
+              {t('dashboard.distribution.drivers')}{" "}
               <span className="text-muted-foreground font-normal text-sm">
                 ({drivers.length})
               </span>
@@ -348,14 +350,14 @@ export default function DistributionPage() {
               size="sm"
               onClick={() => setSortByLoad((v) => !v)}
             >
-              {sortByLoad ? "Default Order" : "Sort by Load"}
+              {sortByLoad ? t('dashboard.distribution.defaultOrder') : t('dashboard.distribution.sortByLoad')}
             </Button>
           </div>
 
           {drivers.length === 0 && (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground text-sm">
-                No drivers available. Run Auto-Distribute to get started.
+                {t('dashboard.distribution.noDrivers')}
               </CardContent>
             </Card>
           )}
@@ -387,7 +389,7 @@ export default function DistributionPage() {
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
                       <span>
-                        {count}/{max} deliveries
+                        {t('dashboard.distribution.deliveries', { count: String(count), max: String(max) })}
                       </span>
                       <span className="text-muted-foreground">{pct}%</span>
                     </div>
@@ -402,7 +404,7 @@ export default function DistributionPage() {
                   {/* Capacity stepper */}
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">
-                      Max deliveries:
+                      {t('dashboard.distribution.maxDeliveries')}
                     </span>
                     <div className="flex items-center gap-1">
                       <Button
@@ -442,7 +444,7 @@ export default function DistributionPage() {
                             onClick={() =>
                               handleRemoveDelivery(driver.id, del.id)
                             }
-                            title="Remove delivery"
+                            title={t('dashboard.distribution.removeDelivery')}
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -468,21 +470,21 @@ export default function DistributionPage() {
                   {removeConfirmId === driver.id ? (
                     <div className="flex items-center gap-2 w-full">
                       <span className="text-xs text-destructive">
-                        Remove this driver?
+                        {t('dashboard.distribution.removeDriverConfirm')}
                       </span>
                       <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => handleRemoveDriver(driver.id)}
                       >
-                        Confirm
+                        {t('dashboard.common.confirm')}
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setRemoveConfirmId(null)}
                       >
-                        Cancel
+                        {t('dashboard.common.cancel')}
                       </Button>
                     </div>
                   ) : (
@@ -492,7 +494,7 @@ export default function DistributionPage() {
                       className="text-destructive hover:text-destructive"
                       onClick={() => setRemoveConfirmId(driver.id)}
                     >
-                      Remove Driver
+                      {t('dashboard.distribution.removeDriver')}
                     </Button>
                   )}
                 </CardFooter>
@@ -511,14 +513,14 @@ export default function DistributionPage() {
               {/* Session selector */}
               <div className="flex items-center gap-4">
                 <label className="text-sm font-medium whitespace-nowrap">
-                  Session:
+                  {t('dashboard.distribution.session')}
                 </label>
                 <select
                   value={selectedSession}
                   onChange={(e) => setSelectedSession(e.target.value)}
                   className="flex h-10 w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <option value="">Select a session...</option>
+                  <option value="">{t('dashboard.distribution.selectSession')}</option>
                   {sessions.map((s) => (
                     <option key={s.id} value={s.id}>
                       {new Date(s.date).toLocaleDateString()} — {s.status}
@@ -529,7 +531,7 @@ export default function DistributionPage() {
 
               {/* Day selector */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Day of Week:</label>
+                <label className="text-sm font-medium">{t('dashboard.distribution.dayOfWeek')}</label>
                 <div className="flex flex-wrap gap-2">
                   {DAYS_OF_WEEK.map((day) => (
                     <button
@@ -555,12 +557,11 @@ export default function DistributionPage() {
                   disabled={distributing || !selectedSession}
                   className="px-8"
                 >
-                  {distributing ? "Distributing..." : "Auto-Distribute"}
+                  {distributing ? t('dashboard.distribution.distributing') : t('dashboard.distribution.autoDistribute')}
                 </Button>
 
                 <span className="text-sm text-muted-foreground">
-                  {totalAssigned} assigned, {totalUnassigned} unassigned,{" "}
-                  {totalWarnings} warning{totalWarnings !== 1 ? "s" : ""}
+                  {t('dashboard.distribution.summary', { assigned: String(totalAssigned), unassigned: String(totalUnassigned), warnings: String(totalWarnings), plural: totalWarnings !== 1 ? "s" : "" })}
                 </span>
               </div>
             </CardContent>
@@ -571,8 +572,7 @@ export default function DistributionPage() {
             <Card>
               <CardContent className="py-16 text-center">
                 <p className="text-muted-foreground">
-                  Select a session and day, then click Auto-Distribute to get
-                  started.
+                  {t('dashboard.distribution.emptyState')}
                 </p>
               </CardContent>
             </Card>
@@ -583,7 +583,7 @@ export default function DistributionPage() {
             <Card className="flex-1 flex flex-col">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">
-                  Unassigned Deliveries
+                  {t('dashboard.distribution.unassignedDeliveries')}
                   <Badge variant="warning" className="ml-2">
                     {unassigned.length}
                   </Badge>
@@ -645,7 +645,7 @@ export default function DistributionPage() {
                           }}
                           className="h-9 rounded-md border border-input bg-background px-2 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
-                          <option value="">Assign to...</option>
+                          <option value="">{t('dashboard.distribution.assignTo')}</option>
                           {drivers.map((d) => (
                             <option key={d.id} value={d.id}>
                               {d.name} ({d.assignedDeliveries.length}/
@@ -666,7 +666,7 @@ export default function DistributionPage() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">
-                  Warnings
+                  {t('dashboard.distribution.warnings')}
                   <Badge variant="destructive" className="ml-2">
                     {warnings.length}
                   </Badge>
@@ -715,10 +715,10 @@ export default function DistributionPage() {
                 className="px-8"
               >
                 {confirming
-                  ? "Confirming..."
+                  ? t('dashboard.distribution.confirming')
                   : unassigned.length > 0
-                  ? `Confirm & Assign (${unassigned.length} unassigned remaining)`
-                  : "Confirm & Assign"}
+                  ? t('dashboard.distribution.confirmUnassignedRemaining', { count: String(unassigned.length) })
+                  : t('dashboard.distribution.confirmAndAssign')}
               </Button>
             </div>
           )}

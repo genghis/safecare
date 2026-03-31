@@ -12,12 +12,14 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { apiGet, apiPut, apiPost } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 // ---------------------------------------------------------------------------
 // Two-Factor Authentication Section
 // ---------------------------------------------------------------------------
 
 function TwoFactorSection() {
+  const { t } = useLocale();
   const [totpEnabled, setTotpEnabled] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,7 +60,7 @@ function TwoFactorSection() {
       setSetupUri(res.data.uri);
       setShowSetup(true);
     } else {
-      setSetupError(res.error || "Failed to generate TOTP secret.");
+      setSetupError(res.error || t('dashboard.settings.totpSetupFailed'));
     }
   }
 
@@ -79,7 +81,7 @@ function TwoFactorSection() {
       setSetupSecret("");
       setSetupUri("");
     } else {
-      setSetupError(res.error || "Invalid code. Please try again.");
+      setSetupError(res.error || t('dashboard.settings.invalidCode'));
     }
 
     setEnabling(false);
@@ -100,7 +102,7 @@ function TwoFactorSection() {
       setShowDisable(false);
       setDisablePassword("");
     } else {
-      setDisableError(res.error || "Invalid password.");
+      setDisableError(res.error || t('dashboard.settings.invalidPassword'));
     }
 
     setDisabling(false);
@@ -110,10 +112,10 @@ function TwoFactorSection() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Two-Factor Authentication</CardTitle>
+          <CardTitle className="text-lg">{t('dashboard.settings.2fa')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">{t('dashboard.common.loading')}</p>
         </CardContent>
       </Card>
     );
@@ -123,18 +125,17 @@ function TwoFactorSection() {
     <Card>
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          Two-Factor Authentication
+          {t('dashboard.settings.2fa')}
           {totpEnabled && (
             <span className="text-emerald-600 text-sm font-normal">
-              &#10003; Enabled
+              &#10003; {t('dashboard.common.enabled')}
             </span>
           )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Two-factor authentication is strongly recommended to protect recipient
-          data.
+          {t('dashboard.settings.2faDesc')}
         </p>
 
         {!totpEnabled && !showSetup && (
@@ -144,7 +145,7 @@ function TwoFactorSection() {
                 {setupError}
               </div>
             )}
-            <Button onClick={handleStartSetup}>Enable 2FA</Button>
+            <Button onClick={handleStartSetup}>{t('dashboard.settings.enable2fa')}</Button>
           </>
         )}
 
@@ -152,13 +153,12 @@ function TwoFactorSection() {
           <div className="space-y-4 rounded-md border p-4">
             <div className="space-y-2">
               <p className="text-sm font-medium">
-                1. Scan this URI in your authenticator app, or enter the secret
-                manually:
+                {t('dashboard.settings.2faScanPrompt')}
               </p>
               <div className="space-y-2">
                 <div>
                   <label className="text-xs text-muted-foreground">
-                    OTPAuth URI (paste into authenticator)
+                    {t('dashboard.settings.otpAuthUri')}
                   </label>
                   <div className="mt-1 rounded-md bg-muted p-2 text-xs font-mono break-all select-all">
                     {setupUri}
@@ -166,7 +166,7 @@ function TwoFactorSection() {
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">
-                    Secret (for manual entry)
+                    {t('dashboard.settings.secretManualEntry')}
                   </label>
                   <div className="mt-1 rounded-md bg-muted p-2 text-sm font-mono tracking-wider select-all">
                     {setupSecret}
@@ -178,7 +178,7 @@ function TwoFactorSection() {
             <form onSubmit={handleVerifyAndEnable} className="space-y-3">
               <div className="space-y-2">
                 <p className="text-sm font-medium">
-                  2. Enter the 6-digit code from your authenticator to verify:
+                  {t('dashboard.settings.2faVerifyPrompt')}
                 </p>
                 <Input
                   type="text"
@@ -207,7 +207,7 @@ function TwoFactorSection() {
                   type="submit"
                   disabled={enabling || verifyCode.length !== 6}
                 >
-                  {enabling ? "Verifying..." : "Verify & Enable"}
+                  {enabling ? t('dashboard.settings.verifying') : t('dashboard.settings.verifyAndEnable')}
                 </Button>
                 <Button
                   type="button"
@@ -218,7 +218,7 @@ function TwoFactorSection() {
                     setSetupError("");
                   }}
                 >
-                  Cancel
+                  {t('dashboard.common.cancel')}
                 </Button>
               </div>
             </form>
@@ -228,13 +228,13 @@ function TwoFactorSection() {
         {totpEnabled && !showDisable && (
           <div className="space-y-3">
             <p className="text-sm">
-              Your account is protected with two-factor authentication.
+              {t('dashboard.settings.2faProtected')}
             </p>
             <Button
               variant="outline"
               onClick={() => setShowDisable(true)}
             >
-              Disable 2FA
+              {t('dashboard.settings.disable2fa')}
             </Button>
           </div>
         )}
@@ -242,12 +242,11 @@ function TwoFactorSection() {
         {totpEnabled && showDisable && (
           <form onSubmit={handleDisable} className="space-y-3">
             <p className="text-sm">
-              Enter your password to confirm disabling two-factor
-              authentication.
+              {t('dashboard.settings.disableConfirmPrompt')}
             </p>
             <Input
               type="password"
-              placeholder="Enter your password"
+              placeholder={t('dashboard.settings.enterPassword')}
               value={disablePassword}
               onChange={(e) => setDisablePassword(e.target.value)}
               className="max-w-md"
@@ -266,7 +265,7 @@ function TwoFactorSection() {
                 variant="destructive"
                 disabled={disabling || !disablePassword}
               >
-                {disabling ? "Disabling..." : "Disable 2FA"}
+                {disabling ? t('dashboard.settings.disabling') : t('dashboard.settings.disable2fa')}
               </Button>
               <Button
                 type="button"
@@ -277,7 +276,7 @@ function TwoFactorSection() {
                   setDisableError("");
                 }}
               >
-                Cancel
+                {t('dashboard.common.cancel')}
               </Button>
             </div>
           </form>
@@ -349,6 +348,7 @@ const DEFAULT_SETTINGS: OrgSettings = {
 // ---------------------------------------------------------------------------
 
 export default function SettingsPage() {
+  const { t } = useLocale();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -499,9 +499,9 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-8">Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-8">{t('dashboard.settings.title')}</h1>
         <div className="flex items-center justify-center h-64 text-muted-foreground">
-          Loading settings...
+          {t('dashboard.settings.loadingSettings')}
         </div>
       </div>
     );
@@ -510,9 +510,9 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.settings.title')}</h1>
         <p className="text-muted-foreground mt-1">
-          Configure your organization and default service area.
+          {t('dashboard.settings.subtitle')}
         </p>
       </div>
 
@@ -520,15 +520,15 @@ export default function SettingsPage() {
         {/* Org Name */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Organization</CardTitle>
+            <CardTitle className="text-lg">{t('dashboard.settings.organization')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Organization Name</label>
+              <label className="text-sm font-medium">{t('dashboard.settings.orgName')}</label>
               <Input
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                placeholder="e.g., Chicago Mutual Aid"
+                placeholder={t('dashboard.settings.orgNamePlaceholder')}
                 className="max-w-md"
               />
             </div>
@@ -538,20 +538,16 @@ export default function SettingsPage() {
         {/* Operating Region */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Operating Region</CardTitle>
+            <CardTitle className="text-lg">{t('dashboard.settings.operatingRegion')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Define where your deliveries happen and where your drivers operate.
-              Pan and zoom the map so the visible area covers your full operating
-              region. This determines the default view for all maps, which area
-              to provision for geocoding and routing, and where address search
-              results are biased.
+              {t('dashboard.settings.operatingRegionDesc')}
             </p>
 
             {/* Search input */}
             <div className="relative z-[10000]" ref={resultsRef}>
-              <label className="text-sm font-medium">Search Location</label>
+              <label className="text-sm font-medium">{t('dashboard.settings.searchLocation')}</label>
               <div className="relative mt-1">
                 <Input
                   value={searchQuery}
@@ -559,7 +555,7 @@ export default function SettingsPage() {
                   onFocus={() =>
                     searchResults.length > 0 && setShowResults(true)
                   }
-                  placeholder="Search for a city or address..."
+                  placeholder={t('dashboard.settings.searchPlaceholder')}
                 />
                 {searching && (
                   <div className="absolute right-3 top-3 h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
@@ -616,21 +612,21 @@ export default function SettingsPage() {
                 <div className="rounded-md border bg-muted/50 px-4 py-3 space-y-2">
                   <div className="text-sm space-y-1">
                     <div>
-                      <span className="text-muted-foreground">Center:</span>{" "}
+                      <span className="text-muted-foreground">{t('dashboard.settings.center')}</span>{" "}
                       <span className="font-mono">{label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Estimated size:</span>
+                      <span className="text-muted-foreground">{t('dashboard.settings.estimatedSize')}</span>
                       <span className={`font-medium ${isVeryLarge ? "text-destructive" : isLarge ? "text-amber-500" : "text-emerald-600"}`}>
                         ~{estMB < 1 ? '<1' : estMB} MB download, ~{estRAM < 100 ? '<100' : estRAM} MB RAM
                       </span>
                     </div>
                   </div>
                   {isVeryLarge && (
-                    <p className="text-xs text-destructive">This region may require 4+ GB RAM. Zoom in for smaller hardware.</p>
+                    <p className="text-xs text-destructive">{t('dashboard.settings.largeRegionWarning')}</p>
                   )}
                   {isLarge && !isVeryLarge && (
-                    <p className="text-xs text-amber-500">Fine for 8GB, tight for 4GB hardware.</p>
+                    <p className="text-xs text-amber-500">{t('dashboard.settings.mediumRegionNote')}</p>
                   )}
                 </div>
               );
@@ -642,11 +638,11 @@ export default function SettingsPage() {
                 onClick={handleSave}
                 disabled={saving}
               >
-                {saving ? "Saving..." : "Save Settings"}
+                {saving ? t('dashboard.common.saving') : t('dashboard.settings.saveSettings')}
               </Button>
               {saved && (
                 <span className="text-sm text-emerald-600 font-medium">
-                  Settings saved successfully.
+                  {t('dashboard.settings.settingsSaved')}
                 </span>
               )}
             </div>
@@ -657,15 +653,15 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              Map Data
+              {t('dashboard.settings.mapData')}
               {provisionStatus.status === "ready" && (
                 <span className="text-emerald-600 text-sm font-normal">
-                  &#10003; Ready
+                  &#10003; {t('dashboard.common.ready')}
                 </span>
               )}
               {provisionStatus.status === "error" && (
                 <span className="text-destructive text-sm font-normal">
-                  &#10007; Error
+                  &#10007; {t('dashboard.common.error')}
                 </span>
               )}
             </CardTitle>
@@ -674,14 +670,13 @@ export default function SettingsPage() {
             {provisionStatus.status === "not_started" && (
               <>
                 <p className="text-sm text-muted-foreground">
-                  No map data provisioned yet. Set your service area above, then
-                  provision maps to enable address search and offline routing.
+                  {t('dashboard.settings.noMapData')}
                 </p>
                 <Button
                   onClick={handleProvision}
                   disabled={provisioning || !bounds}
                 >
-                  {provisioning ? "Starting..." : "Provision Maps"}
+                  {provisioning ? t('dashboard.common.starting') : t('dashboard.settings.provisionMaps')}
                 </Button>
               </>
             )}
@@ -721,7 +716,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2 text-sm">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent flex-shrink-0" />
                     <span className="font-medium">
-                      {provisionStatus.message || "Importing map data..."}
+                      {provisionStatus.message || t('dashboard.settings.importingMaps')}
                     </span>
                   </div>
                   {(provisionStatus as any).importProgress != null && (
@@ -744,7 +739,7 @@ export default function SettingsPage() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    This typically takes 15-60 minutes, or 1-3 hours on a Raspberry Pi. Do not restart.
+                    {t('dashboard.settings.importTimeEstimate')}
                   </p>
                 </div>
               </>
@@ -753,12 +748,11 @@ export default function SettingsPage() {
             {provisionStatus.status === "ready" && (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Maps are provisioned and ready. Address search and routing are
-                  available.
+                  {t('dashboard.settings.mapsReady')}
                 </p>
                 {provisionStatus.state && (
                   <p className="text-sm">
-                    <span className="text-muted-foreground">State:</span>{" "}
+                    <span className="text-muted-foreground">{t('dashboard.settings.state')}</span>{" "}
                     {provisionStatus.state}
                     {provisionStatus.sizeBytes
                       ? ` (${(provisionStatus.sizeBytes / 1024 / 1024).toFixed(0)} MB)`
@@ -770,7 +764,7 @@ export default function SettingsPage() {
                   onClick={handleProvision}
                   disabled={provisioning}
                 >
-                  {provisioning ? "Starting..." : "Re-provision"}
+                  {provisioning ? t('dashboard.common.starting') : t('dashboard.settings.reprovision')}
                 </Button>
               </>
             )}
@@ -778,14 +772,14 @@ export default function SettingsPage() {
             {provisionStatus.status === "error" && (
               <>
                 <p className="text-sm text-destructive">
-                  {provisionStatus.message || "An unknown error occurred."}
+                  {provisionStatus.message || t('dashboard.common.error')}
                 </p>
                 <Button
                   variant="outline"
                   onClick={handleProvision}
                   disabled={provisioning}
                 >
-                  {provisioning ? "Starting..." : "Retry"}
+                  {provisioning ? t('dashboard.common.starting') : t('dashboard.common.retry')}
                 </Button>
               </>
             )}

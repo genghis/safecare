@@ -20,6 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/status-badge";
 import { apiGet, apiPost, apiPut, apiPatch } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,6 +74,7 @@ const DAYS_OF_WEEK = [
 // ---------------------------------------------------------------------------
 
 export default function DriversPage() {
+  const { t } = useLocale();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -127,7 +129,7 @@ export default function DriversPage() {
   }
 
   function getAvailabilityDays(avail: DriverAvailability[] | undefined): string {
-    if (!avail || avail.length === 0) return "Not set";
+    if (!avail || avail.length === 0) return t('dashboard.common.notSet');
     const days = [...new Set(avail.map((a) => a.day))];
     return days
       .map((d) => {
@@ -138,7 +140,7 @@ export default function DriversPage() {
   }
 
   function getZoneDisplay(zones: string[] | undefined): string {
-    if (!zones || zones.length === 0) return "None";
+    if (!zones || zones.length === 0) return t('dashboard.common.none');
     if (zones.length <= 2) return zones.join(", ");
     return `${zones.length} zones`;
   }
@@ -310,17 +312,17 @@ export default function DriversPage() {
     <div>
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Drivers</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.drivers.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage volunteer drivers, availability, and capacity.
+            {t('dashboard.drivers.subtitle')}
           </p>
         </div>
-        <Button onClick={openAddModal}>Add Driver</Button>
+        <Button onClick={openAddModal}>{t('dashboard.drivers.addDriver')}</Button>
       </div>
 
       <div className="mb-4">
         <Input
-          placeholder="Search by name, phone, or team..."
+          placeholder={t('dashboard.drivers.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
@@ -331,16 +333,16 @@ export default function DriversPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Vetted</TableHead>
-              <TableHead>Vehicle Size</TableHead>
-              <TableHead>Capacity</TableHead>
-              <TableHead>Availability</TableHead>
-              <TableHead>Zones</TableHead>
-              <TableHead>Team</TableHead>
-              <TableHead>Joined</TableHead>
+              <TableHead>{t('dashboard.drivers.colName')}</TableHead>
+              <TableHead>{t('dashboard.drivers.colPhone')}</TableHead>
+              <TableHead>{t('dashboard.drivers.colStatus')}</TableHead>
+              <TableHead>{t('dashboard.drivers.colVetted')}</TableHead>
+              <TableHead>{t('dashboard.drivers.colVehicleSize')}</TableHead>
+              <TableHead>{t('dashboard.drivers.colCapacity')}</TableHead>
+              <TableHead>{t('dashboard.drivers.colAvailability')}</TableHead>
+              <TableHead>{t('dashboard.drivers.colZones')}</TableHead>
+              <TableHead>{t('dashboard.drivers.colTeam')}</TableHead>
+              <TableHead>{t('dashboard.drivers.colJoined')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -350,7 +352,7 @@ export default function DriversPage() {
                   colSpan={10}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  Loading drivers...
+                  {t('dashboard.drivers.loadingDrivers')}
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
@@ -360,8 +362,8 @@ export default function DriversPage() {
                   className="h-24 text-center text-muted-foreground"
                 >
                   {search
-                    ? "No drivers match your search."
-                    : "No drivers found."}
+                    ? t('dashboard.drivers.noMatch')
+                    : t('dashboard.drivers.noDrivers')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -396,7 +398,7 @@ export default function DriversPage() {
                     </TableCell>
                     <TableCell>
                       <span className="text-sm">
-                        {driver.maxDeliveries || vehicleInfo?.max || "N/A"} max
+                        {driver.maxDeliveries || vehicleInfo?.max || t('dashboard.common.na')} {t('dashboard.common.max')}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -409,7 +411,7 @@ export default function DriversPage() {
                         {getZoneDisplay(driver.zones)}
                       </span>
                     </TableCell>
-                    <TableCell>{driver.team || "Unassigned"}</TableCell>
+                    <TableCell>{driver.team || t('dashboard.common.unassigned')}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(driver.createdAt).toLocaleDateString()}
                     </TableCell>
@@ -449,12 +451,12 @@ export default function DriversPage() {
           >
             <Card className="border-0 shadow-none">
               <CardHeader>
-                <CardTitle className="text-lg">Edit Driver</CardTitle>
+                <CardTitle className="text-lg">{t('dashboard.drivers.editDriver')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Name */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Name</label>
+                  <label className="text-sm font-medium">{t('dashboard.common.name')}</label>
                   <Input
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
@@ -463,7 +465,7 @@ export default function DriversPage() {
 
                 {/* Phone */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Phone</label>
+                  <label className="text-sm font-medium">{t('dashboard.common.phone')}</label>
                   <Input
                     value={editPhone}
                     onChange={(e) => setEditPhone(e.target.value)}
@@ -472,7 +474,7 @@ export default function DriversPage() {
 
                 {/* Vehicle Size */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Vehicle Size</label>
+                  <label className="text-sm font-medium">{t('dashboard.drivers.colVehicleSize')}</label>
                   <select
                     value={editVehicleSize}
                     onChange={(e) => {
@@ -492,7 +494,7 @@ export default function DriversPage() {
 
                 {/* Max Deliveries */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Max Deliveries</label>
+                  <label className="text-sm font-medium">{t('dashboard.drivers.maxDeliveries')}</label>
                   <Input
                     type="number"
                     min={1}
@@ -506,7 +508,7 @@ export default function DriversPage() {
 
                 {/* Team */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Team</label>
+                  <label className="text-sm font-medium">{t('dashboard.drivers.colTeam')}</label>
                   <Input
                     value={editTeam}
                     onChange={(e) => setEditTeam(e.target.value)}
@@ -515,7 +517,7 @@ export default function DriversPage() {
 
                 {/* Availability */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Availability</label>
+                  <label className="text-sm font-medium">{t('dashboard.drivers.colAvailability')}</label>
                   <div className="space-y-2">
                     {DAYS_OF_WEEK.map((day) => {
                       const avail = editAvailability.find(
@@ -551,7 +553,7 @@ export default function DriversPage() {
                                 }
                                 className="h-8 w-28 text-xs"
                               />
-                              <span className="text-muted-foreground">to</span>
+                              <span className="text-muted-foreground">{t('dashboard.common.to')}</span>
                               <Input
                                 type="time"
                                 value={avail.endTime}
@@ -574,10 +576,10 @@ export default function DriversPage() {
               </CardContent>
               <div className="flex items-center justify-end gap-2 p-6 pt-0">
                 <Button variant="ghost" onClick={closeEdit}>
-                  Cancel
+                  {t('dashboard.common.cancel')}
                 </Button>
                 <Button onClick={handleSaveEdit} disabled={editSaving}>
-                  {editSaving ? "Saving..." : "Save Changes"}
+                  {editSaving ? t('dashboard.common.saving') : t('dashboard.drivers.saveChanges')}
                 </Button>
               </div>
             </Card>
@@ -596,42 +598,42 @@ export default function DriversPage() {
           >
             <Card className="border-0 shadow-none">
               <CardHeader>
-                <CardTitle className="text-lg">Add Driver</CardTitle>
+                <CardTitle className="text-lg">{t('dashboard.drivers.addDriver')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Name */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Name *</label>
+                  <label className="text-sm font-medium">{t('dashboard.common.name')} {t('dashboard.common.required')}</label>
                   <Input
                     value={addName}
                     onChange={(e) => setAddName(e.target.value)}
-                    placeholder="Full name"
+                    placeholder={t('dashboard.common.placeholderFullName')}
                   />
                 </div>
 
                 {/* Phone */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Phone *</label>
+                  <label className="text-sm font-medium">{t('dashboard.common.phone')} {t('dashboard.common.required')}</label>
                   <Input
                     value={addPhone}
                     onChange={(e) => setAddPhone(e.target.value)}
-                    placeholder="+1 (555) 000-0000"
+                    placeholder={t('dashboard.common.placeholderPhone')}
                   />
                 </div>
 
                 {/* Email */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Email</label>
+                  <label className="text-sm font-medium">{t('dashboard.common.email')}</label>
                   <Input
                     value={addEmail}
                     onChange={(e) => setAddEmail(e.target.value)}
-                    placeholder="driver@example.com"
+                    placeholder={t('dashboard.drivers.placeholderEmail')}
                   />
                 </div>
 
                 {/* Vehicle Size */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Vehicle Size</label>
+                  <label className="text-sm font-medium">{t('dashboard.drivers.colVehicleSize')}</label>
                   <select
                     value={addVehicleSize}
                     onChange={(e) => {
@@ -651,7 +653,7 @@ export default function DriversPage() {
 
                 {/* Max Deliveries */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Max Deliveries</label>
+                  <label className="text-sm font-medium">{t('dashboard.drivers.maxDeliveries')}</label>
                   <Input
                     type="number"
                     min={1}
@@ -665,17 +667,17 @@ export default function DriversPage() {
 
                 {/* Team */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Team</label>
+                  <label className="text-sm font-medium">{t('dashboard.drivers.colTeam')}</label>
                   <Input
                     value={addTeam}
                     onChange={(e) => setAddTeam(e.target.value)}
-                    placeholder="Team name"
+                    placeholder={t('dashboard.drivers.placeholderTeam')}
                   />
                 </div>
 
                 {/* Availability */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Availability</label>
+                  <label className="text-sm font-medium">{t('dashboard.drivers.colAvailability')}</label>
                   <div className="space-y-2">
                     {DAYS_OF_WEEK.map((day) => {
                       const avail = addAvailability.find(
@@ -711,7 +713,7 @@ export default function DriversPage() {
                                 }
                                 className="h-8 w-28 text-xs"
                               />
-                              <span className="text-muted-foreground">to</span>
+                              <span className="text-muted-foreground">{t('dashboard.common.to')}</span>
                               <Input
                                 type="time"
                                 value={avail.endTime}
@@ -734,13 +736,13 @@ export default function DriversPage() {
               </CardContent>
               <div className="flex items-center justify-end gap-2 p-6 pt-0">
                 <Button variant="ghost" onClick={closeAddModal}>
-                  Cancel
+                  {t('dashboard.common.cancel')}
                 </Button>
                 <Button
                   onClick={handleSaveAdd}
                   disabled={addSaving || !addName || !addPhone}
                 >
-                  {addSaving ? "Adding..." : "Add Driver"}
+                  {addSaving ? t('dashboard.common.adding') : t('dashboard.drivers.addDriver')}
                 </Button>
               </div>
             </Card>
@@ -766,6 +768,7 @@ function DriverDetailPanel({
   onEdit: (driver: Driver) => void;
   onStatusChange: (driverId: string, status: string) => void;
 }) {
+  const { t } = useLocale();
   const [confirmSuspend, setConfirmSuspend] = useState(false);
   if (!driver) return null;
 
@@ -775,7 +778,7 @@ function DriverDetailPanel({
     <Card className="mt-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="text-lg">
-          {driver.name} — Details
+          {t('dashboard.drivers.details', { name: driver.name })}
         </CardTitle>
         <div className="flex items-center gap-2">
           <Button
@@ -783,10 +786,10 @@ function DriverDetailPanel({
             size="sm"
             onClick={() => onEdit(driver)}
           >
-            Edit
+            {t('dashboard.common.edit')}
           </Button>
           <Button variant="ghost" size="sm" onClick={onClose}>
-            Close
+            {t('dashboard.common.close')}
           </Button>
         </div>
       </CardHeader>
@@ -794,35 +797,35 @@ function DriverDetailPanel({
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {/* Vehicle info */}
           <div className="space-y-1">
-            <span className="text-xs text-muted-foreground">Vehicle</span>
+            <span className="text-xs text-muted-foreground">{t('dashboard.drivers.vehicle')}</span>
             <p className="text-sm font-medium">
               {vehicleInfo
                 ? `${vehicleInfo.label} (${driver.maxDeliveries || vehicleInfo.max} max)`
-                : driver.vehicle || "N/A"}
+                : driver.vehicle || t('dashboard.common.na')}
             </p>
           </div>
 
           {/* Team */}
           <div className="space-y-1">
-            <span className="text-xs text-muted-foreground">Team</span>
+            <span className="text-xs text-muted-foreground">{t('dashboard.drivers.colTeam')}</span>
             <p className="text-sm font-medium">
-              {driver.team || "Unassigned"}
+              {driver.team || t('dashboard.common.unassigned')}
             </p>
           </div>
 
           {/* Phone */}
           <div className="space-y-1">
-            <span className="text-xs text-muted-foreground">Phone</span>
+            <span className="text-xs text-muted-foreground">{t('dashboard.common.phone')}</span>
             <p className="text-sm font-medium">{driver.phone}</p>
           </div>
         </div>
 
         {/* Availability schedule */}
         <div className="mt-6">
-          <h3 className="text-sm font-medium mb-3">Availability Schedule</h3>
+          <h3 className="text-sm font-medium mb-3">{t('dashboard.drivers.availabilitySchedule')}</h3>
           {(!driver.availability || driver.availability.length === 0) ? (
             <p className="text-sm text-muted-foreground">
-              No availability set.
+              {t('dashboard.drivers.noAvailability')}
             </p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -845,7 +848,7 @@ function DriverDetailPanel({
                         {avail.startTime} - {avail.endTime}
                       </span>
                     ) : (
-                      <span className="ml-2 text-xs">Unavailable</span>
+                      <span className="ml-2 text-xs">{t('dashboard.drivers.unavailable')}</span>
                     )}
                   </div>
                 );
@@ -856,10 +859,10 @@ function DriverDetailPanel({
 
         {/* Zones */}
         <div className="mt-6">
-          <h3 className="text-sm font-medium mb-3">Assigned Zones</h3>
+          <h3 className="text-sm font-medium mb-3">{t('dashboard.drivers.assignedZones')}</h3>
           {(!driver.zones || driver.zones.length === 0) ? (
             <p className="text-sm text-muted-foreground">
-              No zones assigned.
+              {t('dashboard.drivers.noZones')}
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
@@ -874,7 +877,7 @@ function DriverDetailPanel({
 
         {/* Vetting workflow */}
         <div className="mt-6">
-          <h3 className="text-sm font-medium mb-3">Vetting Status</h3>
+          <h3 className="text-sm font-medium mb-3">{t('dashboard.drivers.vettingStatus')}</h3>
           <div className="flex items-center gap-3">
             <StatusBadge status={driver.status === "vetted" ? "vetted" : driver.status === "suspended" ? "suspended" : "not_vetted"} />
             <div className="flex gap-2">
@@ -885,14 +888,14 @@ function DriverDetailPanel({
                     onClick={() => onStatusChange(driver.id, "vetted")}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
-                    Approve (Vet)
+                    {t('dashboard.drivers.approveVet')}
                   </Button>
                   <Button
                     size="sm"
                     variant="destructive"
                     onClick={() => setConfirmSuspend(true)}
                   >
-                    Suspend
+                    {t('dashboard.drivers.suspend')}
                   </Button>
                 </>
               )}
@@ -902,7 +905,7 @@ function DriverDetailPanel({
                   variant="destructive"
                   onClick={() => setConfirmSuspend(true)}
                 >
-                  Suspend
+                  {t('dashboard.drivers.suspend')}
                 </Button>
               )}
               {driver.status === "suspended" && (
@@ -911,7 +914,7 @@ function DriverDetailPanel({
                   onClick={() => onStatusChange(driver.id, "vetted")}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                  Reinstate
+                  {t('dashboard.drivers.reinstate')}
                 </Button>
               )}
             </div>
@@ -919,7 +922,7 @@ function DriverDetailPanel({
           {confirmSuspend && (
             <div className="mt-3 flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3">
               <span className="text-sm text-destructive">
-                Suspend this driver? They will not receive routes.
+                {t('dashboard.drivers.suspendConfirm')}
               </span>
               <Button
                 size="sm"
@@ -929,14 +932,14 @@ function DriverDetailPanel({
                   setConfirmSuspend(false);
                 }}
               >
-                Confirm
+                {t('dashboard.common.confirm')}
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setConfirmSuspend(false)}
               >
-                Cancel
+                {t('dashboard.common.cancel')}
               </Button>
             </div>
           )}

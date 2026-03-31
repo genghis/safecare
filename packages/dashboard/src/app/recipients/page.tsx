@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
 import { apiGet, apiPost } from "@/lib/api";
+import { useLocale } from "@/lib/locale";
 
 interface Recipient {
   id: string;
@@ -31,6 +32,7 @@ interface Recipient {
 }
 
 export default function RecipientsPage() {
+  const { t } = useLocale();
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -128,7 +130,7 @@ export default function RecipientsPage() {
       setRecipients((prev) => [...prev, newRecipient]);
       closeAddModal();
     } else {
-      alert(res.error || "Failed to add recipient. Please try again.");
+      alert(res.error || t('dashboard.recipients.addFailed'));
     }
     setAddSaving(false);
   }
@@ -137,17 +139,17 @@ export default function RecipientsPage() {
     <div>
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Recipients</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.recipients.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage mutual aid recipients and their delivery preferences.
+            {t('dashboard.recipients.subtitle')}
           </p>
         </div>
-        <Button onClick={openAddModal}>Add Recipient</Button>
+        <Button onClick={openAddModal}>{t('dashboard.recipients.addRecipient')}</Button>
       </div>
 
       <div className="mb-4">
         <Input
-          placeholder="Search by name, phone, or address..."
+          placeholder={t('dashboard.recipients.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
@@ -158,25 +160,25 @@ export default function RecipientsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Communication</TableHead>
-              <TableHead>Added</TableHead>
+              <TableHead>{t('dashboard.recipients.colName')}</TableHead>
+              <TableHead>{t('dashboard.recipients.colPhone')}</TableHead>
+              <TableHead>{t('dashboard.recipients.colAddress')}</TableHead>
+              <TableHead>{t('dashboard.recipients.colStatus')}</TableHead>
+              <TableHead>{t('dashboard.recipients.colCommunication')}</TableHead>
+              <TableHead>{t('dashboard.recipients.colAdded')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                  Loading recipients...
+                  {t('dashboard.recipients.loadingRecipients')}
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                  {search ? "No recipients match your search." : "No recipients found."}
+                  {search ? t('dashboard.recipients.noMatch') : t('dashboard.recipients.noRecipients')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -208,31 +210,31 @@ export default function RecipientsPage() {
             className="w-full max-w-2xl rounded-lg border bg-card p-6 shadow-lg max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-semibold mb-4">Add Recipient</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('dashboard.recipients.addRecipient')}</h2>
             <div className="space-y-4">
               {/* Name + Phone row */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Name *</label>
+                  <label className="text-sm font-medium">{t('dashboard.common.name')} {t('dashboard.common.required')}</label>
                   <Input
                     value={addName}
                     onChange={(e) => setAddName(e.target.value)}
-                    placeholder="Full name"
+                    placeholder={t('dashboard.common.placeholderFullName')}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Phone *</label>
+                  <label className="text-sm font-medium">{t('dashboard.common.phone')} {t('dashboard.common.required')}</label>
                   <Input
                     value={addPhone}
                     onChange={(e) => setAddPhone(e.target.value)}
-                    placeholder="+1 (555) 000-0000"
+                    placeholder={t('dashboard.common.placeholderPhone')}
                   />
                 </div>
               </div>
 
               {/* Address + Map */}
               <div className="space-y-1">
-                <label className="text-sm font-medium">Delivery Location *</label>
+                <label className="text-sm font-medium">{t('dashboard.recipients.deliveryLocation')} {t('dashboard.common.required')}</label>
                 <AddressPickerMap
                   lat={addLat}
                   lng={addLng}
@@ -248,12 +250,12 @@ export default function RecipientsPage() {
                 />
                 <div className="mt-2">
                   <label className="text-xs text-muted-foreground">
-                    Address (auto-filled from map, editable)
+                    {t('dashboard.recipients.addressAutoFilled')}
                   </label>
                   <Input
                     value={addAddress}
                     onChange={(e) => setAddAddress(e.target.value)}
-                    placeholder="Address will be filled when you select a location"
+                    placeholder={t('dashboard.recipients.addressMapPlaceholder')}
                     className="mt-1"
                   />
                 </div>
@@ -262,7 +264,7 @@ export default function RecipientsPage() {
               {/* Communication + Language row */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Notification Channel</label>
+                  <label className="text-sm font-medium">{t('dashboard.recipients.notificationChannel')}</label>
                   <select
                     value={addCommPref}
                     onChange={(e) => setAddCommPref(e.target.value)}
@@ -274,7 +276,7 @@ export default function RecipientsPage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Language</label>
+                  <label className="text-sm font-medium">{t('dashboard.recipients.language')}</label>
                   <select
                     value={addLanguage}
                     onChange={(e) => setAddLanguage(e.target.value)}
@@ -293,13 +295,13 @@ export default function RecipientsPage() {
 
             <div className="flex items-center justify-end gap-2 mt-6">
               <Button variant="ghost" onClick={closeAddModal}>
-                Cancel
+                {t('dashboard.common.cancel')}
               </Button>
               <Button
                 onClick={handleAddRecipient}
                 disabled={addSaving || !addName || !addPhone || !addAddress}
               >
-                {addSaving ? "Adding..." : "Add Recipient"}
+                {addSaving ? t('dashboard.common.adding') : t('dashboard.recipients.addRecipient')}
               </Button>
             </div>
           </div>
