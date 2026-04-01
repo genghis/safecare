@@ -14,7 +14,7 @@ import { t as translate, type SupportedLocale, LOCALE_LABELS } from "../../../sh
 
 const LOCALE_STORAGE_KEY = "safecare_locale";
 
-const SUPPORTED: SupportedLocale[] = ["en", "es", "ar", "so", "fr", "zh"];
+const SUPPORTED: SupportedLocale[] = ["en", "es", "ar", "so", "fr", "zh", "uk"];
 
 function detectLocale(): SupportedLocale {
   // 1. Stored preference

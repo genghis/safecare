@@ -19,7 +19,7 @@ import type { ReactNode } from "react";
 import { apiGet } from "@/lib/api";
 
 // Inline the types to avoid shared package import issues in Next.js
-type SupportedLocale = "en" | "es" | "ar" | "so" | "fr" | "zh";
+type SupportedLocale = "en" | "es" | "ar" | "so" | "fr" | "zh" | "uk";
 
 const LOCALE_LABELS: Record<SupportedLocale, string> = {
   en: "English",
@@ -28,9 +28,10 @@ const LOCALE_LABELS: Record<SupportedLocale, string> = {
   so: "Soomaali",
   fr: "Français",
   zh: "中文",
+  uk: "Українська",
 };
 
-const SUPPORTED: SupportedLocale[] = ["en", "es", "ar", "so", "fr", "zh"];
+const SUPPORTED: SupportedLocale[] = ["en", "es", "ar", "so", "fr", "zh", "uk"];
 
 // Inline translation function (mirrors shared/i18n.ts but avoids import issues)
 // In production, this should import from @safecare/shared

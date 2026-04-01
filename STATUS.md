@@ -157,6 +157,7 @@ All user-facing strings translated to 6 languages. Language selectable in Settin
 | so | Soomaali (Somali) | Complete | Complete | Complete |
 | fr | Français (French) | Complete | Complete | Complete |
 | zh | 中文 (Chinese) | Complete | Complete | Complete |
+| uk | Українська (Ukrainian) | Complete | Complete | Complete |
 
 ## Cross-Cutting Gaps
 

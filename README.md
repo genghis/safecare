@@ -70,7 +70,7 @@ Open **http://localhost:3000** — a setup wizard walks you through creating you
 - **Address autocomplete** — self-hosted Nominatim geocoding (optional [TIGER data](docs/TIGER.md) for rural house-number accuracy)
 - **Offline driver navigation** — map tiles and routes pre-cached on phones
 - **Airplane mode prompts** — privacy reminder near delivery areas with loud audio alert at 500 m
-- **6 languages** — English, Spanish, Arabic, Somali, French, Chinese (recipient notifications; dashboard/driver UI is English-only)
+- **7 languages** — English, Spanish, Arabic, Somali, French, Chinese, Ukrainian
 - **3 notification channels** — Signal (free, E2E), SMS (Twilio), WhatsApp (Twilio)
 - **Field-level encryption** — recipient PII encrypted with pgcrypto
 - **Driver phone encryption** — route data AES-GCM-256 encrypted in IndexedDB, key never on disk

@@ -10,7 +10,7 @@
  * Interpolation uses {{variable}} syntax: "Hi {{name}}, your delivery..."
  */
 
-export type SupportedLocale = 'en' | 'es' | 'ar' | 'so' | 'fr' | 'zh';
+export type SupportedLocale = 'en' | 'es' | 'ar' | 'so' | 'fr' | 'zh' | 'uk';
 
 export const LOCALE_LABELS: Record<SupportedLocale, string> = {
   en: 'English',
@@ -19,6 +19,7 @@ export const LOCALE_LABELS: Record<SupportedLocale, string> = {
   so: 'Soomaali',
   fr: 'Français',
   zh: '中文',
+  uk: 'Українська',
 };
 
 export const DEFAULT_LOCALE: SupportedLocale = 'en';
@@ -38,6 +39,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidkaagu waa soo socda waxayna dhowaan imanaysaa.',
     fr: 'Votre livraison est en route et devrait arriver bientôt.',
     zh: '您的配送正在路上，很快就会到达。',
+    uk: 'Ваше замовлення вже в дорозі й незабаром прибуде.',
   },
   'notification.delivery.delivered': {
     en: 'Your delivery has arrived.',
@@ -46,6 +48,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidkaagu wuu yimid.',
     fr: 'Votre livraison est arrivée.',
     zh: '您的配送已到达。',
+    uk: 'Ваше замовлення доставлено.',
   },
   'notification.delivery.ackPrompt': {
     en: 'Your delivery has arrived. Reply GOT IT to confirm.',
@@ -54,6 +57,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidkaagu wuu yimid. Ku jawaab HELAY si aad u xaqiijiso.',
     fr: 'Votre livraison est arrivée. Répondez RECU pour confirmer.',
     zh: '您的配送已到达。回复 收到 以确认。',
+    uk: 'Ваше замовлення доставлено. Відповідайте ОТРИМАВ для підтвердження.',
   },
   'notification.delivery.ackConfirmed': {
     en: 'Thank you! Your delivery is confirmed.',
@@ -62,6 +66,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Mahadsanid! Gaadiidkaaga waa la xaqiijiyay.',
     fr: 'Merci ! Votre livraison est confirmée.',
     zh: '谢谢！您的配送已确认。',
+    uk: 'Дякуємо! Доставку підтверджено.',
   },
   'notification.delivery.orphanedAlert': {
     en: 'Delivery not confirmed after {{minutes}} minutes. Please check on recipient.',
@@ -70,6 +75,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidka lama xaqiijinin {{minutes}} daqiiqo kadib. Fadlan hubi qaabilaha.',
     fr: 'Livraison non confirmée après {{minutes}} minutes. Veuillez vérifier auprès du destinataire.',
     zh: '配送在{{minutes}}分钟后未确认。请检查收件人。',
+    uk: 'Доставку не підтверджено протягом {{minutes}} хвилин. Будь ласка, перевірте отримувача.',
   },
   'notification.delivery.failed': {
     en: 'We were unable to complete your delivery. We will try again soon.',
@@ -78,6 +84,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ma awoodnay inaan dhameystirno gaadiidkaaga. Dhowaan waan isku dayi doonaa mar kale.',
     fr: 'Nous n\'avons pas pu effectuer votre livraison. Nous réessaierons bientôt.',
     zh: '我们无法完成您的配送。我们将很快再次尝试。',
+    uk: 'Нам не вдалося завершити доставку. Ми спробуємо ще раз найближчим часом.',
   },
 
   // --- Driver app UI strings ---
@@ -88,6 +95,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Lama diiwaangelinin',
     fr: 'Non enregistré',
     zh: '未签到',
+    uk: 'Не зареєстровано',
   },
   'driver.status.checkedIn': {
     en: 'Checked in — waiting for dispatch',
@@ -96,6 +104,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waa la diiwaangeliyay — sugitaanka dirida',
     fr: 'Enregistré — en attente de dispatch',
     zh: '已签到 — 等待调度',
+    uk: 'Зареєстровано — очікування на розподіл',
   },
   'driver.status.routesReleased': {
     en: 'Routes released — download your deliveries',
@@ -104,6 +113,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waddooyinka waa la sii daayay — soo deji gaadiidkaaga',
     fr: 'Routes publiées — téléchargez vos livraisons',
     zh: '路线已发布 — 下载您的配送任务',
+    uk: 'Маршрути опубліковано — завантажте свої доставки',
   },
   'driver.action.checkIn': {
     en: 'Ready for Routes',
@@ -112,6 +122,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'U diyaar ah Waddooyinka',
     fr: 'Prêt pour les routes',
     zh: '准备接收路线',
+    uk: 'Готовий до маршрутів',
   },
   'driver.action.endShift': {
     en: 'End Shift',
@@ -120,6 +131,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dhamee Wareegga',
     fr: 'Fin de service',
     zh: '结束班次',
+    uk: 'Завершити зміну',
   },
   'driver.purge.confirmed': {
     en: 'Route data deleted. 0 addresses on this device.',
@@ -128,6 +140,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xogta waddada waa la tirtiray. 0 cinwaanno qalabkan ku jira.',
     fr: 'Données de route supprimées. 0 adresses sur cet appareil.',
     zh: '路线数据已删除。此设备上有0个地址。',
+    uk: 'Дані маршруту видалено. 0 адрес на цьому пристрої.',
   },
   'driver.airplaneMode.approaching': {
     en: 'You\'re approaching the delivery area. Consider enabling airplane mode for privacy.',
@@ -136,6 +149,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waad ku soo dhowdahay aagga gaadiidka. Ka fakir shidida habka diyaaradda sirta awgeed.',
     fr: 'Vous approchez de la zone de livraison. Pensez à activer le mode avion pour la confidentialité.',
     zh: '您正在接近配送区域。请考虑开启飞行模式以保护隐私。',
+    uk: 'Ви наближаєтесь до зони доставки. Розгляньте можливість увімкнення авіарежиму для конфіденційності.',
   },
   'driver.airplaneMode.recommended': {
     en: 'Airplane mode recommended',
@@ -144,6 +158,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Habka diyaaradda waa la talinayaa',
     fr: 'Mode avion recommandé',
     zh: '建议开启飞行模式',
+    uk: 'Рекомендовано авіарежим',
   },
   'driver.map.cachingTiles': {
     en: 'Caching maps for offline use...',
@@ -152,6 +167,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Kaydinta khariidadaha isticmaalka offline...',
     fr: 'Mise en cache des cartes pour utilisation hors ligne...',
     zh: '正在缓存地图以供离线使用...',
+    uk: 'Кешування мап для роботи офлайн...',
   },
   'driver.map.cached': {
     en: 'Maps cached! You can navigate offline.',
@@ -160,6 +176,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Khariidadaha waa la kaydiyay! Waad ku socon kartaa offline.',
     fr: 'Cartes en cache ! Vous pouvez naviguer hors ligne.',
     zh: '地图已缓存！您可以离线导航。',
+    uk: 'Мапи закешовано! Можна навігувати офлайн.',
   },
   'driver.delivery.markDelivered': {
     en: 'Mark Delivered',
@@ -168,6 +185,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Calaamadee Gaarsiisan',
     fr: 'Marquer comme livré',
     zh: '标记为已送达',
+    uk: 'Позначити доставленим',
   },
   'driver.delivery.markFailed': {
     en: 'Could Not Deliver',
@@ -176,6 +194,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ma La Gaarsiin Karin',
     fr: 'Impossible de livrer',
     zh: '无法送达',
+    uk: 'Не вдалося доставити',
   },
 
   // --- Dashboard UI strings ---
@@ -186,6 +205,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dashboard-ka',
     fr: 'Tableau de bord',
     zh: '仪表板',
+    uk: 'Панель керування',
   },
   'dashboard.nav.recipients': {
     en: 'Recipients',
@@ -194,6 +214,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qaabilayaasha',
     fr: 'Destinataires',
     zh: '收件人',
+    uk: 'Отримувачі',
   },
   'dashboard.nav.drivers': {
     en: 'Drivers',
@@ -202,6 +223,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Darawallada',
     fr: 'Chauffeurs',
     zh: '司机',
+    uk: 'Водії',
   },
   'dashboard.nav.dispatch': {
     en: 'Dispatch',
@@ -210,6 +232,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dirida',
     fr: 'Dispatch',
     zh: '调度',
+    uk: 'Диспетчеризація',
   },
   'dashboard.nav.deliveries': {
     en: 'Deliveries',
@@ -218,6 +241,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidyada',
     fr: 'Livraisons',
     zh: '配送',
+    uk: 'Доставки',
   },
   'dashboard.nav.zones': {
     en: 'Zones',
@@ -226,6 +250,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aagagga',
     fr: 'Zones',
     zh: '区域',
+    uk: 'Зони',
   },
 
   // --- Communication preferences ---
@@ -236,6 +261,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'SMS',
     fr: 'SMS',
     zh: '短信',
+    uk: 'SMS',
   },
   'comm.whatsapp': {
     en: 'WhatsApp',
@@ -244,6 +270,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'WhatsApp',
     fr: 'WhatsApp',
     zh: 'WhatsApp',
+    uk: 'WhatsApp',
   },
   'comm.signal': {
     en: 'Signal',
@@ -252,91 +279,92 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Signal',
     fr: 'Signal',
     zh: 'Signal',
+    uk: 'Signal',
   },
 
   // --- Login screen ---
-  'driver.login.appName': { en: 'SafeCare', es: 'SafeCare', ar: 'SafeCare', so: 'SafeCare', fr: 'SafeCare', zh: 'SafeCare' },
-  'driver.login.subtitle': { en: 'Driver Delivery App', es: 'Aplicación de Entregas para Conductores', ar: 'تطبيق توصيل السائق', so: 'Barnaamijka Gaadiidka Darawalka', fr: 'Application de livraison chauffeur', zh: '司机配送应用' },
-  'driver.login.phoneLabel': { en: 'Phone Number', es: 'Número de Teléfono', ar: 'رقم الهاتف', so: 'Lambarka Telefoonka', fr: 'Numéro de téléphone', zh: '电话号码' },
-  'driver.login.sendCode': { en: 'Send Verification Code', es: 'Enviar Código de Verificación', ar: 'إرسال رمز التحقق', so: 'Dir Koodhka Xaqiijinta', fr: 'Envoyer le code de vérification', zh: '发送验证码' },
-  'driver.login.otpLabel': { en: 'Enter Verification Code', es: 'Ingrese el Código de Verificación', ar: 'أدخل رمز التحقق', so: 'Geli Koodhka Xaqiijinta', fr: 'Entrez le code de vérification', zh: '输入验证码' },
-  'driver.login.otpHint': { en: 'A 6-digit code was sent to {{phone}}', es: 'Se envió un código de 6 dígitos a {{phone}}', ar: 'تم إرسال رمز مكون من 6 أرقام إلى {{phone}}', so: 'Koodh 6 lambar ah ayaa loo diray {{phone}}', fr: 'Un code à 6 chiffres a été envoyé au {{phone}}', zh: '已向 {{phone}} 发送6位验证码' },
-  'driver.login.verify': { en: 'Verify & Sign In', es: 'Verificar e Iniciar Sesión', ar: 'تحقق وسجل الدخول', so: 'Xaqiiji oo Gal', fr: 'Vérifier et se connecter', zh: '验证并登录' },
-  'driver.login.back': { en: 'Back', es: 'Volver', ar: 'رجوع', so: 'Dib u noqo', fr: 'Retour', zh: '返回' },
-  'driver.login.errorPhone': { en: 'Enter a valid phone number.', es: 'Ingrese un número de teléfono válido.', ar: 'أدخل رقم هاتف صالح.', so: 'Geli lambar telefoon sax ah.', fr: 'Entrez un numéro de téléphone valide.', zh: '请输入有效的电话号码。' },
-  'driver.login.errorOtp': { en: 'Enter the 6-digit code.', es: 'Ingrese el código de 6 dígitos.', ar: 'أدخل الرمز المكون من 6 أرقام.', so: 'Geli koodhka 6 lambar.', fr: 'Entrez le code à 6 chiffres.', zh: '请输入6位验证码。' },
-  'driver.login.errorOtpRequest': { en: 'Could not request OTP. Is this phone number registered as a driver?', es: '¿No se pudo solicitar el código. ¿Este número de teléfono está registrado como conductor?', ar: 'تعذر طلب رمز التحقق. هل هذا الرقم مسجل كسائق؟', so: 'Ma la codsan karin koodhka. Lambarkani ma u diiwaangashan yahay darawal?', fr: 'Impossible de demander le code. Ce numéro est-il enregistré en tant que chauffeur ?', zh: '无法请求验证码。此电话号码是否已注册为司机？' },
-  'driver.login.errorOtpInvalid': { en: 'Invalid or expired code. Please try again.', es: 'Código inválido o expirado. Por favor intente de nuevo.', ar: 'رمز غير صالح أو منتهي الصلاحية. يرجى المحاولة مرة أخرى.', so: 'Koodh aan sax ahayn ama uu dhacay. Fadlan isku day mar kale.', fr: 'Code invalide ou expiré. Veuillez réessayer.', zh: '验证码无效或已过期。请重试。' },
-  'driver.login.devOtp': { en: 'Dev mode — your code is:', es: 'Modo desarrollo — su código es:', ar: 'وضع التطوير — رمزك هو:', so: 'Habka horumarinta — koodhkaagu waa:', fr: 'Mode développement — votre code est :', zh: '开发模式 — 您的验证码是：' },
+  'driver.login.appName': { en: 'SafeCare', es: 'SafeCare', ar: 'SafeCare', so: 'SafeCare', fr: 'SafeCare', zh: 'SafeCare', uk: 'SafeCare' },
+  'driver.login.subtitle': { en: 'Driver Delivery App', es: 'Aplicación de Entregas para Conductores', ar: 'تطبيق توصيل السائق', so: 'Barnaamijka Gaadiidka Darawalka', fr: 'Application de livraison chauffeur', zh: '司机配送应用', uk: 'Застосунок доставки для водіїв' },
+  'driver.login.phoneLabel': { en: 'Phone Number', es: 'Número de Teléfono', ar: 'رقم الهاتف', so: 'Lambarka Telefoonka', fr: 'Numéro de téléphone', zh: '电话号码', uk: 'Номер телефону' },
+  'driver.login.sendCode': { en: 'Send Verification Code', es: 'Enviar Código de Verificación', ar: 'إرسال رمز التحقق', so: 'Dir Koodhka Xaqiijinta', fr: 'Envoyer le code de vérification', zh: '发送验证码', uk: 'Надіслати код підтвердження' },
+  'driver.login.otpLabel': { en: 'Enter Verification Code', es: 'Ingrese el Código de Verificación', ar: 'أدخل رمز التحقق', so: 'Geli Koodhka Xaqiijinta', fr: 'Entrez le code de vérification', zh: '输入验证码', uk: 'Введіть код підтвердження' },
+  'driver.login.otpHint': { en: 'A 6-digit code was sent to {{phone}}', es: 'Se envió un código de 6 dígitos a {{phone}}', ar: 'تم إرسال رمز مكون من 6 أرقام إلى {{phone}}', so: 'Koodh 6 lambar ah ayaa loo diray {{phone}}', fr: 'Un code à 6 chiffres a été envoyé au {{phone}}', zh: '已向 {{phone}} 发送6位验证码', uk: '6-значний код надіслано на {{phone}}' },
+  'driver.login.verify': { en: 'Verify & Sign In', es: 'Verificar e Iniciar Sesión', ar: 'تحقق وسجل الدخول', so: 'Xaqiiji oo Gal', fr: 'Vérifier et se connecter', zh: '验证并登录', uk: 'Підтвердити та увійти' },
+  'driver.login.back': { en: 'Back', es: 'Volver', ar: 'رجوع', so: 'Dib u noqo', fr: 'Retour', zh: '返回', uk: 'Назад' },
+  'driver.login.errorPhone': { en: 'Enter a valid phone number.', es: 'Ingrese un número de teléfono válido.', ar: 'أدخل رقم هاتف صالح.', so: 'Geli lambar telefoon sax ah.', fr: 'Entrez un numéro de téléphone valide.', zh: '请输入有效的电话号码。', uk: 'Введіть дійсний номер телефону.' },
+  'driver.login.errorOtp': { en: 'Enter the 6-digit code.', es: 'Ingrese el código de 6 dígitos.', ar: 'أدخل الرمز المكون من 6 أرقام.', so: 'Geli koodhka 6 lambar.', fr: 'Entrez le code à 6 chiffres.', zh: '请输入6位验证码。', uk: 'Введіть 6-значний код.' },
+  'driver.login.errorOtpRequest': { en: 'Could not request OTP. Is this phone number registered as a driver?', es: '¿No se pudo solicitar el código. ¿Este número de teléfono está registrado como conductor?', ar: 'تعذر طلب رمز التحقق. هل هذا الرقم مسجل كسائق؟', so: 'Ma la codsan karin koodhka. Lambarkani ma u diiwaangashan yahay darawal?', fr: 'Impossible de demander le code. Ce numéro est-il enregistré en tant que chauffeur ?', zh: '无法请求验证码。此电话号码是否已注册为司机？', uk: 'Не вдалося запросити OTP. Чи зареєстровано цей номер як водія?' },
+  'driver.login.errorOtpInvalid': { en: 'Invalid or expired code. Please try again.', es: 'Código inválido o expirado. Por favor intente de nuevo.', ar: 'رمز غير صالح أو منتهي الصلاحية. يرجى المحاولة مرة أخرى.', so: 'Koodh aan sax ahayn ama uu dhacay. Fadlan isku day mar kale.', fr: 'Code invalide ou expiré. Veuillez réessayer.', zh: '验证码无效或已过期。请重试。', uk: 'Недійсний або прострочений код. Спробуйте ще раз.' },
+  'driver.login.devOtp': { en: 'Dev mode — your code is:', es: 'Modo desarrollo — su código es:', ar: 'وضع التطوير — رمزك هو:', so: 'Habka horumarinta — koodhkaagu waa:', fr: 'Mode développement — votre code est :', zh: '开发模式 — 您的验证码是：', uk: 'Режим розробки — ваш код:' },
 
   // --- Dashboard screen ---
-  'driver.dashboard.myProfile': { en: 'My Profile', es: 'Mi Perfil', ar: 'ملفي الشخصي', so: 'Bogaygga', fr: 'Mon profil', zh: '我的资料' },
-  'driver.dashboard.readyPrompt': { en: 'Ready to start your shift?', es: '¿Listo para comenzar su turno?', ar: 'هل أنت جاهز لبدء ورديتك؟', so: 'Ma u diyaar tahay inaad bilowdo wareegaaga?', fr: 'Prêt à commencer votre service ?', zh: '准备好开始您的班次了吗？' },
-  'driver.dashboard.waitingForRoutes': { en: 'Waiting for routes to be released...', es: 'Esperando que se liberen las rutas...', ar: 'في انتظار إصدار المسارات...', so: 'La sugayo in waddooyinka la sii daayo...', fr: 'En attente de la publication des routes...', zh: '等待路线发布...' },
-  'driver.dashboard.checkForRoutes': { en: 'Check for Routes', es: 'Buscar Rutas', ar: 'التحقق من المسارات', so: 'Hubi Waddooyinka', fr: 'Vérifier les routes', zh: '检查路线' },
-  'driver.dashboard.remaining': { en: 'Remaining', es: 'Restantes', ar: 'متبقية', so: 'Haray', fr: 'Restantes', zh: '剩余' },
-  'driver.dashboard.delivered': { en: 'Delivered', es: 'Entregadas', ar: 'تم التوصيل', so: 'La gaarsiiyay', fr: 'Livrées', zh: '已送达' },
-  'driver.dashboard.total': { en: 'Total', es: 'Total', ar: 'الإجمالي', so: 'Wadarta', fr: 'Total', zh: '总计' },
-  'driver.dashboard.refresh': { en: 'Refresh', es: 'Actualizar', ar: 'تحديث', so: 'Cusboonaysii', fr: 'Actualiser', zh: '刷新' },
-  'driver.dashboard.refreshing': { en: 'Refreshing...', es: 'Actualizando...', ar: 'جارٍ التحديث...', so: 'Waa la cusboonaysiinayaa...', fr: 'Actualisation...', zh: '正在刷新...' },
-  'driver.dashboard.availableOffline': { en: 'Available offline', es: 'Disponible sin conexión', ar: 'متاح بدون اتصال', so: 'Waa la heli karaa offline', fr: 'Disponible hors ligne', zh: '可离线使用' },
-  'driver.dashboard.errorCheckIn': { en: 'Could not check in. Please try again.', es: 'No se pudo registrar. Por favor intente de nuevo.', ar: 'تعذر تسجيل الدخول. يرجى المحاولة مرة أخرى.', so: 'Ma la diiwaangelin karin. Fadlan isku day mar kale.', fr: "Impossible de s'enregistrer. Veuillez réessayer.", zh: '无法签到。请重试。' },
-  'driver.dashboard.errorRoutesNotReleased': { en: 'Routes have not been released yet. Try again shortly.', es: 'Las rutas aún no se han liberado. Intente de nuevo en breve.', ar: 'لم يتم إصدار المسارات بعد. حاول مرة أخرى قريباً.', so: 'Waddooyinka wali lama sii dayin. Isku day mar kale dhowaan.', fr: "Les routes n'ont pas encore été publiées. Réessayez sous peu.", zh: '路线尚未发布。请稍后再试。' },
-  'driver.dashboard.errorFetchRoutes': { en: 'Could not fetch routes. Check your connection.', es: 'No se pudieron obtener las rutas. Verifique su conexión.', ar: 'تعذر جلب المسارات. تحقق من اتصالك.', so: 'Ma la soo qaadan karin waddooyinka. Hubi xiriirkaaga.', fr: 'Impossible de récupérer les routes. Vérifiez votre connexion.', zh: '无法获取路线。请检查您的网络连接。' },
-  'driver.dashboard.errorEndShift': { en: 'Could not end shift. Try again when online.', es: 'No se pudo terminar el turno. Intente cuando esté en línea.', ar: 'تعذر إنهاء الوردية. حاول مرة أخرى عندما تكون متصلاً.', so: 'Ma la dhammayn karin wareegga. Isku day markii aad ku xiran tahay.', fr: 'Impossible de terminer le service. Réessayez en ligne.', zh: '无法结束班次。请在联网时重试。' },
-  'driver.dashboard.endShiftTitle': { en: 'End Shift', es: 'Terminar Turno', ar: 'إنهاء الوردية', so: 'Dhamee Wareegga', fr: 'Fin de service', zh: '结束班次' },
-  'driver.dashboard.endShiftMessage': { en: 'This will sync remaining updates and clear all local data. This action cannot be undone.', es: 'Esto sincronizará las actualizaciones restantes y borrará todos los datos locales. Esta acción no se puede deshacer.', ar: 'سيؤدي هذا إلى مزامنة التحديثات المتبقية ومسح جميع البيانات المحلية. لا يمكن التراجع عن هذا الإجراء.', so: 'Tani waxay isku dubbaridi doontaa cusboonaysiinta haray waxayna tirtiri doontaa dhammaan xogta maxalliga. Tallaabadan dib looma noqon karo.', fr: 'Cela synchronisera les mises à jour restantes et effacera toutes les données locales. Cette action est irréversible.', zh: '这将同步剩余更新并清除所有本地数据。此操作无法撤销。' },
+  'driver.dashboard.myProfile': { en: 'My Profile', es: 'Mi Perfil', ar: 'ملفي الشخصي', so: 'Bogaygga', fr: 'Mon profil', zh: '我的资料', uk: 'Мій профіль' },
+  'driver.dashboard.readyPrompt': { en: 'Ready to start your shift?', es: '¿Listo para comenzar su turno?', ar: 'هل أنت جاهز لبدء ورديتك؟', so: 'Ma u diyaar tahay inaad bilowdo wareegaaga?', fr: 'Prêt à commencer votre service ?', zh: '准备好开始您的班次了吗？', uk: 'Готові розпочати зміну?' },
+  'driver.dashboard.waitingForRoutes': { en: 'Waiting for routes to be released...', es: 'Esperando que se liberen las rutas...', ar: 'في انتظار إصدار المسارات...', so: 'La sugayo in waddooyinka la sii daayo...', fr: 'En attente de la publication des routes...', zh: '等待路线发布...', uk: 'Очікування на публікацію маршрутів...' },
+  'driver.dashboard.checkForRoutes': { en: 'Check for Routes', es: 'Buscar Rutas', ar: 'التحقق من المسارات', so: 'Hubi Waddooyinka', fr: 'Vérifier les routes', zh: '检查路线', uk: 'Перевірити маршрути' },
+  'driver.dashboard.remaining': { en: 'Remaining', es: 'Restantes', ar: 'متبقية', so: 'Haray', fr: 'Restantes', zh: '剩余', uk: 'Залишилось' },
+  'driver.dashboard.delivered': { en: 'Delivered', es: 'Entregadas', ar: 'تم التوصيل', so: 'La gaarsiiyay', fr: 'Livrées', zh: '已送达', uk: 'Доставлено' },
+  'driver.dashboard.total': { en: 'Total', es: 'Total', ar: 'الإجمالي', so: 'Wadarta', fr: 'Total', zh: '总计', uk: 'Всього' },
+  'driver.dashboard.refresh': { en: 'Refresh', es: 'Actualizar', ar: 'تحديث', so: 'Cusboonaysii', fr: 'Actualiser', zh: '刷新', uk: 'Оновити' },
+  'driver.dashboard.refreshing': { en: 'Refreshing...', es: 'Actualizando...', ar: 'جارٍ التحديث...', so: 'Waa la cusboonaysiinayaa...', fr: 'Actualisation...', zh: '正在刷新...', uk: 'Оновлення...' },
+  'driver.dashboard.availableOffline': { en: 'Available offline', es: 'Disponible sin conexión', ar: 'متاح بدون اتصال', so: 'Waa la heli karaa offline', fr: 'Disponible hors ligne', zh: '可离线使用', uk: 'Доступно офлайн' },
+  'driver.dashboard.errorCheckIn': { en: 'Could not check in. Please try again.', es: 'No se pudo registrar. Por favor intente de nuevo.', ar: 'تعذر تسجيل الدخول. يرجى المحاولة مرة أخرى.', so: 'Ma la diiwaangelin karin. Fadlan isku day mar kale.', fr: "Impossible de s'enregistrer. Veuillez réessayer.", zh: '无法签到。请重试。', uk: 'Не вдалося зареєструватися. Спробуйте ще раз.' },
+  'driver.dashboard.errorRoutesNotReleased': { en: 'Routes have not been released yet. Try again shortly.', es: 'Las rutas aún no se han liberado. Intente de nuevo en breve.', ar: 'لم يتم إصدار المسارات بعد. حاول مرة أخرى قريباً.', so: 'Waddooyinka wali lama sii dayin. Isku day mar kale dhowaan.', fr: "Les routes n'ont pas encore été publiées. Réessayez sous peu.", zh: '路线尚未发布。请稍后再试。', uk: 'Маршрути ще не опубліковано. Спробуйте пізніше.' },
+  'driver.dashboard.errorFetchRoutes': { en: 'Could not fetch routes. Check your connection.', es: 'No se pudieron obtener las rutas. Verifique su conexión.', ar: 'تعذر جلب المسارات. تحقق من اتصالك.', so: 'Ma la soo qaadan karin waddooyinka. Hubi xiriirkaaga.', fr: 'Impossible de récupérer les routes. Vérifiez votre connexion.', zh: '无法获取路线。请检查您的网络连接。', uk: 'Не вдалося отримати маршрути. Перевірте підключення.' },
+  'driver.dashboard.errorEndShift': { en: 'Could not end shift. Try again when online.', es: 'No se pudo terminar el turno. Intente cuando esté en línea.', ar: 'تعذر إنهاء الوردية. حاول مرة أخرى عندما تكون متصلاً.', so: 'Ma la dhammayn karin wareegga. Isku day markii aad ku xiran tahay.', fr: 'Impossible de terminer le service. Réessayez en ligne.', zh: '无法结束班次。请在联网时重试。', uk: 'Не вдалося завершити зміну. Спробуйте, коли будете онлайн.' },
+  'driver.dashboard.endShiftTitle': { en: 'End Shift', es: 'Terminar Turno', ar: 'إنهاء الوردية', so: 'Dhamee Wareegga', fr: 'Fin de service', zh: '结束班次', uk: 'Завершити зміну' },
+  'driver.dashboard.endShiftMessage': { en: 'This will sync remaining updates and clear all local data. This action cannot be undone.', es: 'Esto sincronizará las actualizaciones restantes y borrará todos los datos locales. Esta acción no se puede deshacer.', ar: 'سيؤدي هذا إلى مزامنة التحديثات المتبقية ومسح جميع البيانات المحلية. لا يمكن التراجع عن هذا الإجراء.', so: 'Tani waxay isku dubbaridi doontaa cusboonaysiinta haray waxayna tirtiri doontaa dhammaan xogta maxalliga. Tallaabadan dib looma noqon karo.', fr: 'Cela synchronisera les mises à jour restantes et effacera toutes les données locales. Cette action est irréversible.', zh: '这将同步剩余更新并清除所有本地数据。此操作无法撤销。', uk: 'Це синхронізує решту оновлень і очистить усі локальні дані. Цю дію не можна скасувати.' },
 
   // --- DeliveryDetail screen ---
-  'driver.delivery.notFound': { en: 'Delivery not found.', es: 'Entrega no encontrada.', ar: 'لم يتم العثور على التوصيل.', so: 'Gaadiidka lama helin.', fr: 'Livraison introuvable.', zh: '未找到配送。' },
-  'driver.delivery.goBack': { en: 'Go Back', es: 'Volver', ar: 'رجوع', so: 'Dib u noqo', fr: 'Retour', zh: '返回' },
-  'driver.delivery.airplaneWarning': { en: 'Turn on Airplane Mode when approaching the delivery address to minimize location tracking.', es: 'Active el Modo Avión al acercarse a la dirección de entrega para minimizar el rastreo de ubicación.', ar: 'قم بتشغيل وضع الطيران عند الاقتراب من عنوان التوصيل لتقليل تتبع الموقع.', so: 'Shid Habka Diyaaradda markaad u soo dhowdahay cinwaanka gaadiidka si loo yareeyo la socodka goobta.', fr: "Activez le mode avion en approchant de l'adresse de livraison pour limiter le suivi de localisation.", zh: '接近配送地址时请开启飞行模式以减少位置追踪。' },
-  'driver.delivery.backToDashboard': { en: 'Back to Dashboard', es: 'Volver al Panel', ar: 'العودة إلى لوحة التحكم', so: 'Ku noqo Dashboard-ka', fr: 'Retour au tableau de bord', zh: '返回仪表板' },
-  'driver.delivery.addressLabel': { en: 'Address', es: 'Dirección', ar: 'العنوان', so: 'Cinwaanka', fr: 'Adresse', zh: '地址' },
-  'driver.delivery.notesLabel': { en: 'Notes', es: 'Notas', ar: 'ملاحظات', so: 'Qoraallo', fr: 'Notes', zh: '备注' },
-  'driver.delivery.statusLabel': { en: 'Status', es: 'Estado', ar: 'الحالة', so: 'Xaalada', fr: 'Statut', zh: '状态' },
-  'driver.delivery.statusDelivered': { en: 'Delivered', es: 'Entregado', ar: 'تم التوصيل', so: 'La gaarsiiyay', fr: 'Livré', zh: '已送达' },
-  'driver.delivery.statusInTransit': { en: 'In Transit', es: 'En Tránsito', ar: 'قيد التوصيل', so: 'Waa la qaadayaa', fr: 'En transit', zh: '运输中' },
-  'driver.delivery.statusPending': { en: 'Pending', es: 'Pendiente', ar: 'قيد الانتظار', so: 'La sugayo', fr: 'En attente', zh: '待处理' },
-  'driver.delivery.headingToRoute': { en: 'Heading to Route', es: 'Rumbo a la Ruta', ar: 'متوجه إلى المسار', so: 'U socda Waddada', fr: 'En route vers la livraison', zh: '前往路线' },
-  'driver.delivery.completed': { en: 'Delivery completed', es: 'Entrega completada', ar: 'اكتملت التوصيلة', so: 'Gaadiidku wuu dhammaadey', fr: 'Livraison effectuée', zh: '配送已完成' },
+  'driver.delivery.notFound': { en: 'Delivery not found.', es: 'Entrega no encontrada.', ar: 'لم يتم العثور على التوصيل.', so: 'Gaadiidka lama helin.', fr: 'Livraison introuvable.', zh: '未找到配送。', uk: 'Доставку не знайдено.' },
+  'driver.delivery.goBack': { en: 'Go Back', es: 'Volver', ar: 'رجوع', so: 'Dib u noqo', fr: 'Retour', zh: '返回', uk: 'Повернутися' },
+  'driver.delivery.airplaneWarning': { en: 'Turn on Airplane Mode when approaching the delivery address to minimize location tracking.', es: 'Active el Modo Avión al acercarse a la dirección de entrega para minimizar el rastreo de ubicación.', ar: 'قم بتشغيل وضع الطيران عند الاقتراب من عنوان التوصيل لتقليل تتبع الموقع.', so: 'Shid Habka Diyaaradda markaad u soo dhowdahay cinwaanka gaadiidka si loo yareeyo la socodka goobta.', fr: "Activez le mode avion en approchant de l'adresse de livraison pour limiter le suivi de localisation.", zh: '接近配送地址时请开启飞行模式以减少位置追踪。', uk: 'Увімкніть авіарежим при наближенні до адреси доставки, щоб мінімізувати відстеження місцезнаходження.' },
+  'driver.delivery.backToDashboard': { en: 'Back to Dashboard', es: 'Volver al Panel', ar: 'العودة إلى لوحة التحكم', so: 'Ku noqo Dashboard-ka', fr: 'Retour au tableau de bord', zh: '返回仪表板', uk: 'Повернутися до панелі' },
+  'driver.delivery.addressLabel': { en: 'Address', es: 'Dirección', ar: 'العنوان', so: 'Cinwaanka', fr: 'Adresse', zh: '地址', uk: 'Адреса' },
+  'driver.delivery.notesLabel': { en: 'Notes', es: 'Notas', ar: 'ملاحظات', so: 'Qoraallo', fr: 'Notes', zh: '备注', uk: 'Нотатки' },
+  'driver.delivery.statusLabel': { en: 'Status', es: 'Estado', ar: 'الحالة', so: 'Xaalada', fr: 'Statut', zh: '状态', uk: 'Статус' },
+  'driver.delivery.statusDelivered': { en: 'Delivered', es: 'Entregado', ar: 'تم التوصيل', so: 'La gaarsiiyay', fr: 'Livré', zh: '已送达', uk: 'Доставлено' },
+  'driver.delivery.statusInTransit': { en: 'In Transit', es: 'En Tránsito', ar: 'قيد التوصيل', so: 'Waa la qaadayaa', fr: 'En transit', zh: '运输中', uk: 'У дорозі' },
+  'driver.delivery.statusPending': { en: 'Pending', es: 'Pendiente', ar: 'قيد الانتظار', so: 'La sugayo', fr: 'En attente', zh: '待处理', uk: 'Очікує' },
+  'driver.delivery.headingToRoute': { en: 'Heading to Route', es: 'Rumbo a la Ruta', ar: 'متوجه إلى المسار', so: 'U socda Waddada', fr: 'En route vers la livraison', zh: '前往路线', uk: 'На маршрут' },
+  'driver.delivery.completed': { en: 'Delivery completed', es: 'Entrega completada', ar: 'اكتملت التوصيلة', so: 'Gaadiidku wuu dhammaadey', fr: 'Livraison effectuée', zh: '配送已完成', uk: 'Доставку виконано' },
 
   // --- RestoreKey screen ---
-  'driver.restore.title': { en: 'Restore Routes', es: 'Restaurar Rutas', ar: 'استعادة المسارات', so: 'Soo Celi Waddooyinka', fr: 'Restaurer les routes', zh: '恢复路线' },
-  'driver.restore.description': { en: 'Your routes are encrypted on this device. Scan your backup QR code to unlock them.', es: 'Sus rutas están cifradas en este dispositivo. Escanee su código QR de respaldo para desbloquearlas.', ar: 'مساراتك مشفرة على هذا الجهاز. امسح رمز QR الاحتياطي لفتحها.', so: 'Waddooyinkaagu waxay ku xidhan yihiin qalabkan. Sawir koodhka QR-ka kaydka si aad u furtid.', fr: 'Vos routes sont chiffrées sur cet appareil. Scannez votre code QR de sauvegarde pour les déverrouiller.', zh: '您的路线已在此设备上加密。扫描您的备份二维码以解锁。' },
-  'driver.restore.scanQr': { en: 'Scan QR Code', es: 'Escanear Código QR', ar: 'مسح رمز QR', so: 'Sawir Koodhka QR', fr: 'Scanner le code QR', zh: '扫描二维码' },
-  'driver.restore.skipFresh': { en: 'Skip & Start Fresh', es: 'Omitir y Empezar de Nuevo', ar: 'تخطي والبدء من جديد', so: 'Ka bood oo Dib u bilow', fr: 'Ignorer et recommencer', zh: '跳过并重新开始' },
-  'driver.restore.skipWarning': { en: '"Start Fresh" will erase all cached routes and return to login.', es: '"Empezar de Nuevo" borrará todas las rutas guardadas y volverá al inicio de sesión.', ar: '"البدء من جديد" سيمسح جميع المسارات المخزنة ويعود إلى تسجيل الدخول.', so: '"Dib u bilow" waxay tirtiri doontaa dhammaan waddooyinka la kaydiyay waxayna ku celin doontaa gelitaanka.', fr: '"Recommencer" effacera toutes les routes en cache et reviendra à la connexion.', zh: '"重新开始"将删除所有缓存路线并返回登录页面。' },
-  'driver.restore.errorInvalidQr': { en: 'Invalid QR code. Please scan the SafeCare backup key.', es: 'Código QR inválido. Por favor escanee la clave de respaldo de SafeCare.', ar: 'رمز QR غير صالح. يرجى مسح مفتاح النسخ الاحتياطي لـ SafeCare.', so: 'Koodhka QR-ka ma sax aha. Fadlan sawir furaha kaydka SafeCare.', fr: 'Code QR invalide. Veuillez scanner la clé de sauvegarde SafeCare.', zh: '无效的二维码。请扫描SafeCare备份密钥。' },
-  'driver.restore.errorInvalidKey': { en: 'Invalid key format in QR code.', es: 'Formato de clave inválido en el código QR.', ar: 'تنسيق مفتاح غير صالح في رمز QR.', so: 'Qaabka furaha ee koodhka QR-ka ma sax aha.', fr: 'Format de clé invalide dans le code QR.', zh: '二维码中的密钥格式无效。' },
-  'driver.restore.errorRestore': { en: 'Failed to restore encryption key. Try again.', es: 'Error al restaurar la clave de cifrado. Intente de nuevo.', ar: 'فشل في استعادة مفتاح التشفير. حاول مرة أخرى.', so: 'Waa lagu guul daraystay soo celinta furaha sirta. Isku day mar kale.', fr: 'Échec de la restauration de la clé de chiffrement. Réessayez.', zh: '恢复加密密钥失败。请重试。' },
-  'driver.restore.errorCamera': { en: 'Could not access camera. Please allow camera permission and try again.', es: 'No se pudo acceder a la cámara. Permita el acceso a la cámara e intente de nuevo.', ar: 'تعذر الوصول إلى الكاميرا. يرجى السماح بإذن الكاميرا والمحاولة مرة أخرى.', so: 'Ma la geli karin kaamiradda. Fadlan ogolow oggolaanshaha kaamiradda oo isku day mar kale.', fr: "Impossible d'accéder à la caméra. Veuillez autoriser l'accès et réessayer.", zh: '无法访问摄像头。请允许摄像头权限后重试。' },
+  'driver.restore.title': { en: 'Restore Routes', es: 'Restaurar Rutas', ar: 'استعادة المسارات', so: 'Soo Celi Waddooyinka', fr: 'Restaurer les routes', zh: '恢复路线', uk: 'Відновити маршрути' },
+  'driver.restore.description': { en: 'Your routes are encrypted on this device. Scan your backup QR code to unlock them.', es: 'Sus rutas están cifradas en este dispositivo. Escanee su código QR de respaldo para desbloquearlas.', ar: 'مساراتك مشفرة على هذا الجهاز. امسح رمز QR الاحتياطي لفتحها.', so: 'Waddooyinkaagu waxay ku xidhan yihiin qalabkan. Sawir koodhka QR-ka kaydka si aad u furtid.', fr: 'Vos routes sont chiffrées sur cet appareil. Scannez votre code QR de sauvegarde pour les déverrouiller.', zh: '您的路线已在此设备上加密。扫描您的备份二维码以解锁。', uk: 'Ваші маршрути зашифровано на цьому пристрої. Скануйте резервний QR-код, щоб розблокувати їх.' },
+  'driver.restore.scanQr': { en: 'Scan QR Code', es: 'Escanear Código QR', ar: 'مسح رمز QR', so: 'Sawir Koodhka QR', fr: 'Scanner le code QR', zh: '扫描二维码', uk: 'Сканувати QR-код' },
+  'driver.restore.skipFresh': { en: 'Skip & Start Fresh', es: 'Omitir y Empezar de Nuevo', ar: 'تخطي والبدء من جديد', so: 'Ka bood oo Dib u bilow', fr: 'Ignorer et recommencer', zh: '跳过并重新开始', uk: 'Пропустити та почати заново' },
+  'driver.restore.skipWarning': { en: '"Start Fresh" will erase all cached routes and return to login.', es: '"Empezar de Nuevo" borrará todas las rutas guardadas y volverá al inicio de sesión.', ar: '"البدء من جديد" سيمسح جميع المسارات المخزنة ويعود إلى تسجيل الدخول.', so: '"Dib u bilow" waxay tirtiri doontaa dhammaan waddooyinka la kaydiyay waxayna ku celin doontaa gelitaanka.', fr: '"Recommencer" effacera toutes les routes en cache et reviendra à la connexion.', zh: '"重新开始"将删除所有缓存路线并返回登录页面。', uk: '«Почати заново» видалить усі кешовані маршрути та поверне до входу.' },
+  'driver.restore.errorInvalidQr': { en: 'Invalid QR code. Please scan the SafeCare backup key.', es: 'Código QR inválido. Por favor escanee la clave de respaldo de SafeCare.', ar: 'رمز QR غير صالح. يرجى مسح مفتاح النسخ الاحتياطي لـ SafeCare.', so: 'Koodhka QR-ka ma sax aha. Fadlan sawir furaha kaydka SafeCare.', fr: 'Code QR invalide. Veuillez scanner la clé de sauvegarde SafeCare.', zh: '无效的二维码。请扫描SafeCare备份密钥。', uk: 'Недійсний QR-код. Будь ласка, скануйте резервний ключ SafeCare.' },
+  'driver.restore.errorInvalidKey': { en: 'Invalid key format in QR code.', es: 'Formato de clave inválido en el código QR.', ar: 'تنسيق مفتاح غير صالح في رمز QR.', so: 'Qaabka furaha ee koodhka QR-ka ma sax aha.', fr: 'Format de clé invalide dans le code QR.', zh: '二维码中的密钥格式无效。', uk: 'Недійсний формат ключа у QR-коді.' },
+  'driver.restore.errorRestore': { en: 'Failed to restore encryption key. Try again.', es: 'Error al restaurar la clave de cifrado. Intente de nuevo.', ar: 'فشل في استعادة مفتاح التشفير. حاول مرة أخرى.', so: 'Waa lagu guul daraystay soo celinta furaha sirta. Isku day mar kale.', fr: 'Échec de la restauration de la clé de chiffrement. Réessayez.', zh: '恢复加密密钥失败。请重试。', uk: 'Не вдалося відновити ключ шифрування. Спробуйте ще раз.' },
+  'driver.restore.errorCamera': { en: 'Could not access camera. Please allow camera permission and try again.', es: 'No se pudo acceder a la cámara. Permita el acceso a la cámara e intente de nuevo.', ar: 'تعذر الوصول إلى الكاميرا. يرجى السماح بإذن الكاميرا والمحاولة مرة أخرى.', so: 'Ma la geli karin kaamiradda. Fadlan ogolow oggolaanshaha kaamiradda oo isku day mar kale.', fr: "Impossible d'accéder à la caméra. Veuillez autoriser l'accès et réessayer.", zh: '无法访问摄像头。请允许摄像头权限后重试。', uk: 'Не вдалося отримати доступ до камери. Будь ласка, дозвольте доступ до камери та спробуйте ще раз.' },
 
   // --- BackupKeyOverlay ---
-  'driver.backup.title': { en: 'Save Backup Key', es: 'Guardar Clave de Respaldo', ar: 'حفظ مفتاح النسخ الاحتياطي', so: 'Kaydi Furaha Kaydka', fr: 'Enregistrer la clé de sauvegarde', zh: '保存备份密钥' },
-  'driver.backup.description': { en: "Take a photo of this code. If the app closes while you're offline, scan it to restore your routes.", es: 'Tome una foto de este código. Si la aplicación se cierra mientras está sin conexión, escanéelo para restaurar sus rutas.', ar: 'التقط صورة لهذا الرمز. إذا أُغلق التطبيق أثناء عدم الاتصال، امسحه لاستعادة مساراتك.', so: 'Ka sawir koodhkan. Haddii barnaamijka uu xirmo adoo offline ah, sawir si aad u soo celiso waddooyinkaaga.', fr: "Prenez une photo de ce code. Si l'application se ferme hors ligne, scannez-le pour restaurer vos routes.", zh: '拍下此二维码的照片。如果应用在离线时关闭，扫描它即可恢复您的路线。' },
-  'driver.backup.dismiss': { en: "I've Saved It", es: 'Ya lo Guardé', ar: 'لقد حفظته', so: 'Waan Kaydiyay', fr: "C'est enregistré", zh: '我已保存' },
+  'driver.backup.title': { en: 'Save Backup Key', es: 'Guardar Clave de Respaldo', ar: 'حفظ مفتاح النسخ الاحتياطي', so: 'Kaydi Furaha Kaydka', fr: 'Enregistrer la clé de sauvegarde', zh: '保存备份密钥', uk: 'Зберегти резервний ключ' },
+  'driver.backup.description': { en: "Take a photo of this code. If the app closes while you're offline, scan it to restore your routes.", es: 'Tome una foto de este código. Si la aplicación se cierra mientras está sin conexión, escanéelo para restaurar sus rutas.', ar: 'التقط صورة لهذا الرمز. إذا أُغلق التطبيق أثناء عدم الاتصال، امسحه لاستعادة مساراتك.', so: 'Ka sawir koodhkan. Haddii barnaamijka uu xirmo adoo offline ah, sawir si aad u soo celiso waddooyinkaaga.', fr: "Prenez une photo de ce code. Si l'application se ferme hors ligne, scannez-le pour restaurer vos routes.", zh: '拍下此二维码的照片。如果应用在离线时关闭，扫描它即可恢复您的路线。', uk: 'Сфотографуйте цей код. Якщо застосунок закриється, поки ви офлайн, скануйте його для відновлення маршрутів.' },
+  'driver.backup.dismiss': { en: "I've Saved It", es: 'Ya lo Guardé', ar: 'لقد حفظته', so: 'Waan Kaydiyay', fr: "C'est enregistré", zh: '我已保存', uk: 'Я зберіг(-ла)' },
 
   // --- PanicButton ---
-  'driver.panic.erase': { en: 'Erase', es: 'Borrar', ar: 'مسح', so: 'Tirtir', fr: 'Effacer', zh: '清除' },
-  'driver.panic.erasing': { en: 'Erasing...', es: 'Borrando...', ar: 'جارٍ المسح...', so: 'Waa la tirtirayaa...', fr: 'Suppression...', zh: '正在清除...' },
-  'driver.panic.ariaLabel': { en: 'Emergency erase — hold to activate', es: 'Borrado de emergencia — mantenga presionado para activar', ar: 'مسح طوارئ — اضغط مع الاستمرار للتفعيل', so: 'Tirtir degdeg — hay si aad u hawlgeliso', fr: "Effacement d'urgence — maintenez pour activer", zh: '紧急清除 — 长按以激活' },
+  'driver.panic.erase': { en: 'Erase', es: 'Borrar', ar: 'مسح', so: 'Tirtir', fr: 'Effacer', zh: '清除', uk: 'Стерти' },
+  'driver.panic.erasing': { en: 'Erasing...', es: 'Borrando...', ar: 'جارٍ المسح...', so: 'Waa la tirtirayaa...', fr: 'Suppression...', zh: '正在清除...', uk: 'Стирання...' },
+  'driver.panic.ariaLabel': { en: 'Emergency erase — hold to activate', es: 'Borrado de emergencia — mantenga presionado para activar', ar: 'مسح طوارئ — اضغط مع الاستمرار للتفعيل', so: 'Tirtir degdeg — hay si aad u hawlgeliso', fr: "Effacement d'urgence — maintenez pour activer", zh: '紧急清除 — 长按以激活', uk: 'Екстрене стирання — утримуйте для активації' },
 
   // --- ConfirmDialog ---
-  'driver.confirm.confirm': { en: 'Confirm', es: 'Confirmar', ar: 'تأكيد', so: 'Xaqiiji', fr: 'Confirmer', zh: '确认' },
-  'driver.confirm.cancel': { en: 'Cancel', es: 'Cancelar', ar: 'إلغاء', so: 'Ka noqo', fr: 'Annuler', zh: '取消' },
+  'driver.confirm.confirm': { en: 'Confirm', es: 'Confirmar', ar: 'تأكيد', so: 'Xaqiiji', fr: 'Confirmer', zh: '确认', uk: 'Підтвердити' },
+  'driver.confirm.cancel': { en: 'Cancel', es: 'Cancelar', ar: 'إلغاء', so: 'Ka noqo', fr: 'Annuler', zh: '取消', uk: 'Скасувати' },
 
   // --- StatusBar ---
-  'driver.statusBar.checkedIn': { en: 'Checked in — waiting for routes', es: 'Registrado — esperando rutas', ar: 'تم تسجيل الدخول — في انتظار المسارات', so: 'Waa la diiwaangeliyay — sugitaanka waddooyinka', fr: 'Enregistré — en attente des routes', zh: '已签到 — 等待路线' },
-  'driver.statusBar.routesActive': { en: 'Routes active', es: 'Rutas activas', ar: 'المسارات نشطة', so: 'Waddooyinku way shaqaynayaan', fr: 'Routes actives', zh: '路线已激活' },
-  'driver.statusBar.shiftEnded': { en: 'Shift ended', es: 'Turno terminado', ar: 'انتهت الوردية', so: 'Wareegga waa dhammaadey', fr: 'Service terminé', zh: '班次已结束' },
-  'driver.statusBar.online': { en: 'Online', es: 'En línea', ar: 'متصل', so: 'Ku xiran', fr: 'En ligne', zh: '在线' },
-  'driver.statusBar.offline': { en: 'Offline', es: 'Sin conexión', ar: 'غير متصل', so: 'Ka baxsan', fr: 'Hors ligne', zh: '离线' },
-  'driver.statusBar.offlineMessage': { en: 'You are offline — updates will sync when reconnected', es: 'Está sin conexión — las actualizaciones se sincronizarán al reconectarse', ar: 'أنت غير متصل — ستتم مزامنة التحديثات عند إعادة الاتصال', so: 'Waad ka baxsan tahay — cusboonaysiintu waxay isku dubbaridaan markaad dib u xiran tahay', fr: 'Vous êtes hors ligne — les mises à jour seront synchronisées à la reconnexion', zh: '您已离线 — 重新连接后将同步更新' },
-  'driver.statusBar.pending': { en: '{{count}} pending', es: '{{count}} pendientes', ar: '{{count}} قيد الانتظار', so: '{{count}} la sugayo', fr: '{{count}} en attente', zh: '{{count}} 待处理' },
+  'driver.statusBar.checkedIn': { en: 'Checked in — waiting for routes', es: 'Registrado — esperando rutas', ar: 'تم تسجيل الدخول — في انتظار المسارات', so: 'Waa la diiwaangeliyay — sugitaanka waddooyinka', fr: 'Enregistré — en attente des routes', zh: '已签到 — 等待路线', uk: 'Зареєстровано — очікування маршрутів' },
+  'driver.statusBar.routesActive': { en: 'Routes active', es: 'Rutas activas', ar: 'المسارات نشطة', so: 'Waddooyinku way shaqaynayaan', fr: 'Routes actives', zh: '路线已激活', uk: 'Маршрути активні' },
+  'driver.statusBar.shiftEnded': { en: 'Shift ended', es: 'Turno terminado', ar: 'انتهت الوردية', so: 'Wareegga waa dhammaadey', fr: 'Service terminé', zh: '班次已结束', uk: 'Зміну завершено' },
+  'driver.statusBar.online': { en: 'Online', es: 'En línea', ar: 'متصل', so: 'Ku xiran', fr: 'En ligne', zh: '在线', uk: 'Онлайн' },
+  'driver.statusBar.offline': { en: 'Offline', es: 'Sin conexión', ar: 'غير متصل', so: 'Ka baxsan', fr: 'Hors ligne', zh: '离线', uk: 'Офлайн' },
+  'driver.statusBar.offlineMessage': { en: 'You are offline — updates will sync when reconnected', es: 'Está sin conexión — las actualizaciones se sincronizarán al reconectarse', ar: 'أنت غير متصل — ستتم مزامنة التحديثات عند إعادة الاتصال', so: 'Waad ka baxsan tahay — cusboonaysiintu waxay isku dubbaridaan markaad dib u xiran tahay', fr: 'Vous êtes hors ligne — les mises à jour seront synchronisées à la reconnexion', zh: '您已离线 — 重新连接后将同步更新', uk: 'Ви офлайн — оновлення синхронізуються після повторного підключення' },
+  'driver.statusBar.pending': { en: '{{count}} pending', es: '{{count}} pendientes', ar: '{{count}} قيد الانتظار', so: '{{count}} la sugayo', fr: '{{count}} en attente', zh: '{{count}} 待处理', uk: '{{count}} в очікуванні' },
 
   // --- AirplaneModeReminder (stop-level alert) ---
-  'driver.airplaneMode.stopAlert': { en: 'Approaching delivery address — enable airplane mode now!', es: 'Acercándose a la dirección de entrega — ¡active el modo avión ahora!', ar: 'تقترب من عنوان التوصيل — قم بتفعيل وضع الطيران الآن!', so: 'Waad u soo dhowdahay cinwaanka gaadiidka — shid habka diyaaradda hadda!', fr: "Approche de l'adresse de livraison — activez le mode avion maintenant !", zh: '正在接近配送地址 — 请立即开启飞行模式！' },
+  'driver.airplaneMode.stopAlert': { en: 'Approaching delivery address — enable airplane mode now!', es: 'Acercándose a la dirección de entrega — ¡active el modo avión ahora!', ar: 'تقترب من عنوان التوصيل — قم بتفعيل وضع الطيران الآن!', so: 'Waad u soo dhowdahay cinwaanka gaadiidka — shid habka diyaaradda hadda!', fr: "Approche de l'adresse de livraison — activez le mode avion maintenant !", zh: '正在接近配送地址 — 请立即开启飞行模式！', uk: 'Наближення до адреси доставки — увімкніть авіарежим зараз!' },
 
   // =========================================================================
   // Dashboard strings (auto-extracted)
@@ -348,6 +376,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Keydi',
     fr: 'Enregistrer',
     zh: '保存',
+    uk: 'Зберегти',
   },
   'dashboard.common.cancel': {
     en: 'Cancel',
@@ -356,6 +385,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Jooji',
     fr: 'Annuler',
     zh: '取消',
+    uk: 'Скасувати',
   },
   'dashboard.common.confirm': {
     en: 'Confirm',
@@ -364,6 +394,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaqiiji',
     fr: 'Confirmer',
     zh: '确认',
+    uk: 'Підтвердити',
   },
   'dashboard.common.delete': {
     en: 'Delete',
@@ -372,6 +403,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Tirtir',
     fr: 'Supprimer',
     zh: '删除',
+    uk: 'Видалити',
   },
   'dashboard.common.edit': {
     en: 'Edit',
@@ -380,6 +412,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Wax ka bedel',
     fr: 'Modifier',
     zh: '编辑',
+    uk: 'Редагувати',
   },
   'dashboard.common.close': {
     en: 'Close',
@@ -388,6 +421,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xir',
     fr: 'Fermer',
     zh: '关闭',
+    uk: 'Закрити',
   },
   'dashboard.common.loading': {
     en: 'Loading...',
@@ -396,6 +430,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo dejinaya...',
     fr: 'Chargement...',
     zh: '加载中...',
+    uk: 'Завантаження...',
   },
   'dashboard.common.saving': {
     en: 'Saving...',
@@ -404,6 +439,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Keydimaya...',
     fr: 'Enregistrement...',
     zh: '保存中...',
+    uk: 'Збереження...',
   },
   'dashboard.common.adding': {
     en: 'Adding...',
@@ -412,6 +448,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ku daraya...',
     fr: 'Ajout...',
     zh: '添加中...',
+    uk: 'Додавання...',
   },
   'dashboard.common.retry': {
     en: 'Retry',
@@ -420,6 +457,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Isku day mar kale',
     fr: 'Réessayer',
     zh: '重试',
+    uk: 'Повторити',
   },
   'dashboard.common.continue': {
     en: 'Continue',
@@ -428,6 +466,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Sii wad',
     fr: 'Continuer',
     zh: '继续',
+    uk: 'Продовжити',
   },
   'dashboard.common.ok': {
     en: 'OK',
@@ -436,6 +475,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'OK',
     fr: 'OK',
     zh: '确定',
+    uk: 'OK',
   },
   'dashboard.common.name': {
     en: 'Name',
@@ -444,6 +484,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Magaca',
     fr: 'Nom',
     zh: '姓名',
+    uk: 'Ім\'я',
   },
   'dashboard.common.phone': {
     en: 'Phone',
@@ -452,6 +493,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Telefoon',
     fr: 'Téléphone',
     zh: '电话',
+    uk: 'Телефон',
   },
   'dashboard.common.email': {
     en: 'Email',
@@ -460,6 +502,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Iimaylka',
     fr: 'E-mail',
     zh: '电子邮件',
+    uk: 'Ел. пошта',
   },
   'dashboard.common.address': {
     en: 'Address',
@@ -468,6 +511,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Cinwaanka',
     fr: 'Adresse',
     zh: '地址',
+    uk: 'Адреса',
   },
   'dashboard.common.status': {
     en: 'Status',
@@ -476,6 +520,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaaladda',
     fr: 'Statut',
     zh: '状态',
+    uk: 'Статус',
   },
   'dashboard.common.actions': {
     en: 'Actions',
@@ -484,6 +529,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ficilada',
     fr: 'Actions',
     zh: '操作',
+    uk: 'Дії',
   },
   'dashboard.common.dismiss': {
     en: 'Dismiss',
@@ -492,6 +538,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Iska dhaaf',
     fr: 'Ignorer',
     zh: '忽略',
+    uk: 'Відхилити',
   },
   'dashboard.common.selectDriver': {
     en: 'Select driver',
@@ -500,6 +547,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dooro darawal',
     fr: 'Sélectionner un chauffeur',
     zh: '选择司机',
+    uk: 'Обрати водія',
   },
   'dashboard.common.unassigned': {
     en: 'Unassigned',
@@ -508,6 +556,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aan la shaqaaleysiinin',
     fr: 'Non assigné',
     zh: '未分配',
+    uk: 'Не призначено',
   },
   'dashboard.common.assigned': {
     en: 'Assigned',
@@ -516,6 +565,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'La shaqaaleeyay',
     fr: 'Assigné',
     zh: '已分配',
+    uk: 'Призначено',
   },
   'dashboard.common.active': {
     en: 'Active',
@@ -524,6 +574,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Firfircoon',
     fr: 'Actif',
     zh: '活跃',
+    uk: 'Активний',
   },
   'dashboard.common.inactive': {
     en: 'Inactive',
@@ -532,6 +583,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aan firfircoonayn',
     fr: 'Inactif',
     zh: '不活跃',
+    uk: 'Неактивний',
   },
   'dashboard.common.pending': {
     en: 'Pending',
@@ -540,6 +592,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Sugaya',
     fr: 'En attente',
     zh: '待处理',
+    uk: 'Очікує',
   },
   'dashboard.common.inTransit': {
     en: 'In Transit',
@@ -548,6 +601,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waddada ku jira',
     fr: 'En transit',
     zh: '运送中',
+    uk: 'У дорозі',
   },
   'dashboard.common.delivered': {
     en: 'Delivered',
@@ -556,6 +610,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'La gaarsiiyay',
     fr: 'Livré',
     zh: '已送达',
+    uk: 'Доставлено',
   },
   'dashboard.common.acknowledged': {
     en: 'Acknowledged',
@@ -564,6 +619,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'La xaqiijiyay',
     fr: 'Confirmé',
     zh: '已确认',
+    uk: 'Підтверджено',
   },
   'dashboard.common.failed': {
     en: 'Failed',
@@ -572,6 +628,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Guul daray',
     fr: 'Échoué',
     zh: '失败',
+    uk: 'Невдало',
   },
   'dashboard.common.cancelled': {
     en: 'Cancelled',
@@ -580,6 +637,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'La joojiyay',
     fr: 'Annulé',
     zh: '已取消',
+    uk: 'Скасовано',
   },
   'dashboard.common.all': {
     en: 'All',
@@ -588,6 +646,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dhammaan',
     fr: 'Tous',
     zh: '全部',
+    uk: 'Усі',
   },
   'dashboard.common.none': {
     en: 'None',
@@ -596,6 +655,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Midna',
     fr: 'Aucun',
     zh: '无',
+    uk: 'Немає',
   },
   'dashboard.common.notSet': {
     en: 'Not set',
@@ -604,6 +664,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aan la dejin',
     fr: 'Non défini',
     zh: '未设置',
+    uk: 'Не встановлено',
   },
   'dashboard.common.na': {
     en: 'N/A',
@@ -612,6 +673,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'M/J',
     fr: 'N/D',
     zh: '不适用',
+    uk: 'Н/Д',
   },
   'dashboard.common.placeholderFullName': {
     en: 'Full name',
@@ -620,6 +682,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Magaca oo dhan',
     fr: 'Nom complet',
     zh: '全名',
+    uk: 'Повне ім\'я',
   },
   'dashboard.common.placeholderPhone': {
     en: '+1 (555) 000-0000',
@@ -628,6 +691,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: '+1 (555) 000-0000',
     fr: '+1 (555) 000-0000',
     zh: '+1 (555) 000-0000',
+    uk: '+1 (555) 000-0000',
   },
   'dashboard.common.required': {
     en: '*',
@@ -636,6 +700,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: '*',
     fr: '*',
     zh: '*',
+    uk: '*',
   },
   'dashboard.common.to': {
     en: 'to',
@@ -644,6 +709,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'ilaa',
     fr: 'à',
     zh: '至',
+    uk: 'до',
   },
   'dashboard.common.max': {
     en: 'max',
@@ -652,6 +718,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'ugu badan',
     fr: 'max',
     zh: '最大',
+    uk: 'макс',
   },
   'dashboard.common.free': {
     en: 'Free',
@@ -660,6 +727,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Bilaash',
     fr: 'Gratuit',
     zh: '免费',
+    uk: 'Безкоштовно',
   },
   'dashboard.common.optional': {
     en: 'Optional',
@@ -668,6 +736,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ikhtiyaari',
     fr: 'Facultatif',
     zh: '可选',
+    uk: 'Необов\'язково',
   },
   'dashboard.common.enabled': {
     en: 'Enabled',
@@ -676,6 +745,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'La hawlgeliyay',
     fr: 'Activé',
     zh: '已启用',
+    uk: 'Увімкнено',
   },
   'dashboard.common.ready': {
     en: 'Ready',
@@ -684,6 +754,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Diyaar',
     fr: 'Prêt',
     zh: '就绪',
+    uk: 'Готово',
   },
   'dashboard.common.error': {
     en: 'Error',
@@ -692,6 +763,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Khalad',
     fr: 'Erreur',
     zh: '错误',
+    uk: 'Помилка',
   },
   'dashboard.common.starting': {
     en: 'Starting...',
@@ -700,6 +772,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Bilaabmaya...',
     fr: 'Démarrage...',
     zh: '启动中...',
+    uk: 'Запуск...',
   },
   'dashboard.common.checking': {
     en: 'Checking...',
@@ -708,6 +781,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Hubinaya...',
     fr: 'Vérification...',
     zh: '检查中...',
+    uk: 'Перевірка...',
   },
 
   // =========================================================================
@@ -720,6 +794,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qaybinta',
     fr: 'Distribution',
     zh: '分配',
+    uk: 'Розподіл',
   },
   'dashboard.nav.settings': {
     en: 'Settings',
@@ -728,6 +803,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dejinta',
     fr: 'Paramètres',
     zh: '设置',
+    uk: 'Налаштування',
   },
   'dashboard.nav.logout': {
     en: 'Logout',
@@ -736,6 +812,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ka bax',
     fr: 'Déconnexion',
     zh: '退出登录',
+    uk: 'Вийти',
   },
 
   // =========================================================================
@@ -748,6 +825,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dashboard-ka',
     fr: 'Tableau de bord',
     zh: '仪表板',
+    uk: 'Панель керування',
   },
   'dashboard.home.subtitle': {
     en: 'Overview of today\'s mutual aid delivery operations.',
@@ -756,6 +834,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dulmar guud oo ku saabsan howlgallada gaadiidka kaalmada ee maanta.',
     fr: 'Aperçu des opérations de livraison d\'entraide d\'aujourd\'hui.',
     zh: '今日互助配送运营概览。',
+    uk: 'Огляд сьогоднішніх операцій з доставки взаємодопомоги.',
   },
   'dashboard.home.totalRecipients': {
     en: 'Total Recipients',
@@ -764,6 +843,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Wadarta qaabilayaasha',
     fr: 'Total des destinataires',
     zh: '总收件人数',
+    uk: 'Всього отримувачів',
   },
   'dashboard.home.totalRecipientsDesc': {
     en: 'Registered recipients in the system',
@@ -772,6 +852,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qaabilayaasha ku diiwaangashan nidaamka',
     fr: 'Destinataires enregistrés dans le système',
     zh: '系统中已注册的收件人',
+    uk: 'Зареєстровані отримувачі в системі',
   },
   'dashboard.home.activeDrivers': {
     en: 'Active Drivers',
@@ -780,6 +861,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Darawallada firfircoon',
     fr: 'Chauffeurs actifs',
     zh: '活跃司机',
+    uk: 'Активні водії',
   },
   'dashboard.home.activeDriversDesc': {
     en: 'Drivers currently checked in',
@@ -788,6 +870,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Darawallada hadda diiwaangashay',
     fr: 'Chauffeurs actuellement enregistrés',
     zh: '当前已签到的司机',
+    uk: 'Водії, які зараз зареєстровані',
   },
   'dashboard.home.todaysDeliveries': {
     en: 'Today\'s Deliveries',
@@ -796,6 +879,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidyada maanta',
     fr: 'Livraisons du jour',
     zh: '今日配送',
+    uk: 'Сьогоднішні доставки',
   },
   'dashboard.home.todaysDeliveriesDesc': {
     en: 'Deliveries scheduled for today',
@@ -804,6 +888,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidyada loo qorsheeyay maanta',
     fr: 'Livraisons prévues pour aujourd\'hui',
     zh: '今天计划的配送',
+    uk: 'Доставки, заплановані на сьогодні',
   },
   'dashboard.home.pendingOrders': {
     en: 'Pending Orders',
@@ -812,6 +897,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dalabka sugaya',
     fr: 'Commandes en attente',
     zh: '待处理订单',
+    uk: 'Замовлення в очікуванні',
   },
   'dashboard.home.pendingOrdersDesc': {
     en: 'Orders awaiting assignment',
@@ -820,6 +906,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dalabka sugaya hawl-gelinta',
     fr: 'Commandes en attente d\'attribution',
     zh: '等待分配的订单',
+    uk: 'Замовлення, що очікують призначення',
   },
   'dashboard.home.welcomeTitle': {
     en: 'Welcome to SafeCare',
@@ -828,6 +915,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ku soo dhawoow SafeCare',
     fr: 'Bienvenue sur SafeCare',
     zh: '欢迎使用 SafeCare',
+    uk: 'Ласкаво просимо до SafeCare',
   },
   'dashboard.home.welcomeMessage': {
     en: 'Set up your service area in Settings to enable address search, maps, and offline routing.',
@@ -836,6 +924,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Deji aagga adeegaaga Dejinta si aad u awooddo raadinta cinwaanka, khariidadaha, iyo waddooyinka offline.',
     fr: 'Configurez votre zone de service dans les Paramètres pour activer la recherche d\'adresses, les cartes et le routage hors ligne.',
     zh: '在设置中配置您的服务区域以启用地址搜索、地图和离线路线规划。',
+    uk: 'Налаштуйте зону обслуговування в Налаштуваннях, щоб увімкнути пошук адрес, мапи та офлайн-маршрутизацію.',
   },
   'dashboard.home.goToSettings': {
     en: 'Go to Settings',
@@ -844,6 +933,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aad Dejinta',
     fr: 'Aller aux Paramètres',
     zh: '前往设置',
+    uk: 'Перейти до налаштувань',
   },
   'dashboard.home.2faBanner': {
     en: 'Protect your account with two-factor authentication.',
@@ -852,6 +942,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ilaal akoonkaaga xaqiijinta laba-tallaabo.',
     fr: 'Protégez votre compte avec l\'authentification à deux facteurs.',
     zh: '使用双重认证保护您的账户。',
+    uk: 'Захистіть свій обліковий запис двофакторною автентифікацією.',
   },
   'dashboard.home.2faSettingsLink': {
     en: 'Set it up in Settings.',
@@ -860,6 +951,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ku deji Dejinta.',
     fr: 'Configurez-le dans les Paramètres.',
     zh: '在设置中进行配置。',
+    uk: 'Налаштуйте в розділі Налаштування.',
   },
 
   // =========================================================================
@@ -872,6 +964,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dirida',
     fr: 'Dispatch',
     zh: '调度',
+    uk: 'Диспетчеризація',
   },
   'dashboard.dispatch.subtitle': {
     en: 'Manage delivery sessions, driver check-ins, and route releases.',
@@ -880,6 +973,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Maareeynta fadhiyada gaadiidka, diiwaangelinta darawallada, iyo siidaynta waddooyinka.',
     fr: 'Gérez les sessions de livraison, les enregistrements des chauffeurs et les publications de routes.',
     zh: '管理配送会话、司机签到和路线发布。',
+    uk: 'Керуйте сеансами доставки, реєстрацією водіїв та публікацією маршрутів.',
   },
   'dashboard.dispatch.loadingData': {
     en: 'Loading dispatch data...',
@@ -888,6 +982,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo dejinaya xogta dirida...',
     fr: 'Chargement des données de dispatch...',
     zh: '正在加载调度数据...',
+    uk: 'Завантаження даних диспетчеризації...',
   },
   'dashboard.dispatch.autoRefreshing': {
     en: 'Auto-refreshing',
@@ -896,6 +991,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Cusboonaysiin toos ah',
     fr: 'Actualisation automatique',
     zh: '自动刷新',
+    uk: 'Автооновлення',
   },
   'dashboard.dispatch.lastUpdated': {
     en: 'Last updated',
@@ -904,6 +1000,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ugu dambeysay oo la cusboonaysiiyay',
     fr: 'Dernière mise à jour',
     zh: '最后更新',
+    uk: 'Останнє оновлення',
   },
   'dashboard.dispatch.createNewSession': {
     en: 'Create New Session',
@@ -912,6 +1009,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Abuur fadhiga cusub',
     fr: 'Créer une nouvelle session',
     zh: '创建新会话',
+    uk: 'Створити новий сеанс',
   },
   'dashboard.dispatch.sessionDate': {
     en: 'Session Date',
@@ -920,6 +1018,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Taariikhda fadhiga',
     fr: 'Date de la session',
     zh: '会话日期',
+    uk: 'Дата сеансу',
   },
   'dashboard.dispatch.creating': {
     en: 'Creating...',
@@ -928,6 +1027,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Abuuraya...',
     fr: 'Création...',
     zh: '创建中...',
+    uk: 'Створення...',
   },
   'dashboard.dispatch.sessionStatus': {
     en: 'Session Status',
@@ -936,6 +1036,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaaladda fadhiga',
     fr: 'Statut de la session',
     zh: '会话状态',
+    uk: 'Статус сеансу',
   },
   'dashboard.dispatch.sessionId': {
     en: 'Session ID',
@@ -944,6 +1045,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aqoonsiga fadhiga',
     fr: 'ID de session',
     zh: '会话 ID',
+    uk: 'Ідентифікатор сеансу',
   },
   'dashboard.dispatch.date': {
     en: 'Date',
@@ -952,6 +1054,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Taariikhda',
     fr: 'Date',
     zh: '日期',
+    uk: 'Дата',
   },
   'dashboard.dispatch.created': {
     en: 'Created',
@@ -960,6 +1063,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'La abuuray',
     fr: 'Créé',
     zh: '创建时间',
+    uk: 'Створено',
   },
   'dashboard.dispatch.released': {
     en: 'Released',
@@ -968,6 +1072,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'La sii daayay',
     fr: 'Publié',
     zh: '发布时间',
+    uk: 'Опубліковано',
   },
   'dashboard.dispatch.recipientNotifications': {
     en: 'Recipient Notifications',
@@ -976,6 +1081,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ogeysiisyada qaabilaha',
     fr: 'Notifications aux destinataires',
     zh: '收件人通知',
+    uk: 'Сповіщення отримувачів',
   },
   'dashboard.dispatch.recipientNotificationsDesc': {
     en: 'Recipients are automatically notified when their delivery is on its way and when it arrives.',
@@ -984,6 +1090,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qaabilayaasha waa loo soo sheegayaa si toos ah marka gaadiidkoodu socdo iyo marka uu yimaado.',
     fr: 'Les destinataires sont automatiquement notifiés lorsque leur livraison est en route et à son arrivée.',
     zh: '收件人会在配送途中和到达时自动收到通知。',
+    uk: 'Отримувачі автоматично сповіщуються, коли їхня доставка в дорозі та коли вона прибуває.',
   },
   'dashboard.dispatch.enRouteNotification': {
     en: 'En route notification',
@@ -992,6 +1099,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ogeysiiska waddada',
     fr: 'Notification en route',
     zh: '途中通知',
+    uk: 'Сповіщення про відправлення',
   },
   'dashboard.dispatch.enRouteNotificationDesc': {
     en: 'Sent when a driver starts their route',
@@ -1000,6 +1108,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waxaa la diraa marka darawalku bilaabo waddadiisa',
     fr: 'Envoyée lorsqu\'un chauffeur commence sa route',
     zh: '司机出发时发送',
+    uk: 'Надсилається, коли водій починає маршрут',
   },
   'dashboard.dispatch.deliveredNotification': {
     en: 'Delivered notification',
@@ -1008,6 +1117,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ogeysiiska gaarsiinta',
     fr: 'Notification de livraison',
     zh: '送达通知',
+    uk: 'Сповіщення про доставку',
   },
   'dashboard.dispatch.deliveredNotificationDesc': {
     en: 'Sent when the driver marks the delivery complete',
@@ -1016,6 +1126,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waxaa la diraa marka darawalku calaamadeeyо gaadiidka dhamaystiran',
     fr: 'Envoyée lorsque le chauffeur marque la livraison comme terminée',
     zh: '司机标记配送完成时发送',
+    uk: 'Надсилається, коли водій позначає доставку завершеною',
   },
   'dashboard.dispatch.driverCheckIns': {
     en: 'Driver Check-ins',
@@ -1024,6 +1135,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Diiwaangelinta darawallada',
     fr: 'Enregistrements des chauffeurs',
     zh: '司机签到',
+    uk: 'Реєстрація водіїв',
   },
   'dashboard.dispatch.selectAll': {
     en: 'Select All',
@@ -1032,6 +1144,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dooro dhammaan',
     fr: 'Tout sélectionner',
     zh: '全选',
+    uk: 'Обрати все',
   },
   'dashboard.dispatch.clear': {
     en: 'Clear',
@@ -1040,6 +1153,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Nadiifi',
     fr: 'Effacer',
     zh: '清除',
+    uk: 'Очистити',
   },
   'dashboard.dispatch.noCheckIns': {
     en: 'No drivers have checked in yet. Drivers check in via the IVR/SMS system or mobile app.',
@@ -1048,6 +1162,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Weli darawal kama diiwaangalin. Darawalladu waxay ku diiwaangeliyaan nidaamka IVR/SMS ama abka moobiilka.',
     fr: 'Aucun chauffeur ne s\'est encore enregistré. Les chauffeurs s\'enregistrent via le système IVR/SMS ou l\'application mobile.',
     zh: '尚无司机签到。司机通过 IVR/SMS 系统或移动应用签到。',
+    uk: 'Жоден водій ще не зареєструвався. Водії реєструються через систему IVR/SMS або мобільний застосунок.',
   },
   'dashboard.dispatch.noVehicleInfo': {
     en: 'No vehicle info',
@@ -1056,6 +1171,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Macluumaad gaadiid ma jirto',
     fr: 'Aucune information sur le véhicule',
     zh: '无车辆信息',
+    uk: 'Немає інформації про транспорт',
   },
   'dashboard.dispatch.revoking': {
     en: 'Revoking...',
@@ -1064,6 +1180,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ka noqonaya...',
     fr: 'Révocation...',
     zh: '撤销中...',
+    uk: 'Відкликання...',
   },
   'dashboard.dispatch.revoke': {
     en: 'Revoke',
@@ -1072,6 +1189,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ka noqo',
     fr: 'Révoquer',
     zh: '撤销',
+    uk: 'Відкликати',
   },
   'dashboard.dispatch.revokeConfirm': {
     en: 'Revoke routes for {{name}}? This will erase all delivery data from their phone the next time it connects.',
@@ -1080,6 +1198,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ka noqo waddooyinka {{name}}? Tani waxay tirtiri doontaa dhammaan xogta gaadiidka telefoonkooda marka xigta oo ay ku xirnaato.',
     fr: 'Révoquer les routes pour {{name}} ? Cela effacera toutes les données de livraison de leur téléphone à la prochaine connexion.',
     zh: '撤销 {{name}} 的路线？这将在其手机下次连接时擦除所有配送数据。',
+    uk: 'Відкликати маршрути для {{name}}? Це видалить усі дані доставки з їхнього телефону при наступному підключенні.',
   },
   'dashboard.dispatch.releasingRoutes': {
     en: 'Releasing Routes...',
@@ -1088,6 +1207,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Sii daaynaya waddooyinka...',
     fr: 'Publication des routes...',
     zh: '正在发布路线...',
+    uk: 'Публікація маршрутів...',
   },
   'dashboard.dispatch.approveAndRelease': {
     en: 'Approve & Release Routes ({{count}} driver{{plural}})',
@@ -1096,6 +1216,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ogolow & Sii Daay Waddooyinka ({{count}} darawal)',
     fr: 'Approuver et publier les routes ({{count}} chauffeur{{plural}})',
     zh: '批准并发布路线（{{count}} 位司机）',
+    uk: 'Затвердити та опублікувати маршрути ({{count}} водій(-їв))',
   },
   'dashboard.dispatch.deliveryProgress': {
     en: 'Delivery Progress',
@@ -1104,6 +1225,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Horumarka gaadiidka',
     fr: 'Progression des livraisons',
     zh: '配送进度',
+    uk: 'Прогрес доставки',
   },
   'dashboard.dispatch.deliveriesAfterRelease': {
     en: 'Deliveries will appear here after routes are released.',
@@ -1112,6 +1234,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidyadu waxay halkan ka muuqan doonaan kadib marka waddooyinka la sii daayo.',
     fr: 'Les livraisons apparaîtront ici après la publication des routes.',
     zh: '路线发布后配送将显示在此处。',
+    uk: 'Доставки з\'являться тут після публікації маршрутів.',
   },
   'dashboard.dispatch.noDeliveries': {
     en: 'No deliveries in this session.',
@@ -1120,6 +1243,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiid kuma jiro fadhigan.',
     fr: 'Aucune livraison dans cette session.',
     zh: '本次会话中没有配送。',
+    uk: 'Немає доставок у цьому сеансі.',
   },
   'dashboard.dispatch.driver': {
     en: 'Driver: {{name}}',
@@ -1128,6 +1252,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Darawal: {{name}}',
     fr: 'Chauffeur : {{name}}',
     zh: '司机：{{name}}',
+    uk: 'Водій: {{name}}',
   },
 
   // =========================================================================
@@ -1140,6 +1265,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qaabilayaasha',
     fr: 'Destinataires',
     zh: '收件人',
+    uk: 'Отримувачі',
   },
   'dashboard.recipients.subtitle': {
     en: 'Manage mutual aid recipients and their delivery preferences.',
@@ -1148,6 +1274,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Maaree qaabilayaasha kaalmada iyo doorashooyinkooda gaadiidka.',
     fr: 'Gérez les destinataires d\'entraide et leurs préférences de livraison.',
     zh: '管理互助收件人及其配送偏好。',
+    uk: 'Керуйте отримувачами взаємодопомоги та їхніми вподобаннями щодо доставки.',
   },
   'dashboard.recipients.addRecipient': {
     en: 'Add Recipient',
@@ -1156,6 +1283,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ku dar qaabilaha',
     fr: 'Ajouter un destinataire',
     zh: '添加收件人',
+    uk: 'Додати отримувача',
   },
   'dashboard.recipients.searchPlaceholder': {
     en: 'Search by name, phone, or address...',
@@ -1164,6 +1292,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Raadi magaca, telefoonka, ama cinwaanka...',
     fr: 'Rechercher par nom, téléphone ou adresse...',
     zh: '按姓名、电话或地址搜索...',
+    uk: 'Шукати за ім\'ям, телефоном або адресою...',
   },
   'dashboard.recipients.colName': {
     en: 'Name',
@@ -1172,6 +1301,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Magaca',
     fr: 'Nom',
     zh: '姓名',
+    uk: 'Ім\'я',
   },
   'dashboard.recipients.colPhone': {
     en: 'Phone',
@@ -1180,6 +1310,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Telefoon',
     fr: 'Téléphone',
     zh: '电话',
+    uk: 'Телефон',
   },
   'dashboard.recipients.colAddress': {
     en: 'Address',
@@ -1188,6 +1319,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Cinwaanka',
     fr: 'Adresse',
     zh: '地址',
+    uk: 'Адреса',
   },
   'dashboard.recipients.colStatus': {
     en: 'Status',
@@ -1196,6 +1328,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaaladda',
     fr: 'Statut',
     zh: '状态',
+    uk: 'Статус',
   },
   'dashboard.recipients.colCommunication': {
     en: 'Communication',
@@ -1204,6 +1337,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xiriirka',
     fr: 'Communication',
     zh: '通信方式',
+    uk: 'Зв\'язок',
   },
   'dashboard.recipients.colAdded': {
     en: 'Added',
@@ -1212,6 +1346,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'La daray',
     fr: 'Ajouté',
     zh: '添加时间',
+    uk: 'Додано',
   },
   'dashboard.recipients.loadingRecipients': {
     en: 'Loading recipients...',
@@ -1220,6 +1355,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo dejinaya qaabilayaasha...',
     fr: 'Chargement des destinataires...',
     zh: '正在加载收件人...',
+    uk: 'Завантаження отримувачів...',
   },
   'dashboard.recipients.noMatch': {
     en: 'No recipients match your search.',
@@ -1228,6 +1364,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ma jiraan qaabilayaal u dhigma raadintaada.',
     fr: 'Aucun destinataire ne correspond à votre recherche.',
     zh: '没有收件人与您的搜索匹配。',
+    uk: 'Жодного отримувача не відповідає пошуку.',
   },
   'dashboard.recipients.noRecipients': {
     en: 'No recipients found.',
@@ -1236,6 +1373,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Lama helin qaabilayaal.',
     fr: 'Aucun destinataire trouvé.',
     zh: '未找到收件人。',
+    uk: 'Отримувачів не знайдено.',
   },
   'dashboard.recipients.deliveryLocation': {
     en: 'Delivery Location',
@@ -1244,6 +1382,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Goobta gaadiidka',
     fr: 'Lieu de livraison',
     zh: '配送位置',
+    uk: 'Місце доставки',
   },
   'dashboard.recipients.addressAutoFilled': {
     en: 'Address (auto-filled from map, editable)',
@@ -1252,6 +1391,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Cinwaanka (si toos ah looga buuxiyay khariidada, waa la bedeli karaa)',
     fr: 'Adresse (remplie automatiquement depuis la carte, modifiable)',
     zh: '地址（从地图自动填充，可编辑）',
+    uk: 'Адреса (автоматично заповнена з мапи, можна редагувати)',
   },
   'dashboard.recipients.addressMapPlaceholder': {
     en: 'Address will be filled when you select a location',
@@ -1260,6 +1400,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Cinwaanka waa la buuxin doonaa markaad goob doorato',
     fr: 'L\'adresse sera remplie lorsque vous sélectionnerez un lieu',
     zh: '选择位置后将自动填充地址',
+    uk: 'Адресу буде заповнено після вибору місця',
   },
   'dashboard.recipients.notificationChannel': {
     en: 'Notification Channel',
@@ -1268,6 +1409,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Kanaalka ogeysiisyada',
     fr: 'Canal de notification',
     zh: '通知渠道',
+    uk: 'Канал сповіщень',
   },
   'dashboard.recipients.language': {
     en: 'Language',
@@ -1276,6 +1418,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Luuqadda',
     fr: 'Langue',
     zh: '语言',
+    uk: 'Мова',
   },
   'dashboard.recipients.addFailed': {
     en: 'Failed to add recipient. Please try again.',
@@ -1284,6 +1427,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waa lagu guul daristay ku darista qaabilaha. Fadlan isku day mar kale.',
     fr: 'Échec de l\'ajout du destinataire. Veuillez réessayer.',
     zh: '添加收件人失败。请重试。',
+    uk: 'Не вдалося додати отримувача. Спробуйте ще раз.',
   },
 
   // =========================================================================
@@ -1296,6 +1440,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Darawallada',
     fr: 'Chauffeurs',
     zh: '司机',
+    uk: 'Водії',
   },
   'dashboard.drivers.subtitle': {
     en: 'Manage volunteer drivers, availability, and capacity.',
@@ -1304,6 +1449,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Maaree darawallada mutadawwiciinta ah, diyaarinta, iyo awoodda.',
     fr: 'Gérez les chauffeurs bénévoles, leur disponibilité et leur capacité.',
     zh: '管理志愿者司机、可用性和运力。',
+    uk: 'Керуйте волонтерами-водіями, доступністю та спроможністю.',
   },
   'dashboard.drivers.addDriver': {
     en: 'Add Driver',
@@ -1312,6 +1458,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ku dar darawal',
     fr: 'Ajouter un chauffeur',
     zh: '添加司机',
+    uk: 'Додати водія',
   },
   'dashboard.drivers.searchPlaceholder': {
     en: 'Search by name, phone, or team...',
@@ -1320,6 +1467,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Raadi magaca, telefoonka, ama kooxda...',
     fr: 'Rechercher par nom, téléphone ou équipe...',
     zh: '按姓名、电话或团队搜索...',
+    uk: 'Шукати за ім\'ям, телефоном або командою...',
   },
   'dashboard.drivers.colName': {
     en: 'Name',
@@ -1328,6 +1476,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Magaca',
     fr: 'Nom',
     zh: '姓名',
+    uk: 'Ім\'я',
   },
   'dashboard.drivers.colPhone': {
     en: 'Phone',
@@ -1336,6 +1485,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Telefoon',
     fr: 'Téléphone',
     zh: '电话',
+    uk: 'Телефон',
   },
   'dashboard.drivers.colStatus': {
     en: 'Status',
@@ -1344,6 +1494,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaaladda',
     fr: 'Statut',
     zh: '状态',
+    uk: 'Статус',
   },
   'dashboard.drivers.colVetted': {
     en: 'Vetted',
@@ -1352,6 +1503,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'La baaray',
     fr: 'Vérifié',
     zh: '已审核',
+    uk: 'Перевірено',
   },
   'dashboard.drivers.colVehicleSize': {
     en: 'Vehicle Size',
@@ -1360,6 +1512,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Cabbirka gaadiidka',
     fr: 'Taille du véhicule',
     zh: '车辆尺寸',
+    uk: 'Розмір транспорту',
   },
   'dashboard.drivers.colCapacity': {
     en: 'Capacity',
@@ -1368,6 +1521,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Awoodda',
     fr: 'Capacité',
     zh: '运力',
+    uk: 'Спроможність',
   },
   'dashboard.drivers.colAvailability': {
     en: 'Availability',
@@ -1376,6 +1530,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Diyaarinta',
     fr: 'Disponibilité',
     zh: '可用性',
+    uk: 'Доступність',
   },
   'dashboard.drivers.colZones': {
     en: 'Zones',
@@ -1384,6 +1539,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aagagga',
     fr: 'Zones',
     zh: '区域',
+    uk: 'Зони',
   },
   'dashboard.drivers.colTeam': {
     en: 'Team',
@@ -1392,6 +1548,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Kooxda',
     fr: 'Équipe',
     zh: '团队',
+    uk: 'Команда',
   },
   'dashboard.drivers.colJoined': {
     en: 'Joined',
@@ -1400,6 +1557,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ku biiray',
     fr: 'Inscrit',
     zh: '加入时间',
+    uk: 'Приєднався(-лась)',
   },
   'dashboard.drivers.loadingDrivers': {
     en: 'Loading drivers...',
@@ -1408,6 +1566,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo dejinaya darawallada...',
     fr: 'Chargement des chauffeurs...',
     zh: '正在加载司机...',
+    uk: 'Завантаження водіїв...',
   },
   'dashboard.drivers.noMatch': {
     en: 'No drivers match your search.',
@@ -1416,6 +1575,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ma jiraan darawalaal u dhigma raadintaada.',
     fr: 'Aucun chauffeur ne correspond à votre recherche.',
     zh: '没有司机与您的搜索匹配。',
+    uk: 'Жодного водія не відповідає пошуку.',
   },
   'dashboard.drivers.noDrivers': {
     en: 'No drivers found.',
@@ -1424,6 +1584,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Lama helin darawalaal.',
     fr: 'Aucun chauffeur trouvé.',
     zh: '未找到司机。',
+    uk: 'Водіїв не знайдено.',
   },
   'dashboard.drivers.editDriver': {
     en: 'Edit Driver',
@@ -1432,6 +1593,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Wax ka bedel darawanka',
     fr: 'Modifier le chauffeur',
     zh: '编辑司机',
+    uk: 'Редагувати водія',
   },
   'dashboard.drivers.maxDeliveries': {
     en: 'Max Deliveries',
@@ -1440,6 +1602,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidka ugu badan',
     fr: 'Livraisons max',
     zh: '最大配送数',
+    uk: 'Максимум доставок',
   },
   'dashboard.drivers.saveChanges': {
     en: 'Save Changes',
@@ -1448,6 +1611,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Keydi isbeddelada',
     fr: 'Enregistrer les modifications',
     zh: '保存更改',
+    uk: 'Зберегти зміни',
   },
   'dashboard.drivers.placeholderEmail': {
     en: 'driver@example.com',
@@ -1456,6 +1620,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'driver@example.com',
     fr: 'chauffeur@exemple.com',
     zh: 'driver@example.com',
+    uk: 'driver@example.com',
   },
   'dashboard.drivers.placeholderTeam': {
     en: 'Team name',
@@ -1464,6 +1629,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Magaca kooxda',
     fr: 'Nom de l\'équipe',
     zh: '团队名称',
+    uk: 'Назва команди',
   },
   'dashboard.drivers.details': {
     en: '{{name}} — Details',
@@ -1472,6 +1638,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: '{{name}} — Faahfaahin',
     fr: '{{name}} — Détails',
     zh: '{{name}} — 详情',
+    uk: '{{name}} — Деталі',
   },
   'dashboard.drivers.vehicle': {
     en: 'Vehicle',
@@ -1480,6 +1647,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidka',
     fr: 'Véhicule',
     zh: '车辆',
+    uk: 'Транспорт',
   },
   'dashboard.drivers.availabilitySchedule': {
     en: 'Availability Schedule',
@@ -1488,6 +1656,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Jadwalka diyaarinta',
     fr: 'Planning de disponibilité',
     zh: '可用时间表',
+    uk: 'Графік доступності',
   },
   'dashboard.drivers.noAvailability': {
     en: 'No availability set.',
@@ -1496,6 +1665,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Diyaarinta lama dejin.',
     fr: 'Aucune disponibilité définie.',
     zh: '未设置可用性。',
+    uk: 'Доступність не встановлено.',
   },
   'dashboard.drivers.unavailable': {
     en: 'Unavailable',
@@ -1504,6 +1674,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aan diyaar ahayn',
     fr: 'Indisponible',
     zh: '不可用',
+    uk: 'Недоступний',
   },
   'dashboard.drivers.assignedZones': {
     en: 'Assigned Zones',
@@ -1512,6 +1683,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aagagga la shaqaaleeyay',
     fr: 'Zones assignées',
     zh: '已分配区域',
+    uk: 'Призначені зони',
   },
   'dashboard.drivers.noZones': {
     en: 'No zones assigned.',
@@ -1520,6 +1692,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aagag lama shaqaaleysiinin.',
     fr: 'Aucune zone assignée.',
     zh: '未分配区域。',
+    uk: 'Зони не призначено.',
   },
   'dashboard.drivers.vettingStatus': {
     en: 'Vetting Status',
@@ -1528,6 +1701,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaaladda baarista',
     fr: 'Statut de vérification',
     zh: '审核状态',
+    uk: 'Статус перевірки',
   },
   'dashboard.drivers.approveVet': {
     en: 'Approve (Vet)',
@@ -1536,6 +1710,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ogolow (Baar)',
     fr: 'Approuver (Vérifier)',
     zh: '批准（审核）',
+    uk: 'Затвердити (перевірка)',
   },
   'dashboard.drivers.suspend': {
     en: 'Suspend',
@@ -1544,6 +1719,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Hakiyi',
     fr: 'Suspendre',
     zh: '暂停',
+    uk: 'Призупинити',
   },
   'dashboard.drivers.reinstate': {
     en: 'Reinstate',
@@ -1552,6 +1728,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dib u soo celi',
     fr: 'Rétablir',
     zh: '恢复',
+    uk: 'Відновити',
   },
   'dashboard.drivers.suspendConfirm': {
     en: 'Suspend this driver? They will not receive routes.',
@@ -1560,6 +1737,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Hakiyso darawalkan? Ma heli doonaan waddooyin.',
     fr: 'Suspendre ce chauffeur ? Il ne recevra plus de routes.',
     zh: '暂停该司机？他们将无法接收路线。',
+    uk: 'Призупинити цього водія? Він(-она) не отримуватиме маршрути.',
   },
   'dashboard.drivers.vehicleCompact': {
     en: 'Compact / Hatchback',
@@ -1568,6 +1746,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Yar / Hatchback',
     fr: 'Compact / Hayon',
     zh: '紧凑型 / 掀背车',
+    uk: 'Компакт / Хетчбек',
   },
   'dashboard.drivers.vehicleSedan': {
     en: 'Sedan',
@@ -1576,6 +1755,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Sedan',
     fr: 'Berline',
     zh: '轿车',
+    uk: 'Седан',
   },
   'dashboard.drivers.vehicleSuv': {
     en: 'SUV / Crossover',
@@ -1584,6 +1764,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'SUV / Crossover',
     fr: 'SUV / Crossover',
     zh: 'SUV / 跨界车',
+    uk: 'SUV / Кросовер',
   },
   'dashboard.drivers.vehicleMinivan': {
     en: 'Minivan',
@@ -1592,6 +1773,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Minivan',
     fr: 'Monospace',
     zh: '小型货车',
+    uk: 'Мінівен',
   },
   'dashboard.drivers.vehicleTruck': {
     en: 'Pickup / Van',
@@ -1600,6 +1782,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Pickup / Van',
     fr: 'Pick-up / Camionnette',
     zh: '皮卡 / 厢式车',
+    uk: 'Пікап / Фургон',
   },
 
   // =========================================================================
@@ -1612,6 +1795,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dejinta',
     fr: 'Paramètres',
     zh: '设置',
+    uk: 'Налаштування',
   },
   'dashboard.settings.subtitle': {
     en: 'Configure your organization and default service area.',
@@ -1620,6 +1804,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Deji ururkaaga iyo aagga adeegga caadiga ah.',
     fr: 'Configurez votre organisation et la zone de service par défaut.',
     zh: '配置您的组织和默认服务区域。',
+    uk: 'Налаштуйте свою організацію та зону обслуговування за замовчуванням.',
   },
   'dashboard.settings.loadingSettings': {
     en: 'Loading settings...',
@@ -1628,6 +1813,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo dejinaya dejinta...',
     fr: 'Chargement des paramètres...',
     zh: '正在加载设置...',
+    uk: 'Завантаження налаштувань...',
   },
   'dashboard.settings.organization': {
     en: 'Organization',
@@ -1636,6 +1822,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ururka',
     fr: 'Organisation',
     zh: '组织',
+    uk: 'Організація',
   },
   'dashboard.settings.orgName': {
     en: 'Organization Name',
@@ -1644,6 +1831,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Magaca ururka',
     fr: 'Nom de l\'organisation',
     zh: '组织名称',
+    uk: 'Назва організації',
   },
   'dashboard.settings.orgNamePlaceholder': {
     en: 'e.g., Chicago Mutual Aid',
@@ -1652,6 +1840,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'tusaale, Kaalmada Chicago',
     fr: 'ex., Entraide de Chicago',
     zh: '例如：芝加哥互助组织',
+    uk: 'напр., Взаємодопомога Чикаго',
   },
   'dashboard.settings.operatingRegion': {
     en: 'Operating Region',
@@ -1660,6 +1849,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gobolka hawlgalka',
     fr: 'Région d\'opération',
     zh: '运营区域',
+    uk: 'Регіон діяльності',
   },
   'dashboard.settings.operatingRegionDesc': {
     en: 'Define where your deliveries happen and where your drivers operate. Pan and zoom the map so the visible area covers your full operating region. This determines the default view for all maps, which area to provision for geocoding and routing, and where address search results are biased.',
@@ -1668,6 +1858,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qeex halka gaadiidkaadu ka dhacaan iyo halka darawalladaadu ka shaqeeyaan. Dhaqdhaqaaqi oo weyney khariidada si aagga muuqda uu u daboolay gobolkaaga hawlgalka oo dhan. Tani waxay go\'aamisaa aragtida caadiga ah ee dhammaan khariidadaha, aagga lagu diyaarinayo geocoding iyo wadista, iyo halka natiijada raadinta cinwaanka loo janjeero.',
     fr: 'Définissez où vos livraisons ont lieu et où opèrent vos chauffeurs. Faites glisser et zoomez la carte pour que la zone visible couvre toute votre région d\'opération. Cela détermine la vue par défaut de toutes les cartes, la zone à provisionner pour le géocodage et le routage, et la direction des résultats de recherche d\'adresses.',
     zh: '定义配送发生的区域和司机运营的区域。平移和缩放地图，使可见区域覆盖您的整个运营区域。这将决定所有地图的默认视图、需要为地理编码和路线规划配置的区域，以及地址搜索结果的偏向区域。',
+    uk: 'Визначте, де відбуваються ваші доставки та де працюють ваші водії. Переміщуйте та масштабуйте мапу так, щоб видима область охоплювала весь ваш регіон діяльності. Це визначає вигляд за замовчуванням для всіх мап, яку область підготувати для геокодування та маршрутизації, і де зміщуються результати пошуку адрес.',
   },
   'dashboard.settings.searchLocation': {
     en: 'Search Location',
@@ -1676,6 +1867,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Raadi goobta',
     fr: 'Rechercher un lieu',
     zh: '搜索位置',
+    uk: 'Пошук місця',
   },
   'dashboard.settings.searchPlaceholder': {
     en: 'Search for a city or address...',
@@ -1684,6 +1876,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Raadi magaalo ama cinwaan...',
     fr: 'Rechercher une ville ou une adresse...',
     zh: '搜索城市或地址...',
+    uk: 'Шукати місто або адресу...',
   },
   'dashboard.settings.center': {
     en: 'Center:',
@@ -1692,6 +1885,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Bartamaha:',
     fr: 'Centre :',
     zh: '中心：',
+    uk: 'Центр:',
   },
   'dashboard.settings.estimatedSize': {
     en: 'Estimated size:',
@@ -1700,6 +1894,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Cabbirka qiyaasta ah:',
     fr: 'Taille estimée :',
     zh: '预估大小：',
+    uk: 'Приблизний розмір:',
   },
   'dashboard.settings.largeRegionWarning': {
     en: 'This region may require 4+ GB RAM. Zoom in for smaller hardware.',
@@ -1708,6 +1903,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gobolkan wuxuu u baahan karaa 4+ GB RAM. Weynee qalab yar.',
     fr: 'Cette région peut nécessiter plus de 4 Go de RAM. Zoomez pour du matériel plus petit.',
     zh: '此区域可能需要 4GB 以上内存。请放大以适应较小的硬件。',
+    uk: 'Цей регіон може потребувати 4+ ГБ оперативної пам\'яті. Збільште масштаб для менш потужного обладнання.',
   },
   'dashboard.settings.mediumRegionNote': {
     en: 'Fine for 8GB, tight for 4GB hardware.',
@@ -1716,6 +1912,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waa ku filan yahay 8GB, cidhiidhi 4GB.',
     fr: 'Correct pour 8 Go, juste pour du matériel 4 Go.',
     zh: '8GB 内存足够，4GB 硬件较紧张。',
+    uk: 'Достатньо для 8 ГБ, тісно для обладнання з 4 ГБ.',
   },
   'dashboard.settings.saveSettings': {
     en: 'Save Settings',
@@ -1724,6 +1921,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Keydi dejinta',
     fr: 'Enregistrer les paramètres',
     zh: '保存设置',
+    uk: 'Зберегти налаштування',
   },
   'dashboard.settings.settingsSaved': {
     en: 'Settings saved successfully.',
@@ -1732,6 +1930,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dejinta waa lagu guulaystay in la keydiyo.',
     fr: 'Paramètres enregistrés avec succès.',
     zh: '设置保存成功。',
+    uk: 'Налаштування успішно збережено.',
   },
   'dashboard.settings.mapData': {
     en: 'Map Data',
@@ -1740,6 +1939,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xogta khariidada',
     fr: 'Données cartographiques',
     zh: '地图数据',
+    uk: 'Дані мап',
   },
   'dashboard.settings.noMapData': {
     en: 'No map data provisioned yet. Set your service area above, then provision maps to enable address search and offline routing.',
@@ -1748,6 +1948,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Weli xogta khariidada lama diyaarin. Deji aagga adeegaaga kor, kadibna diyaari khariidadaha si aad u awooddo raadinta cinwaanka iyo wadista offline.',
     fr: 'Aucune donnée cartographique provisionnée. Définissez votre zone de service ci-dessus, puis provisionnez les cartes pour activer la recherche d\'adresses et le routage hors ligne.',
     zh: '尚未配置地图数据。请先在上方设置服务区域，然后配置地图以启用地址搜索和离线路线规划。',
+    uk: 'Дані мап ще не підготовлено. Встановіть зону обслуговування вище, потім підготуйте мапи для пошуку адрес та офлайн-маршрутизації.',
   },
   'dashboard.settings.provisionMaps': {
     en: 'Provision Maps',
@@ -1756,6 +1957,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Diyaari khariidadaha',
     fr: 'Provisionner les cartes',
     zh: '配置地图',
+    uk: 'Підготувати мапи',
   },
   'dashboard.settings.reprovision': {
     en: 'Re-provision',
@@ -1764,6 +1966,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dib u diyaari',
     fr: 'Re-provisionner',
     zh: '重新配置',
+    uk: 'Повторно підготувати',
   },
   'dashboard.settings.mapsReady': {
     en: 'Maps are provisioned and ready. Address search and routing are available.',
@@ -1772,6 +1975,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Khariidadaha waa la diyaariyay waana diyaar yihiin. Raadinta cinwaanka iyo wadista waa la heli karaa.',
     fr: 'Les cartes sont provisionnées et prêtes. La recherche d\'adresses et le routage sont disponibles.',
     zh: '地图已配置就绪。地址搜索和路线规划可用。',
+    uk: 'Мапи підготовлено та готово. Пошук адрес і маршрутизація доступні.',
   },
   'dashboard.settings.state': {
     en: 'State:',
@@ -1780,6 +1984,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gobolka:',
     fr: 'État :',
     zh: '州：',
+    uk: 'Стан:',
   },
   'dashboard.settings.importingMaps': {
     en: 'Importing map data...',
@@ -1788,6 +1993,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo dejinaya xogta khariidada...',
     fr: 'Importation des données cartographiques...',
     zh: '正在导入地图数据...',
+    uk: 'Імпорт даних мап...',
   },
   'dashboard.settings.importTimeEstimate': {
     en: 'This typically takes 15-60 minutes, or 1-3 hours on a Raspberry Pi. Do not restart.',
@@ -1796,6 +2002,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Tani caadi ahaan waxay qaadataa 15-60 daqiiqo, ama 1-3 saacadood Raspberry Pi. Ha dib u bilaaban.',
     fr: 'Cela prend généralement 15-60 minutes, ou 1-3 heures sur un Raspberry Pi. Ne redémarrez pas.',
     zh: '通常需要 15-60 分钟，在树莓派上需要 1-3 小时。请勿重启。',
+    uk: 'Зазвичай це займає 15-60 хвилин або 1-3 години на Raspberry Pi. Не перезавантажуйте.',
   },
   'dashboard.settings.2fa': {
     en: 'Two-Factor Authentication',
@@ -1804,6 +2011,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaqiijinta laba-tallaabo',
     fr: 'Authentification à deux facteurs',
     zh: '双重认证',
+    uk: 'Двофакторна автентифікація',
   },
   'dashboard.settings.2faDesc': {
     en: 'Two-factor authentication is strongly recommended to protect recipient data.',
@@ -1812,6 +2020,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaqiijinta laba-tallaaboodu aad ayaa lagu talinayaa si loo ilaaliyo xogta qaabilayaasha.',
     fr: 'L\'authentification à deux facteurs est fortement recommandée pour protéger les données des destinataires.',
     zh: '强烈建议启用双重认证以保护收件人数据。',
+    uk: 'Двофакторна автентифікація наполегливо рекомендована для захисту даних отримувачів.',
   },
   'dashboard.settings.enable2fa': {
     en: 'Enable 2FA',
@@ -1820,6 +2029,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Hawlgeli 2FA',
     fr: 'Activer la 2FA',
     zh: '启用双重认证',
+    uk: 'Увімкнути 2FA',
   },
   'dashboard.settings.disable2fa': {
     en: 'Disable 2FA',
@@ -1828,6 +2038,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dami 2FA',
     fr: 'Désactiver la 2FA',
     zh: '禁用双重认证',
+    uk: 'Вимкнути 2FA',
   },
   'dashboard.settings.2faScanPrompt': {
     en: '1. Scan this URI in your authenticator app, or enter the secret manually:',
@@ -1836,6 +2047,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: '1. Scan-garee URI-ga abkaaga xaqiijinta, ama gali sirta gacanta:',
     fr: '1. Scannez cet URI dans votre application d\'authentification, ou entrez le secret manuellement :',
     zh: '1. 在认证应用中扫描此 URI，或手动输入密钥：',
+    uk: '1. Скануйте цей URI у застосунку автентифікації або введіть секрет вручну:',
   },
   'dashboard.settings.otpAuthUri': {
     en: 'OTPAuth URI (paste into authenticator)',
@@ -1844,6 +2056,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'OTPAuth URI (ku dheji xaqiijiyaha)',
     fr: 'URI OTPAuth (collez dans l\'authentificateur)',
     zh: 'OTPAuth URI（粘贴到认证应用中）',
+    uk: 'OTPAuth URI (вставте в автентифікатор)',
   },
   'dashboard.settings.secretManualEntry': {
     en: 'Secret (for manual entry)',
@@ -1852,6 +2065,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Sirta (gacanta loo galo)',
     fr: 'Secret (pour saisie manuelle)',
     zh: '密钥（手动输入）',
+    uk: 'Секрет (для ручного введення)',
   },
   'dashboard.settings.2faVerifyPrompt': {
     en: '2. Enter the 6-digit code from your authenticator to verify:',
@@ -1860,6 +2074,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: '2. Gali lambarka 6-ka lambar ah ee xaqiijiyahaaga si aad u xaqiijiso:',
     fr: '2. Entrez le code à 6 chiffres de votre authentificateur pour vérifier :',
     zh: '2. 输入认证应用中的 6 位验证码进行验证：',
+    uk: '2. Введіть 6-значний код з автентифікатора для перевірки:',
   },
   'dashboard.settings.verifying': {
     en: 'Verifying...',
@@ -1868,6 +2083,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaqiijinaya...',
     fr: 'Vérification...',
     zh: '验证中...',
+    uk: 'Перевірка...',
   },
   'dashboard.settings.verifyAndEnable': {
     en: 'Verify & Enable',
@@ -1876,6 +2092,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaqiiji & Hawlgeli',
     fr: 'Vérifier et activer',
     zh: '验证并启用',
+    uk: 'Перевірити та увімкнути',
   },
   'dashboard.settings.2faProtected': {
     en: 'Your account is protected with two-factor authentication.',
@@ -1884,6 +2101,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Akoonkaaga waxaa lagu ilaaliyaa xaqiijinta laba-tallaabo.',
     fr: 'Votre compte est protégé par l\'authentification à deux facteurs.',
     zh: '您的账户已受双重认证保护。',
+    uk: 'Ваш обліковий запис захищено двофакторною автентифікацією.',
   },
   'dashboard.settings.disableConfirmPrompt': {
     en: 'Enter your password to confirm disabling two-factor authentication.',
@@ -1892,6 +2110,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gali erayga sirta ah si aad u xaqiijiso daminta xaqiijinta laba-tallaabo.',
     fr: 'Entrez votre mot de passe pour confirmer la désactivation de l\'authentification à deux facteurs.',
     zh: '输入密码以确认禁用双重认证。',
+    uk: 'Введіть пароль для підтвердження вимкнення двофакторної автентифікації.',
   },
   'dashboard.settings.enterPassword': {
     en: 'Enter your password',
@@ -1900,6 +2119,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gali erayga sirta ah',
     fr: 'Entrez votre mot de passe',
     zh: '输入您的密码',
+    uk: 'Введіть ваш пароль',
   },
   'dashboard.settings.disabling': {
     en: 'Disabling...',
@@ -1908,6 +2128,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Daminaya...',
     fr: 'Désactivation...',
     zh: '禁用中...',
+    uk: 'Вимкнення...',
   },
   'dashboard.settings.totpSetupFailed': {
     en: 'Failed to generate TOTP secret.',
@@ -1916,6 +2137,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waa lagu guul daristay abuurista sirta TOTP.',
     fr: 'Échec de la génération du secret TOTP.',
     zh: '生成 TOTP 密钥失败。',
+    uk: 'Не вдалося згенерувати секрет TOTP.',
   },
   'dashboard.settings.invalidCode': {
     en: 'Invalid code. Please try again.',
@@ -1924,6 +2146,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Lambarka sax maaha. Fadlan isku day mar kale.',
     fr: 'Code invalide. Veuillez réessayer.',
     zh: '验证码无效。请重试。',
+    uk: 'Недійсний код. Спробуйте ще раз.',
   },
   'dashboard.settings.invalidPassword': {
     en: 'Invalid password.',
@@ -1932,6 +2155,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Erayga sirta ah waa khalad.',
     fr: 'Mot de passe invalide.',
     zh: '密码无效。',
+    uk: 'Недійсний пароль.',
   },
 
   // =========================================================================
@@ -1944,6 +2168,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gelitaanka maamulaha',
     fr: 'Connexion administrateur',
     zh: '管理员登录',
+    uk: 'Вхід адміністратора',
   },
   'dashboard.login.subtitle': {
     en: 'Sign in to the SafeCare admin dashboard',
@@ -1952,6 +2177,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gal dashboard-ka maamulka SafeCare',
     fr: 'Connectez-vous au tableau de bord administrateur SafeCare',
     zh: '登录 SafeCare 管理员仪表板',
+    uk: 'Увійдіть до панелі адміністратора SafeCare',
   },
   'dashboard.login.emailLabel': {
     en: 'Email',
@@ -1960,6 +2186,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Iimaylka',
     fr: 'E-mail',
     zh: '电子邮件',
+    uk: 'Ел. пошта',
   },
   'dashboard.login.emailPlaceholder': {
     en: 'admin@safecare.org',
@@ -1968,6 +2195,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'admin@safecare.org',
     fr: 'admin@safecare.org',
     zh: 'admin@safecare.org',
+    uk: 'admin@safecare.org',
   },
   'dashboard.login.passwordLabel': {
     en: 'Password',
@@ -1976,6 +2204,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Erayga sirta ah',
     fr: 'Mot de passe',
     zh: '密码',
+    uk: 'Пароль',
   },
   'dashboard.login.passwordPlaceholder': {
     en: 'Enter your password',
@@ -1984,6 +2213,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gali erayga sirta ah',
     fr: 'Entrez votre mot de passe',
     zh: '输入您的密码',
+    uk: 'Введіть ваш пароль',
   },
   'dashboard.login.signingIn': {
     en: 'Signing in...',
@@ -1992,6 +2222,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gelaya...',
     fr: 'Connexion...',
     zh: '登录中...',
+    uk: 'Вхід...',
   },
   'dashboard.login.signIn': {
     en: 'Sign In',
@@ -2000,6 +2231,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gal',
     fr: 'Se connecter',
     zh: '登录',
+    uk: 'Увійти',
   },
   'dashboard.login.invalidCredentials': {
     en: 'Invalid credentials. Please try again.',
@@ -2008,6 +2240,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aqoonsiga waa khalad. Fadlan isku day mar kale.',
     fr: 'Identifiants invalides. Veuillez réessayer.',
     zh: '凭据无效。请重试。',
+    uk: 'Недійсні облікові дані. Спробуйте ще раз.',
   },
   'dashboard.login.totpTitle': {
     en: 'Two-Factor Authentication',
@@ -2016,6 +2249,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaqiijinta laba-tallaabo',
     fr: 'Authentification à deux facteurs',
     zh: '双重认证',
+    uk: 'Двофакторна автентифікація',
   },
   'dashboard.login.totpSubtitle': {
     en: 'Enter the 6-digit code from your authenticator app',
@@ -2024,6 +2258,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gali lambarka 6-ka lambar ah ee abkaaga xaqiijinta',
     fr: 'Entrez le code à 6 chiffres de votre application d\'authentification',
     zh: '输入认证应用中的 6 位验证码',
+    uk: 'Введіть 6-значний код з вашого застосунку автентифікації',
   },
   'dashboard.login.authCode': {
     en: 'Authentication Code',
@@ -2032,6 +2267,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Lambarka xaqiijinta',
     fr: 'Code d\'authentification',
     zh: '认证码',
+    uk: 'Код автентифікації',
   },
   'dashboard.login.verify': {
     en: 'Verify',
@@ -2040,6 +2276,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaqiiji',
     fr: 'Vérifier',
     zh: '验证',
+    uk: 'Перевірити',
   },
   'dashboard.login.backToLogin': {
     en: 'Back to login',
@@ -2048,6 +2285,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ku noqo gelitaanka',
     fr: 'Retour à la connexion',
     zh: '返回登录',
+    uk: 'Повернутися до входу',
   },
   'dashboard.login.invalidCode': {
     en: 'Invalid code. Please try again.',
@@ -2056,6 +2294,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Lambarka sax maaha. Fadlan isku day mar kale.',
     fr: 'Code invalide. Veuillez réessayer.',
     zh: '验证码无效。请重试。',
+    uk: 'Недійсний код. Спробуйте ще раз.',
   },
 
   // =========================================================================
@@ -2068,6 +2307,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'SafeCare waa xidhan yahay',
     fr: 'SafeCare est verrouillé',
     zh: 'SafeCare 已锁定',
+    uk: 'SafeCare заблоковано',
   },
   'dashboard.unlock.subtitle': {
     en: 'Scan your encryption key QR code to unlock the system.',
@@ -2076,6 +2316,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Scan-garee furaha sir-dejinta QR code si aad u furtid nidaamka.',
     fr: 'Scannez votre code QR de clé de chiffrement pour déverrouiller le système.',
     zh: '扫描加密密钥二维码以解锁系统。',
+    uk: 'Скануйте QR-код ключа шифрування для розблокування системи.',
   },
   'dashboard.unlock.cameraPrompt': {
     en: 'Point your camera at the QR code you saved during setup.',
@@ -2084,6 +2325,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'U jeedi kamaradaada QR code-ka aad kaydisay markii dejintaadii.',
     fr: 'Pointez votre caméra vers le code QR que vous avez enregistré lors de la configuration.',
     zh: '将相机对准您在设置期间保存的二维码。',
+    uk: 'Наведіть камеру на QR-код, який ви зберегли під час налаштування.',
   },
   'dashboard.unlock.enterManually': {
     en: 'Enter key manually instead',
@@ -2092,6 +2334,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gacanta ku gali furaha beddelkiisa',
     fr: 'Entrer la clé manuellement',
     zh: '改为手动输入密钥',
+    uk: 'Введіть ключ вручну',
   },
   'dashboard.unlock.scanQr': {
     en: 'Scan QR code instead',
@@ -2100,6 +2343,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Scan-garee QR code beddelkiisa',
     fr: 'Scanner le code QR',
     zh: '改为扫描二维码',
+    uk: 'Натомість сканувати QR-код',
   },
   'dashboard.unlock.encryptionKeyLabel': {
     en: 'Encryption Key (64 hex characters)',
@@ -2108,6 +2352,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Furaha sir-dejinta (64 xaraf hex)',
     fr: 'Clé de chiffrement (64 caractères hexadécimaux)',
     zh: '加密密钥（64 个十六进制字符）',
+    uk: 'Ключ шифрування (64 шістнадцяткових символи)',
   },
   'dashboard.unlock.characters': {
     en: '{{count}}/64 characters',
@@ -2116,6 +2361,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: '{{count}}/64 xaraf',
     fr: '{{count}}/64 caractères',
     zh: '{{count}}/64 个字符',
+    uk: '{{count}}/64 символів',
   },
   'dashboard.unlock.unlocking': {
     en: 'Unlocking...',
@@ -2124,6 +2370,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Furanaya...',
     fr: 'Déverrouillage...',
     zh: '解锁中...',
+    uk: 'Розблокування...',
   },
   'dashboard.unlock.unlock': {
     en: 'Unlock',
@@ -2132,6 +2379,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Fur',
     fr: 'Déverrouiller',
     zh: '解锁',
+    uk: 'Розблокувати',
   },
   'dashboard.unlock.invalidKeyFormat': {
     en: 'Invalid key format. Must be 64 hex characters.',
@@ -2140,6 +2388,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qaabka furaha waa khalad. Waa inay noqdaan 64 xaraf hex.',
     fr: 'Format de clé invalide. Doit contenir 64 caractères hexadécimaux.',
     zh: '密钥格式无效。必须为 64 个十六进制字符。',
+    uk: 'Недійсний формат ключа. Має бути 64 шістнадцяткових символи.',
   },
   'dashboard.unlock.invalidKey': {
     en: 'Invalid encryption key. Check your QR code and try again.',
@@ -2148,6 +2397,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Furaha sir-dejinta waa khalad. Hubi QR code-kaaga oo isku day mar kale.',
     fr: 'Clé de chiffrement invalide. Vérifiez votre code QR et réessayez.',
     zh: '加密密钥无效。请检查二维码后重试。',
+    uk: 'Недійсний ключ шифрування. Перевірте QR-код та спробуйте ще раз.',
   },
 
   // =========================================================================
@@ -2160,6 +2410,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dejinta SafeCare',
     fr: 'Configuration de SafeCare',
     zh: 'SafeCare 安装向导',
+    uk: 'Налаштування SafeCare',
   },
   'dashboard.setup.subtitle': {
     en: 'Let\'s get your mutual aid delivery system running.',
@@ -2168,6 +2419,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aan soo shaqeysiiyo nidaamka gaadiidka kaalmada.',
     fr: 'Mettons en route votre système de livraison d\'entraide.',
     zh: '让我们启动您的互助配送系统。',
+    uk: 'Запустімо вашу систему доставки взаємодопомоги.',
   },
   'dashboard.setup.stepAccount': {
     en: 'Account',
@@ -2176,6 +2428,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Akoonka',
     fr: 'Compte',
     zh: '账户',
+    uk: 'Обліковий запис',
   },
   'dashboard.setup.stepRegion': {
     en: 'Region',
@@ -2184,6 +2437,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gobolka',
     fr: 'Région',
     zh: '区域',
+    uk: 'Регіон',
   },
   'dashboard.setup.stepMaps': {
     en: 'Maps',
@@ -2192,6 +2446,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Khariidadaha',
     fr: 'Cartes',
     zh: '地图',
+    uk: 'Мапи',
   },
   'dashboard.setup.stepNotifications': {
     en: 'Notifications',
@@ -2200,6 +2455,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ogeysiisyada',
     fr: 'Notifications',
     zh: '通知',
+    uk: 'Сповіщення',
   },
   'dashboard.setup.stepSecurity': {
     en: 'Security',
@@ -2208,6 +2464,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Amniga',
     fr: 'Sécurité',
     zh: '安全',
+    uk: 'Безпека',
   },
   'dashboard.setup.createAdminAccount': {
     en: 'Create Your Admin Account',
@@ -2216,6 +2473,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Abuur akoonkaaga maamulaha',
     fr: 'Créez votre compte administrateur',
     zh: '创建管理员账户',
+    uk: 'Створіть обліковий запис адміністратора',
   },
   'dashboard.setup.adminAccountDesc': {
     en: 'This will be the administrator account for managing deliveries, drivers, and recipients.',
@@ -2224,6 +2482,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Tani waxay noqon doontaa akoonka maamulaha ee maaraynta gaadiidyada, darawallada, iyo qaabilayaasha.',
     fr: 'Ce sera le compte administrateur pour gérer les livraisons, les chauffeurs et les destinataires.',
     zh: '这将是用于管理配送、司机和收件人的管理员账户。',
+    uk: 'Це буде обліковий запис адміністратора для керування доставками, водіями та отримувачами.',
   },
   'dashboard.setup.orgNameLabel': {
     en: 'Organization Name',
@@ -2232,6 +2491,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Magaca ururka',
     fr: 'Nom de l\'organisation',
     zh: '组织名称',
+    uk: 'Назва організації',
   },
   'dashboard.setup.orgNamePlaceholder': {
     en: 'e.g., Minneapolis Mutual Aid',
@@ -2240,6 +2500,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'tusaale, Kaalmada Minneapolis',
     fr: 'ex., Entraide de Minneapolis',
     zh: '例如：明尼阿波利斯互助组织',
+    uk: 'напр., Взаємодопомога Міннеаполіса',
   },
   'dashboard.setup.password': {
     en: 'Password',
@@ -2248,6 +2509,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Erayga sirta ah',
     fr: 'Mot de passe',
     zh: '密码',
+    uk: 'Пароль',
   },
   'dashboard.setup.passwordPlaceholder': {
     en: 'At least 8 characters',
@@ -2256,6 +2518,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ugu yaraan 8 xaraf',
     fr: 'Au moins 8 caractères',
     zh: '至少 8 个字符',
+    uk: 'Щонайменше 8 символів',
   },
   'dashboard.setup.confirmPassword': {
     en: 'Confirm Password',
@@ -2264,6 +2527,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaqiiji erayga sirta ah',
     fr: 'Confirmer le mot de passe',
     zh: '确认密码',
+    uk: 'Підтвердити пароль',
   },
   'dashboard.setup.confirmPasswordPlaceholder': {
     en: 'Type password again',
@@ -2272,6 +2536,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Mar kale ku qor erayga sirta ah',
     fr: 'Retapez le mot de passe',
     zh: '再次输入密码',
+    uk: 'Введіть пароль ще раз',
   },
   'dashboard.setup.creatingAccount': {
     en: 'Creating Account...',
@@ -2280,6 +2545,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Abuuraya akoonka...',
     fr: 'Création du compte...',
     zh: '正在创建账户...',
+    uk: 'Створення облікового запису...',
   },
   'dashboard.setup.createAndContinue': {
     en: 'Create Account & Continue',
@@ -2288,6 +2554,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Abuur akoonka & sii wad',
     fr: 'Créer le compte et continuer',
     zh: '创建账户并继续',
+    uk: 'Створити обліковий запис та продовжити',
   },
   'dashboard.setup.passwordsDoNotMatch': {
     en: 'Passwords do not match.',
@@ -2296,6 +2563,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Erayada sirta ah is ma le\'ekdaan.',
     fr: 'Les mots de passe ne correspondent pas.',
     zh: '密码不匹配。',
+    uk: 'Паролі не збігаються.',
   },
   'dashboard.setup.passwordTooShort': {
     en: 'Password must be at least 8 characters.',
@@ -2304,6 +2572,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Erayga sirta ah waa inuu noqdaa ugu yaraan 8 xaraf.',
     fr: 'Le mot de passe doit contenir au moins 8 caractères.',
     zh: '密码长度至少为 8 个字符。',
+    uk: 'Пароль має містити щонайменше 8 символів.',
   },
   'dashboard.setup.accountCreatedLoginFailed': {
     en: 'Account created but login failed. Try the login page.',
@@ -2312,6 +2581,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Akoonka waa la abuuray laakiin gelitaanku wuu guul daristay. Isku day bogga gelitaanka.',
     fr: 'Compte créé mais la connexion a échoué. Essayez la page de connexion.',
     zh: '账户已创建但登录失败。请尝试登录页面。',
+    uk: 'Обліковий запис створено, але вхід не вдався. Спробуйте сторінку входу.',
   },
   'dashboard.setup.defineOperatingRegion': {
     en: 'Define Your Operating Region',
@@ -2320,6 +2590,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qeex gobolkaaga hawlgalka',
     fr: 'Définissez votre région d\'opération',
     zh: '定义您的运营区域',
+    uk: 'Визначте ваш регіон діяльності',
   },
   'dashboard.setup.regionDesc': {
     en: 'Search for your city, then pan and zoom the map so the visible area covers:',
@@ -2328,6 +2599,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Raadi magaaladaada, kadibna dhaqdhaqaaqi oo weynee khariidada si aagga muuqda uu u daboolay:',
     fr: 'Recherchez votre ville, puis faites glisser et zoomez la carte pour que la zone visible couvre :',
     zh: '搜索您的城市，然后平移和缩放地图，使可见区域覆盖：',
+    uk: 'Знайдіть своє місто, потім переміщуйте та масштабуйте мапу, щоб видима область охоплювала:',
   },
   'dashboard.setup.deliveryNeighborhoods': {
     en: 'Delivery neighborhoods where recipients live',
@@ -2336,6 +2608,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaafadaha gaadiidka halka qaabilayaashu ku nool yihiin',
     fr: 'Les quartiers de livraison où vivent les destinataires',
     zh: '收件人所在的配送社区',
+    uk: 'Райони доставки, де мешкають отримувачі',
   },
   'dashboard.setup.driverAreas': {
     en: 'Driver areas where your volunteers come from',
@@ -2344,6 +2617,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aagagga darawallada halka mutadawwiciintaadu ka yimaadaan',
     fr: 'Les zones des chauffeurs d\'où viennent vos bénévoles',
     zh: '志愿者司机来源区域',
+    uk: 'Райони, звідки приїжджають ваші волонтери-водії',
   },
   'dashboard.setup.routesBetween': {
     en: 'Routes between them -- drivers may need directions from home to the delivery area',
@@ -2352,6 +2626,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waddooyinka u dhexeeya -- darawalladu waxay u baahan karaan tilmaamaha guriga ilaa aagga gaadiidka',
     fr: 'Les routes entre eux -- les chauffeurs peuvent avoir besoin d\'itinéraires de chez eux à la zone de livraison',
     zh: '两者之间的路线——司机可能需要从家到配送区域的导航',
+    uk: 'Маршрути між ними — водіям можуть знадобитися напрямки з дому до зони доставки',
   },
   'dashboard.setup.defineZonesLater': {
     en: 'You\'ll define specific delivery zones later. This is the broader region for maps and routing.',
@@ -2360,6 +2635,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aagagga gaadiidka gaar ah waa inaad hadhow qeexdaa. Tani waa gobolka ballaaran ee khariidadaha iyo wadista.',
     fr: 'Vous définirez les zones de livraison spécifiques plus tard. Ceci est la région plus large pour les cartes et le routage.',
     zh: '您稍后将定义具体的配送区域。这是用于地图和路线规划的更大区域。',
+    uk: 'Ви визначите конкретні зони доставки пізніше. Це ширший регіон для мап і маршрутизації.',
   },
   'dashboard.setup.searchCityPlaceholder': {
     en: 'Search for your city...',
@@ -2368,6 +2644,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Raadi magaaladaada...',
     fr: 'Rechercher votre ville...',
     zh: '搜索您的城市...',
+    uk: 'Шукати ваше місто...',
   },
   'dashboard.setup.saveRegionAndContinue': {
     en: 'Save Region & Continue',
@@ -2376,6 +2653,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Keydi gobolka & sii wad',
     fr: 'Enregistrer la région et continuer',
     zh: '保存区域并继续',
+    uk: 'Зберегти регіон та продовжити',
   },
   'dashboard.setup.mapsReady': {
     en: 'Maps Ready!',
@@ -2384,6 +2662,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Khariidadaha waa diyaar!',
     fr: 'Cartes prêtes !',
     zh: '地图就绪！',
+    uk: 'Мапи готові!',
   },
   'dashboard.setup.downloadMapData': {
     en: 'Download Map Data',
@@ -2392,6 +2671,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo deji xogta khariidada',
     fr: 'Télécharger les données cartographiques',
     zh: '下载地图数据',
+    uk: 'Завантажити дані мап',
   },
   'dashboard.setup.mapDataDesc': {
     en: 'SafeCare needs map data for your region. This enables address search, driving directions, and offline maps for drivers. It\'s a one-time download.',
@@ -2400,6 +2680,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'SafeCare wuxuu u baahan yahay xogta khariidada gobolkaaga. Tani waxay awood u siinaysaa raadinta cinwaanka, tilmaamaha wadista, iyo khariidadaha offline ee darawallada. Waa soo dejin hal mar.',
     fr: 'SafeCare a besoin des données cartographiques de votre région. Cela permet la recherche d\'adresses, les itinéraires et les cartes hors ligne pour les chauffeurs. C\'est un téléchargement unique.',
     zh: 'SafeCare 需要您所在地区的地图数据。这将启用地址搜索、驾驶导航和司机离线地图。这是一次性下载。',
+    uk: 'SafeCare потребує дані мап для вашого регіону. Це забезпечує пошук адрес, маршрути для водіїв та офлайн-мапи. Це одноразове завантаження.',
   },
   'dashboard.setup.downloading': {
     en: 'Downloading...',
@@ -2408,6 +2689,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo dejinaya...',
     fr: 'Téléchargement...',
     zh: '下载中...',
+    uk: 'Завантаження...',
   },
   'dashboard.setup.importing': {
     en: 'Importing...',
@@ -2416,6 +2698,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo dejinaya...',
     fr: 'Importation...',
     zh: '导入中...',
+    uk: 'Імпорт...',
   },
   'dashboard.setup.mapsImportingBackground': {
     en: 'Maps are importing in the background. You can continue setting up while this runs.',
@@ -2424,6 +2707,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Khariidadaha waa la soo dejinayaa gadaal. Waad sii wadi kartaa dejinta inta ay socoto.',
     fr: 'Les cartes sont importées en arrière-plan. Vous pouvez continuer la configuration pendant ce temps.',
     zh: '地图正在后台导入。您可以在此期间继续设置。',
+    uk: 'Мапи імпортуються у фоновому режимі. Ви можете продовжити налаштування, поки це виконується.',
   },
   'dashboard.setup.continueWhileImporting': {
     en: 'Continue Setup While Maps Import',
@@ -2432,6 +2716,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Sii wad dejinta inta khariidadaha la soo dejinayo',
     fr: 'Continuer la configuration pendant l\'importation des cartes',
     zh: '在地图导入期间继续设置',
+    uk: 'Продовжити налаштування під час імпорту мап',
   },
   'dashboard.setup.mapsReadyDesc': {
     en: 'Address search, routing, and offline maps are ready.',
@@ -2440,6 +2725,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Raadinta cinwaanka, wadista, iyo khariidadaha offline waa diyaar.',
     fr: 'La recherche d\'adresses, le routage et les cartes hors ligne sont prêts.',
     zh: '地址搜索、路线规划和离线地图已就绪。',
+    uk: 'Пошук адрес, маршрутизація та офлайн-мапи готові.',
   },
   'dashboard.setup.skipForNow': {
     en: 'Skip for Now',
@@ -2448,6 +2734,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Hadda ka bood',
     fr: 'Ignorer pour le moment',
     zh: '暂时跳过',
+    uk: 'Пропустити зараз',
   },
   'dashboard.setup.setupNotifications': {
     en: 'Set Up Notifications',
@@ -2456,6 +2743,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Deji ogeysiisyada',
     fr: 'Configurer les notifications',
     zh: '设置通知',
+    uk: 'Налаштувати сповіщення',
   },
   'dashboard.setup.notificationsDesc': {
     en: 'Recipients are notified when deliveries are on the way and when they arrive. Configure at least one channel. You can always add more later in Settings.',
@@ -2464,6 +2752,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qaabilayaasha waa loo soo sheegayaa marka gaadiidyadu jidka ku jiraan iyo markay yimaadaan. Deji ugu yaraan hal kanaal. Had iyo jeer waxaad ku dari kartaa wax badan hadhow Dejinta.',
     fr: 'Les destinataires sont notifiés lorsque les livraisons sont en route et à leur arrivée. Configurez au moins un canal. Vous pourrez toujours en ajouter d\'autres plus tard dans les Paramètres.',
     zh: '收件人会在配送途中和到达时收到通知。至少配置一个渠道。您可以随时在设置中添加更多。',
+    uk: 'Отримувачі сповіщуються, коли доставки в дорозі та коли вони прибувають. Налаштуйте щонайменше один канал. Ви завжди можете додати більше пізніше в Налаштуваннях.',
   },
   'dashboard.setup.signalRecommended': {
     en: 'Signal (Recommended)',
@@ -2472,6 +2761,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Signal (Lagu talinayo)',
     fr: 'Signal (Recommandé)',
     zh: 'Signal（推荐）',
+    uk: 'Signal (Рекомендовано)',
   },
   'dashboard.setup.signalDesc': {
     en: 'Free, end-to-end encrypted. Messages never leave your control.',
@@ -2480,6 +2770,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Bilaash, sir-dejin dhamaystiran. Fariimaha adigaa maamusha.',
     fr: 'Gratuit, chiffré de bout en bout. Les messages restent sous votre contrôle.',
     zh: '免费，端到端加密。消息始终在您的控制之下。',
+    uk: 'Безкоштовно, наскрізне шифрування. Повідомлення ніколи не виходять з-під вашого контролю.',
   },
   'dashboard.setup.signalPhoneLabel': {
     en: 'Signal Phone Number (register at http://localhost:8089)',
@@ -2488,6 +2779,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Nambarka telefoonka Signal (diiwangeli http://localhost:8089)',
     fr: 'Numéro de téléphone Signal (enregistrez sur http://localhost:8089)',
     zh: 'Signal 电话号码（在 http://localhost:8089 注册）',
+    uk: 'Номер телефону Signal (зареєструйтесь за http://localhost:8089)',
   },
   'dashboard.setup.twilioSms': {
     en: 'SMS via Twilio',
@@ -2496,6 +2788,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'SMS iyada oo loo marayo Twilio',
     fr: 'SMS via Twilio',
     zh: '通过 Twilio 发送短信',
+    uk: 'SMS через Twilio',
   },
   'dashboard.setup.twilioDesc': {
     en: 'Works on any phone. ~$0.01 per message.',
@@ -2504,6 +2797,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waxay ku shaqaysaa telefoon kasta. ~$0.01 fariin kasta.',
     fr: 'Fonctionne sur n\'importe quel téléphone. ~0,01$ par message.',
     zh: '适用于任何手机。每条消息约 $0.01。',
+    uk: 'Працює на будь-якому телефоні. ~$0,01 за повідомлення.',
   },
   'dashboard.setup.accountSid': {
     en: 'Account SID',
@@ -2512,6 +2806,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'SID-ka Akoonka',
     fr: 'SID du compte',
     zh: '账户 SID',
+    uk: 'SID облікового запису',
   },
   'dashboard.setup.authToken': {
     en: 'Auth Token',
@@ -2520,6 +2815,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Calaamadda xaqiijinta',
     fr: 'Token d\'authentification',
     zh: '认证令牌',
+    uk: 'Токен автентифікації',
   },
   'dashboard.setup.twilioPhoneLabel': {
     en: 'Twilio Phone Number',
@@ -2528,6 +2824,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Nambarka telefoonka Twilio',
     fr: 'Numéro de téléphone Twilio',
     zh: 'Twilio 电话号码',
+    uk: 'Номер телефону Twilio',
   },
   'dashboard.setup.mapsStillImporting': {
     en: 'Maps still importing...',
@@ -2536,6 +2833,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Khariidadaha weli waa la soo dejinayaa...',
     fr: 'Les cartes sont encore en cours d\'importation...',
     zh: '地图仍在导入...',
+    uk: 'Мапи досі імпортуються...',
   },
   'dashboard.setup.protectingPrivacy': {
     en: 'Protecting Recipient Privacy',
@@ -2544,6 +2842,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ilaalinta sirta qaabilaha',
     fr: 'Protection de la vie privée des destinataires',
     zh: '保护收件人隐私',
+    uk: 'Захист конфіденційності отримувачів',
   },
   'dashboard.setup.privacyDesc': {
     en: 'SafeCare is built to protect the people you serve. Here\'s how it works and what you need to know.',
@@ -2552,6 +2851,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'SafeCare waxaa loo dhisay si loo ilaaliyo dadka aad u adeegto. Halkan waa sida ay u shaqayso iyo waxa aad u baahan tahay inaad ogaato.',
     fr: 'SafeCare est conçu pour protéger les personnes que vous servez. Voici comment cela fonctionne et ce que vous devez savoir.',
     zh: 'SafeCare 旨在保护您服务的人群。以下是其工作原理和您需要了解的内容。',
+    uk: 'SafeCare створено для захисту людей, яким ви допомагаєте. Ось як це працює і що вам потрібно знати.',
   },
   'dashboard.setup.addressesEncrypted': {
     en: 'Addresses are encrypted',
@@ -2560,6 +2860,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Cinwaanadu waa la sir-dejiyay',
     fr: 'Les adresses sont chiffrées',
     zh: '地址已加密',
+    uk: 'Адреси зашифровано',
   },
   'dashboard.setup.addressesEncryptedDesc': {
     en: 'Recipient names, addresses, and phone numbers are encrypted in the database. Even if someone accesses the server, they can\'t read the data without the encryption key.',
@@ -2568,6 +2869,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Magacyada qaabilayaasha, cinwaanada, iyo lambarada telefoonka waxaa lagu sir-dejiyay database-ka. Xataa haddii qof uu galo server-ka, ma akhri karaan xogta iyagoo aan lahayn furaha sir-dejinta.',
     fr: 'Les noms, adresses et numéros de téléphone des destinataires sont chiffrés dans la base de données. Même si quelqu\'un accède au serveur, il ne peut pas lire les données sans la clé de chiffrement.',
     zh: '收件人的姓名、地址和电话号码在数据库中已加密。即使有人访问服务器，没有加密密钥也无法读取数据。',
+    uk: 'Імена отримувачів, адреси та номери телефонів зашифровані в базі даних. Навіть якщо хтось отримає доступ до сервера, він не зможе прочитати дані без ключа шифрування.',
   },
   'dashboard.setup.driverPhonesAutoPurge': {
     en: 'Driver phones auto-purge',
@@ -2576,6 +2878,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Telefoonada darawalladu si toos ah ayay tirtirantaa',
     fr: 'Les téléphones des chauffeurs se purgent automatiquement',
     zh: '司机手机自动清除',
+    uk: 'Телефони водіїв автоматично очищуються',
   },
   'dashboard.setup.driverPhonesAutoPurgeDesc': {
     en: 'Route data on driver phones is automatically deleted after each shift. If a driver doesn\'t end their shift, data self-destructs after 8 hours. You\'ll be alerted if a driver hasn\'t confirmed deletion.',
@@ -2584,6 +2887,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xogta waddada ee telefoonada darawalladu si toos ah ayaa loo tirtirayaa wareeg kasta kadib. Haddii darawal aan dhamayn wareeggooda, xogta isu burburisaa 8 saacadood kadib. Waa laguu soo digi doonaa haddii darawal aysan xaqiijin tirtiridda.',
     fr: 'Les données de route sur les téléphones des chauffeurs sont automatiquement supprimées après chaque service. Si un chauffeur ne termine pas son service, les données s\'autodétruisent après 8 heures. Vous serez alerté si un chauffeur n\'a pas confirmé la suppression.',
     zh: '司机手机上的路线数据在每次班次结束后自动删除。如果司机未结束班次，数据将在 8 小时后自毁。如果司机未确认删除，您将收到警报。',
+    uk: 'Дані маршрутів на телефонах водіїв автоматично видаляються після кожної зміни. Якщо водій не завершить зміну, дані самознищуються через 8 годин. Вас буде сповіщено, якщо водій не підтвердив видалення.',
   },
   'dashboard.setup.mapsSelfHosted': {
     en: 'Maps and geocoding are self-hosted',
@@ -2592,6 +2896,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Khariidadaha iyo geocoding-ka waa lagu martigeliyay nidaamkaaga',
     fr: 'Les cartes et le géocodage sont auto-hébergés',
     zh: '地图和地理编码自托管',
+    uk: 'Мапи та геокодування розміщено локально',
   },
   'dashboard.setup.mapsSelfHostedDesc': {
     en: 'Address searches run on this device, not Google or any external service. No recipient addresses ever leave your network.',
@@ -2600,6 +2905,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Raadinta cinwaanku waxay ku shaqaysaa qalabkan, maaha Google ama adeeg dibadda ah. Cinwaanada qaabilayaasha weligood ka baxan shabakaddaada.',
     fr: 'Les recherches d\'adresses s\'exécutent sur cet appareil, pas Google ou un service externe. Les adresses des destinataires ne quittent jamais votre réseau.',
     zh: '地址搜索在此设备上运行，而非 Google 或任何外部服务。收件人地址永远不会离开您的网络。',
+    uk: 'Пошук адрес виконується на цьому пристрої, а не в Google чи іншому зовнішньому сервісі. Адреси отримувачів ніколи не залишають вашу мережу.',
   },
   'dashboard.setup.recordsDeletedDaily': {
     en: 'Delivery records are deleted daily',
@@ -2608,6 +2914,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Diiwaanada gaadiidka maalin walba waa la tirtirayaa',
     fr: 'Les enregistrements de livraison sont supprimés quotidiennement',
     zh: '配送记录每日删除',
+    uk: 'Записи доставок видаляються щодня',
   },
   'dashboard.setup.recordsDeletedDailyDesc': {
     en: 'Delivery records (which addresses got deliveries) are hard-deleted within 24 hours. Only anonymous audit counts are kept.',
@@ -2616,6 +2923,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Diiwaanada gaadiidka (cinwaanada gaadiid helay) si adag ayaa loo tirtirayaa 24 saacadood gudahood. Kaliya tirada baarista qarsoodiga ah ayaa la hayaa.',
     fr: 'Les enregistrements de livraison (quelles adresses ont reçu des livraisons) sont supprimés définitivement dans les 24 heures. Seuls les comptages d\'audit anonymes sont conservés.',
     zh: '配送记录（哪些地址收到了配送）会在 24 小时内永久删除。仅保留匿名审计计数。',
+    uk: 'Записи доставок (які адреси отримали доставки) остаточно видаляються протягом 24 годин. Зберігаються лише анонімні дані аудиту.',
   },
   'dashboard.setup.airplaneModeForDrivers': {
     en: 'Airplane mode for drivers',
@@ -2624,6 +2932,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Habka diyaaradda darawallada',
     fr: 'Mode avion pour les chauffeurs',
     zh: '司机飞行模式',
+    uk: 'Авіарежим для водіїв',
   },
   'dashboard.setup.airplaneModeDesc': {
     en: 'Drivers are prompted to enable airplane mode near delivery areas. This prevents their phone from broadcasting location data to cell towers while they\'re near recipients\' homes.',
@@ -2632,6 +2941,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Darawallada waxaa laga codsanayaa inay hawlgeliyaan habka diyaaradda marka ay ku dhowdahay aagagga gaadiidka. Tani waxay ka hortaagaysaa in telefoonkooda soo dir xogta goobta munaarada taleefanka inta ay ku dhow yihiin guryaha qaabilayaasha.',
     fr: 'Les chauffeurs sont invités à activer le mode avion près des zones de livraison. Cela empêche leur téléphone de diffuser des données de localisation aux antennes relais pendant qu\'ils sont près des domiciles des destinataires.',
     zh: '司机在接近配送区域时会收到开启飞行模式的提示。这可以防止他们的手机在靠近收件人住所时向基站广播位置数据。',
+    uk: 'Водіїв запрошують увімкнути авіарежим поблизу зон доставки. Це запобігає передачі даних місцезнаходження їхнього телефону на вежі стільникового зв\'язку, поки вони поблизу домівок отримувачів.',
   },
   'dashboard.setup.yourResponsibilities': {
     en: 'Your responsibilities',
@@ -2640,6 +2950,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Masuuliyadahaada',
     fr: 'Vos responsabilités',
     zh: '您的职责',
+    uk: 'Ваші обов\'язки',
   },
   'dashboard.setup.vetDrivers': {
     en: 'Vet drivers before approving them to receive routes',
@@ -2648,6 +2959,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Baar darawallada ka hor oggolaanshaha inay helaan waddooyin',
     fr: 'Vérifiez les chauffeurs avant de les approuver pour recevoir des routes',
     zh: '在批准司机接收路线之前进行审核',
+    uk: 'Перевіряйте водіїв перед тим, як дозволити їм отримувати маршрути',
   },
   'dashboard.setup.noScreenshot': {
     en: 'Don\'t screenshot or export recipient lists',
@@ -2656,6 +2968,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ha sawirin ama dhoofin liisaska qaabilayaasha',
     fr: 'Ne faites pas de captures d\'écran et n\'exportez pas les listes de destinataires',
     zh: '不要截图或导出收件人名单',
+    uk: 'Не робіть знімки екрану та не експортуйте списки отримувачів',
   },
   'dashboard.setup.limitAccess': {
     en: 'Limit who has admin access to this dashboard',
@@ -2664,6 +2977,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaddi cida gelitaanka maamulka u leh dashboard-kan',
     fr: 'Limitez qui a accès administrateur à ce tableau de bord',
     zh: '限制拥有此仪表板管理员访问权限的人员',
+    uk: 'Обмежте коло осіб з адміністративним доступом до цієї панелі',
   },
   'dashboard.setup.reviewPurgeWarnings': {
     en: 'Review the purge warnings regularly (Settings page)',
@@ -2672,6 +2986,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Si joogto ah dib u eeg digniinooyinka tirtiridda (bogga Dejinta)',
     fr: 'Vérifiez régulièrement les avertissements de purge (page Paramètres)',
     zh: '定期查看清除警告（设置页面）',
+    uk: 'Регулярно переглядайте попередження про очищення (сторінка Налаштування)',
   },
   'dashboard.setup.emergencyDestroy': {
     en: 'If a device is lost or compromised, use the emergency destroy script',
@@ -2680,6 +2995,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Haddii qalab lumo ama la soo galo, isticmaal qoraalka burburidda degdegga ah',
     fr: 'Si un appareil est perdu ou compromis, utilisez le script de destruction d\'urgence',
     zh: '如果设备丢失或被入侵，请使用紧急销毁脚本',
+    uk: 'Якщо пристрій загублено або скомпрометовано, використовуйте скрипт екстреного знищення',
   },
   'dashboard.setup.goToDashboard': {
     en: 'Go to Dashboard',
@@ -2688,6 +3004,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aad Dashboard-ka',
     fr: 'Aller au tableau de bord',
     zh: '前往仪表板',
+    uk: 'Перейти до панелі',
   },
 
   // =========================================================================
@@ -2700,6 +3017,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidyada',
     fr: 'Livraisons',
     zh: '配送',
+    uk: 'Доставки',
   },
   'dashboard.deliveries.subtitle': {
     en: 'View and manage all deliveries, assign drivers, and track status.',
@@ -2708,6 +3026,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Arag oo maaree dhammaan gaadiidyada, u shaqaaleysi darawalaal, oo raadi xaaladda.',
     fr: 'Consultez et gérez toutes les livraisons, assignez des chauffeurs et suivez le statut.',
     zh: '查看和管理所有配送，分配司机，跟踪状态。',
+    uk: 'Переглядайте та керуйте всіма доставками, призначайте водіїв та відстежуйте статус.',
   },
   'dashboard.deliveries.searchPlaceholder': {
     en: 'Search by recipient, address, or driver...',
@@ -2716,6 +3035,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Raadi qaabilaha, cinwaanka, ama darawanka...',
     fr: 'Rechercher par destinataire, adresse ou chauffeur...',
     zh: '按收件人、地址或司机搜索...',
+    uk: 'Шукати за отримувачем, адресою або водієм...',
   },
   'dashboard.deliveries.colRecipient': {
     en: 'Recipient',
@@ -2724,6 +3044,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qaabilaha',
     fr: 'Destinataire',
     zh: '收件人',
+    uk: 'Отримувач',
   },
   'dashboard.deliveries.colAddress': {
     en: 'Address',
@@ -2732,6 +3053,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Cinwaanka',
     fr: 'Adresse',
     zh: '地址',
+    uk: 'Адреса',
   },
   'dashboard.deliveries.colDriver': {
     en: 'Driver',
@@ -2740,6 +3062,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Darawanka',
     fr: 'Chauffeur',
     zh: '司机',
+    uk: 'Водій',
   },
   'dashboard.deliveries.colStatus': {
     en: 'Status',
@@ -2748,6 +3071,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaaladda',
     fr: 'Statut',
     zh: '状态',
+    uk: 'Статус',
   },
   'dashboard.deliveries.colScheduled': {
     en: 'Scheduled',
@@ -2756,6 +3080,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qorsheeyay',
     fr: 'Programmé',
     zh: '计划时间',
+    uk: 'Заплановано',
   },
   'dashboard.deliveries.colActions': {
     en: 'Actions',
@@ -2764,6 +3089,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ficilada',
     fr: 'Actions',
     zh: '操作',
+    uk: 'Дії',
   },
   'dashboard.deliveries.loadingDeliveries': {
     en: 'Loading deliveries...',
@@ -2772,6 +3098,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo dejinaya gaadiidyada...',
     fr: 'Chargement des livraisons...',
     zh: '正在加载配送...',
+    uk: 'Завантаження доставок...',
   },
   'dashboard.deliveries.noMatch': {
     en: 'No deliveries match your filters.',
@@ -2780,6 +3107,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiid u dhigma shaandadahaagu ma jirto.',
     fr: 'Aucune livraison ne correspond à vos filtres.',
     zh: '没有配送与您的筛选条件匹配。',
+    uk: 'Жодна доставка не відповідає вашим фільтрам.',
   },
   'dashboard.deliveries.noDeliveries': {
     en: 'No deliveries found.',
@@ -2788,6 +3116,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Lama helin gaadiidyo.',
     fr: 'Aucune livraison trouvée.',
     zh: '未找到配送。',
+    uk: 'Доставок не знайдено.',
   },
   'dashboard.deliveries.assign': {
     en: 'Assign',
@@ -2796,6 +3125,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'U shaqaaleysi',
     fr: 'Assigner',
     zh: '分配',
+    uk: 'Призначити',
   },
 
   // =========================================================================
@@ -2808,6 +3138,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Aagagga',
     fr: 'Zones',
     zh: '区域',
+    uk: 'Зони',
   },
   'dashboard.zones.subtitle': {
     en: 'Manage delivery zones and their boundaries.',
@@ -2816,6 +3147,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Maaree aagagga gaadiidka iyo xadoodahooda.',
     fr: 'Gérez les zones de livraison et leurs limites.',
     zh: '管理配送区域及其边界。',
+    uk: 'Керуйте зонами доставки та їхніми межами.',
   },
   'dashboard.zones.addZone': {
     en: 'Add Zone',
@@ -2824,6 +3156,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ku dar aag',
     fr: 'Ajouter une zone',
     zh: '添加区域',
+    uk: 'Додати зону',
   },
   'dashboard.zones.loadingZones': {
     en: 'Loading zones...',
@@ -2832,6 +3165,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo dejinaya aagagga...',
     fr: 'Chargement des zones...',
     zh: '正在加载区域...',
+    uk: 'Завантаження зон...',
   },
   'dashboard.zones.noZones': {
     en: 'No zones defined yet. Click "Add Zone" to create one.',
@@ -2840,6 +3174,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Weli aagag lama qeexin. Dhagsii "Ku dar aag" si aad mid abuurto.',
     fr: 'Aucune zone définie. Cliquez sur "Ajouter une zone" pour en créer une.',
     zh: '尚未定义区域。点击"添加区域"创建一个。',
+    uk: 'Зони ще не визначено. Натисніть «Додати зону», щоб створити одну.',
   },
   'dashboard.zones.selectOrAdd': {
     en: 'Select a zone to edit, or click "Add Zone" to create a new one.',
@@ -2848,6 +3183,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dooro aag si aad u wax ka bedesho, ama dhagsii "Ku dar aag" si aad mid cusub abuurto.',
     fr: 'Sélectionnez une zone à modifier, ou cliquez sur "Ajouter une zone" pour en créer une nouvelle.',
     zh: '选择要编辑的区域，或点击"添加区域"创建新区域。',
+    uk: 'Оберіть зону для редагування або натисніть «Додати зону», щоб створити нову.',
   },
   'dashboard.zones.createNewZone': {
     en: 'Create New Zone',
@@ -2856,6 +3192,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Abuur aag cusub',
     fr: 'Créer une nouvelle zone',
     zh: '创建新区域',
+    uk: 'Створити нову зону',
   },
   'dashboard.zones.editZone': {
     en: 'Edit Zone',
@@ -2864,6 +3201,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Wax ka bedel aagga',
     fr: 'Modifier la zone',
     zh: '编辑区域',
+    uk: 'Редагувати зону',
   },
   'dashboard.zones.zoneName': {
     en: 'Zone Name',
@@ -2872,6 +3210,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Magaca aagga',
     fr: 'Nom de la zone',
     zh: '区域名称',
+    uk: 'Назва зони',
   },
   'dashboard.zones.zoneNamePlaceholder': {
     en: 'e.g., North District',
@@ -2880,6 +3219,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'tusaale, Degmada Woqooyi',
     fr: 'ex., Quartier Nord',
     zh: '例如：北区',
+    uk: 'напр., Північний район',
   },
   'dashboard.zones.color': {
     en: 'Color',
@@ -2888,6 +3228,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Midabka',
     fr: 'Couleur',
     zh: '颜色',
+    uk: 'Колір',
   },
   'dashboard.zones.zoneBoundary': {
     en: 'Zone Boundary',
@@ -2896,6 +3237,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xadka aagga',
     fr: 'Limite de la zone',
     zh: '区域边界',
+    uk: 'Межі зони',
   },
   'dashboard.zones.latitude': {
     en: 'Latitude',
@@ -2904,6 +3246,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Latitude',
     fr: 'Latitude',
     zh: '纬度',
+    uk: 'Широта',
   },
   'dashboard.zones.longitude': {
     en: 'Longitude',
@@ -2912,6 +3255,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Longitude',
     fr: 'Longitude',
     zh: '经度',
+    uk: 'Довгота',
   },
   'dashboard.zones.removePoint': {
     en: 'Remove point',
@@ -2920,6 +3264,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ka saar barta',
     fr: 'Supprimer le point',
     zh: '移除点',
+    uk: 'Видалити точку',
   },
   'dashboard.zones.noPoints': {
     en: 'No points added yet. Click on the map to add at least 3 points to define a polygon.',
@@ -2928,6 +3273,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Weli bartooyin lama darin. Dhagsii khariidada si aad ugu yaraan 3 barto ku darto si aad u qeexdo polygon.',
     fr: 'Aucun point ajouté. Cliquez sur la carte pour ajouter au moins 3 points pour définir un polygone.',
     zh: '尚未添加任何点。点击地图添加至少 3 个点以定义多边形。',
+    uk: 'Точок ще не додано. Натисніть на мапу, щоб додати щонайменше 3 точки для визначення полігону.',
   },
   'dashboard.zones.createZone': {
     en: 'Create Zone',
@@ -2936,6 +3282,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Abuur aag',
     fr: 'Créer la zone',
     zh: '创建区域',
+    uk: 'Створити зону',
   },
   'dashboard.zones.deleteZone': {
     en: 'Delete Zone',
@@ -2944,6 +3291,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Tirtir aagga',
     fr: 'Supprimer la zone',
     zh: '删除区域',
+    uk: 'Видалити зону',
   },
   'dashboard.zones.deleteConfirm': {
     en: 'Delete this zone?',
@@ -2952,6 +3300,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Tirtirto aaggan?',
     fr: 'Supprimer cette zone ?',
     zh: '删除此区域？',
+    uk: 'Видалити цю зону?',
   },
   'dashboard.zones.point': {
     en: '{{count}} point',
@@ -2960,6 +3309,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: '{{count}} bar',
     fr: '{{count}} point',
     zh: '{{count}} 个点',
+    uk: '{{count}} точка',
   },
   'dashboard.zones.points': {
     en: '{{count}} points',
@@ -2968,6 +3318,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: '{{count}} bartooyin',
     fr: '{{count}} points',
     zh: '{{count}} 个点',
+    uk: '{{count}} точок',
   },
 
   // =========================================================================
@@ -2980,6 +3331,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qorsheeyaha qaybinta',
     fr: 'Planificateur de distribution',
     zh: '分配规划器',
+    uk: 'Планувальник розподілу',
   },
   'dashboard.distribution.subtitle': {
     en: 'Assign deliveries to drivers by zone and capacity.',
@@ -2988,6 +3340,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'U qoondeey gaadiidyada darawallada aagga iyo awoodda.',
     fr: 'Assignez les livraisons aux chauffeurs par zone et capacité.',
     zh: '按区域和运力将配送分配给司机。',
+    uk: 'Призначте доставки водіям за зонами та спроможністю.',
   },
   'dashboard.distribution.loadingData': {
     en: 'Loading distribution data...',
@@ -2996,6 +3349,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Soo dejinaya xogta qaybinta...',
     fr: 'Chargement des données de distribution...',
     zh: '正在加载分配数据...',
+    uk: 'Завантаження даних розподілу...',
   },
   'dashboard.distribution.drivers': {
     en: 'Drivers',
@@ -3004,6 +3358,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Darawallada',
     fr: 'Chauffeurs',
     zh: '司机',
+    uk: 'Водії',
   },
   'dashboard.distribution.sortByLoad': {
     en: 'Sort by Load',
@@ -3012,6 +3367,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'U kala horreey culeyska',
     fr: 'Trier par charge',
     zh: '按负载排序',
+    uk: 'Сортувати за навантаженням',
   },
   'dashboard.distribution.defaultOrder': {
     en: 'Default Order',
@@ -3020,6 +3376,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Kala horraynta caadiga ah',
     fr: 'Ordre par défaut',
     zh: '默认排序',
+    uk: 'Порядок за замовчуванням',
   },
   'dashboard.distribution.noDrivers': {
     en: 'No drivers available. Run Auto-Distribute to get started.',
@@ -3028,6 +3385,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ma jiraan darawalaal diyaar ah. Orod Qaybinta-Tooska si aad u bilowdo.',
     fr: 'Aucun chauffeur disponible. Lancez la distribution automatique pour commencer.',
     zh: '没有可用的司机。运行自动分配以开始。',
+    uk: 'Немає доступних водіїв. Запустіть автоматичний розподіл, щоб почати.',
   },
   'dashboard.distribution.deliveries': {
     en: '{{count}}/{{max}} deliveries',
@@ -3036,6 +3394,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: '{{count}}/{{max}} gaadiidyo',
     fr: '{{count}}/{{max}} livraisons',
     zh: '{{count}}/{{max}} 配送',
+    uk: '{{count}}/{{max}} доставок',
   },
   'dashboard.distribution.maxDeliveries': {
     en: 'Max deliveries:',
@@ -3044,6 +3403,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidka ugu badan:',
     fr: 'Livraisons max :',
     zh: '最大配送数：',
+    uk: 'Максимум доставок:',
   },
   'dashboard.distribution.removeDelivery': {
     en: 'Remove delivery',
@@ -3052,6 +3412,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ka saar gaadiidka',
     fr: 'Supprimer la livraison',
     zh: '移除配送',
+    uk: 'Видалити доставку',
   },
   'dashboard.distribution.removeDriver': {
     en: 'Remove Driver',
@@ -3060,6 +3421,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ka saar darawanka',
     fr: 'Retirer le chauffeur',
     zh: '移除司机',
+    uk: 'Видалити водія',
   },
   'dashboard.distribution.removeDriverConfirm': {
     en: 'Remove this driver?',
@@ -3068,6 +3430,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Ka saarto darawalkan?',
     fr: 'Retirer ce chauffeur ?',
     zh: '移除该司机？',
+    uk: 'Видалити цього водія?',
   },
   'dashboard.distribution.session': {
     en: 'Session:',
@@ -3076,6 +3439,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Fadhiga:',
     fr: 'Session :',
     zh: '会话：',
+    uk: 'Сеанс:',
   },
   'dashboard.distribution.selectSession': {
     en: 'Select a session...',
@@ -3084,6 +3448,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dooro fadhi...',
     fr: 'Sélectionner une session...',
     zh: '选择一个会话...',
+    uk: 'Оберіть сеанс...',
   },
   'dashboard.distribution.dayOfWeek': {
     en: 'Day of Week:',
@@ -3092,6 +3457,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Maalinta usbuuca:',
     fr: 'Jour de la semaine :',
     zh: '星期几：',
+    uk: 'День тижня:',
   },
   'dashboard.distribution.distributing': {
     en: 'Distributing...',
@@ -3100,6 +3466,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qaybinaya...',
     fr: 'Distribution...',
     zh: '分配中...',
+    uk: 'Розподіл...',
   },
   'dashboard.distribution.autoDistribute': {
     en: 'Auto-Distribute',
@@ -3108,6 +3475,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qaybinta-Tooska',
     fr: 'Distribution automatique',
     zh: '自动分配',
+    uk: 'Автоматичний розподіл',
   },
   'dashboard.distribution.summary': {
     en: '{{assigned}} assigned, {{unassigned}} unassigned, {{warnings}} warning{{plural}}',
@@ -3116,6 +3484,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: '{{assigned}} la shaqaaleeyay, {{unassigned}} aan la shaqaaleysiinin, {{warnings}} digniino',
     fr: '{{assigned}} assigné(s), {{unassigned}} non assigné(s), {{warnings}} avertissement{{plural}}',
     zh: '{{assigned}} 已分配、{{unassigned}} 未分配、{{warnings}} 个警告',
+    uk: '{{assigned}} призначено, {{unassigned}} не призначено, {{warnings}} попередження',
   },
   'dashboard.distribution.emptyState': {
     en: 'Select a session and day, then click Auto-Distribute to get started.',
@@ -3124,6 +3493,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Dooro fadhi iyo maalin, kadibna dhagsii Qaybinta-Tooska si aad u bilowdo.',
     fr: 'Sélectionnez une session et un jour, puis cliquez sur Distribution automatique pour commencer.',
     zh: '选择一个会话和日期，然后点击自动分配以开始。',
+    uk: 'Оберіть сеанс та день, потім натисніть «Автоматичний розподіл», щоб почати.',
   },
   'dashboard.distribution.unassignedDeliveries': {
     en: 'Unassigned Deliveries',
@@ -3132,6 +3502,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Gaadiidyada aan la shaqaaleysiinin',
     fr: 'Livraisons non assignées',
     zh: '未分配的配送',
+    uk: 'Непризначені доставки',
   },
   'dashboard.distribution.assignTo': {
     en: 'Assign to...',
@@ -3140,6 +3511,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'U shaqaaleysi...',
     fr: 'Assigner à...',
     zh: '分配给...',
+    uk: 'Призначити до...',
   },
   'dashboard.distribution.warnings': {
     en: 'Warnings',
@@ -3148,6 +3520,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Digniinooyinka',
     fr: 'Avertissements',
     zh: '警告',
+    uk: 'Попередження',
   },
   'dashboard.distribution.confirming': {
     en: 'Confirming...',
@@ -3156,6 +3529,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaqiijinaya...',
     fr: 'Confirmation...',
     zh: '确认中...',
+    uk: 'Підтвердження...',
   },
   'dashboard.distribution.confirmAndAssign': {
     en: 'Confirm & Assign',
@@ -3164,6 +3538,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaqiiji & U shaqaaleysi',
     fr: 'Confirmer et assigner',
     zh: '确认并分配',
+    uk: 'Підтвердити та призначити',
   },
   'dashboard.distribution.confirmUnassignedRemaining': {
     en: 'Confirm & Assign ({{count}} unassigned remaining)',
@@ -3172,6 +3547,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Xaqiiji & U shaqaaleysi ({{count}} aan la shaqaaleysiinin haray)',
     fr: 'Confirmer et assigner ({{count}} non assigné(s) restant(s))',
     zh: '确认并分配（剩余 {{count}} 个未分配）',
+    uk: 'Підтвердити та призначити ({{count}} непризначених залишилось)',
   },
   'dashboard.distribution.autoDistributeFailed': {
     en: 'Auto-distribute failed. Make sure a session is selected.',
@@ -3180,6 +3556,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Qaybinta-toosku wuu guul daristay. Hubi in fadhi la doortay.',
     fr: 'La distribution automatique a échoué. Assurez-vous qu\'une session est sélectionnée.',
     zh: '自动分配失败。请确保已选择一个会话。',
+    uk: 'Автоматичний розподіл не вдався. Переконайтесь, що сеанс обрано.',
   },
   'dashboard.distribution.confirmFailed': {
     en: 'Failed to confirm assignments.',
@@ -3188,6 +3565,7 @@ const STRINGS: Record<string, StringEntry> = {
     so: 'Waa lagu guul daristay xaqiijinta shaqaaleysinta.',
     fr: 'Échec de la confirmation des assignations.',
     zh: '确认分配失败。',
+    uk: 'Не вдалося підтвердити призначення.',
   },
 };
 

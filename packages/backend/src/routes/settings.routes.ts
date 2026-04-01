@@ -54,7 +54,7 @@ const operatingRegionSchema = z.object({
 const settingsSchema = z.object({
   orgName: z.string().optional().default(''),
   serviceArea: operatingRegionSchema,
-  language: z.enum(['en', 'es', 'ar', 'so', 'fr', 'zh']).optional(),
+  language: z.enum(['en', 'es', 'ar', 'so', 'fr', 'zh', 'uk']).optional(),
 });
 
 // Map state bounding boxes to determine which extracts cover a region

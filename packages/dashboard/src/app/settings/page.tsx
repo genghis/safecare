@@ -552,6 +552,7 @@ export default function SettingsPage() {
                 <option value="so">Soomaali (Somali)</option>
                 <option value="fr">Français (French)</option>
                 <option value="zh">中文 (Chinese)</option>
+                <option value="uk">Українська (Ukrainian)</option>
               </select>
               <p className="text-xs text-muted-foreground">
                 Changes the language for the dashboard and driver app.
