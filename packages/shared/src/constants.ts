@@ -1,5 +1,5 @@
 /** SafeCare application version — source of truth for update checks */
-export const SAFECARE_VERSION = '0.1.0';
+export const SAFECARE_VERSION = '0.2.0';
 
 /** GitHub repository for update checks */
 export const SAFECARE_REPO = 'jasontitus/safecare';
