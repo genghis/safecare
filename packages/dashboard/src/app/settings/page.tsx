@@ -310,6 +310,7 @@ interface ServiceArea {
 interface OrgSettings {
   orgName: string;
   serviceArea: ServiceArea;
+  language?: string;
 }
 
 interface GeocodingResult {
@@ -348,12 +349,13 @@ const DEFAULT_SETTINGS: OrgSettings = {
 // ---------------------------------------------------------------------------
 
 export default function SettingsPage() {
-  const { t } = useLocale();
+  const { t, setLocale } = useLocale();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const [orgName, setOrgName] = useState(DEFAULT_SETTINGS.orgName);
+  const [language, setLanguageState] = useState<string>("en");
   const [lat, setLat] = useState(DEFAULT_SETTINGS.serviceArea.lat);
   const [lng, setLng] = useState(DEFAULT_SETTINGS.serviceArea.lng);
   const [zoom, setZoom] = useState(DEFAULT_SETTINGS.serviceArea.zoom);
@@ -380,6 +382,7 @@ export default function SettingsPage() {
       const res = await apiGet<OrgSettings | null>("/api/settings");
       if (res.ok && res.data) {
         setOrgName(res.data.orgName);
+        if (res.data.language) setLanguageState(res.data.language);
         setLat(res.data.serviceArea.lat);
         setLng(res.data.serviceArea.lng);
         setZoom(res.data.serviceArea.zoom);
@@ -469,9 +472,10 @@ export default function SettingsPage() {
     setSaving(true);
     setSaved(false);
 
-    const settings: OrgSettings = {
+    const settings = {
       orgName,
       serviceArea: { lat, lng, zoom, label, bounds },
+      language,
     };
 
     const res = await apiPut("/api/settings", settings);
@@ -531,6 +535,27 @@ export default function SettingsPage() {
                 placeholder={t('dashboard.settings.orgNamePlaceholder')}
                 className="max-w-md"
               />
+            </div>
+            <div className="space-y-2 mt-4">
+              <label className="text-sm font-medium">{t('dashboard.recipients.language')}</label>
+              <select
+                value={language}
+                onChange={(e) => {
+                  setLanguageState(e.target.value);
+                  if (typeof setLocale === 'function') setLocale(e.target.value as any);
+                }}
+                className="flex h-10 w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="ar">العربية (Arabic)</option>
+                <option value="so">Soomaali (Somali)</option>
+                <option value="fr">Français (French)</option>
+                <option value="zh">中文 (Chinese)</option>
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Changes the language for the dashboard and driver app.
+              </p>
             </div>
           </CardContent>
         </Card>

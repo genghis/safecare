@@ -4,6 +4,18 @@
   <h1>Welcome to SafeCare</h1>
   <p class="subtitle">Let's set up your mutual aid delivery system.</p>
 
+  <div style="margin: 20px 0">
+    <label class="step-item" style="font-size:14px; font-weight:600; margin-bottom:8px; display:block;">Language / Idioma / اللغة</label>
+    <select id="lang-select" class="input" style="max-width:240px">
+      <option value="en">English</option>
+      <option value="es">Español</option>
+      <option value="ar">العربية (Arabic)</option>
+      <option value="so">Soomaali (Somali)</option>
+      <option value="fr">Français (French)</option>
+      <option value="zh">中文 (Chinese)</option>
+    </select>
+  </div>
+
   <div class="steps-preview">
     <div class="step-item"><span class="step-num">1</span> Connect to WiFi</div>
     <div class="step-item"><span class="step-num">2</span> Set device password</div>
@@ -11,6 +23,18 @@
     <div class="step-item"><span class="step-num">4</span> Start services</div>
   </div>
 
-  <a href="/wifi" class="btn btn-primary btn-block">Get Started</a>
+  <a href="/wifi" class="btn btn-primary btn-block" id="start-btn">Get Started</a>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Save language selection for use later when writing org settings
+document.getElementById('lang-select').addEventListener('change', function() {
+  sessionStorage.setItem('safecare_setup_language', this.value);
+});
+document.getElementById('start-btn').addEventListener('click', function(e) {
+  const lang = document.getElementById('lang-select').value;
+  sessionStorage.setItem('safecare_setup_language', lang);
+});
+</script>
 {% endblock %}

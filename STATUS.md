@@ -66,7 +66,7 @@ Last updated: 2026-03-30
 |---------|--------|-------|
 | Unified notification service | Done | Channel-agnostic: SMS, WhatsApp, Signal with fallback |
 | Recipient notifications ("on the way" / "delivered") | Done | Fired async on driver sync status updates |
-| i18n / localized messages | Partial | 6 languages for **recipient notifications only** (en, es, ar, so, fr, zh). Dashboard and driver PWA UI are English-only. |
+| i18n / localized messages | Done | 443 string keys across 6 languages (en, es, ar, so, fr, zh). Full coverage: notifications, driver PWA, admin dashboard. Language picker in settings. RTL support for Arabic. |
 | Twilio SMS send/receive | Done | REST API integration with SID tracking |
 | WhatsApp via Twilio | Done | Sends when recipient opts in, falls back to SMS otherwise |
 | Signal via signal-cli | Done | Self-hosted container, E2E encrypted, free |
@@ -145,18 +145,18 @@ See [tests/README.md](tests/README.md) for details.
 | OSRM | safecare-osrm | 5000 | osrm/osrm-backend:latest |
 | Signal | safecare-signal | 8089 | bbernhard/signal-cli-rest-api |
 
-## i18n Coverage
+## i18n Coverage (443 string keys)
 
-Recipient-facing notification messages are translated to all 6 languages. The admin dashboard and driver PWA UI are English-only.
+All user-facing strings translated to 6 languages. Language selectable in Settings.
 
 | Locale | Language | Notifications | Dashboard UI | Driver PWA UI |
 |--------|----------|--------------|-------------|--------------|
 | en | English | Complete | Complete | Complete |
-| es | Español | Complete | Not done | Not done |
-| ar | العربية (Arabic) | Complete | Not done | Not done |
-| so | Soomaali (Somali) | Complete | Not done | Not done |
-| fr | Français (French) | Complete | Not done | Not done |
-| zh | 中文 (Chinese) | Complete | Not done | Not done |
+| es | Español | Complete | Complete | Complete |
+| ar | العربية (Arabic) | Complete | Complete (RTL) | Complete (RTL) |
+| so | Soomaali (Somali) | Complete | Complete | Complete |
+| fr | Français (French) | Complete | Complete | Complete |
+| zh | 中文 (Chinese) | Complete | Complete | Complete |
 
 ## Cross-Cutting Gaps
 
