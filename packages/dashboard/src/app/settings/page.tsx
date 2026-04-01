@@ -814,7 +814,159 @@ export default function SettingsPage() {
 
         {/* Two-Factor Authentication */}
         <TwoFactorSection />
+
+        {/* System Updates */}
+        <SystemUpdatesSection />
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// System Updates section
+// ---------------------------------------------------------------------------
+
+function SystemUpdatesSection() {
+  const { t } = useLocale();
+  const [checking, setChecking] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<any>(null);
+  const [osInfo, setOsInfo] = useState<any>(null);
+  const [updating, setUpdating] = useState(false);
+  const [applyingOs, setApplyingOs] = useState(false);
+  const [showOsDetails, setShowOsDetails] = useState(false);
+
+  const checkForUpdates = async () => {
+    setChecking(true);
+    const [appRes, osRes] = await Promise.all([
+      apiGet<any>("/api/updates/check"),
+      apiGet<any>("/api/updates/os-status"),
+    ]);
+    if (appRes.ok) setUpdateInfo(appRes.data);
+    if (osRes.ok) setOsInfo(osRes.data);
+    setChecking(false);
+  };
+
+  useEffect(() => { checkForUpdates(); }, []);
+
+  const handleAppUpdate = async () => {
+    if (!updateInfo?.latestVersion) return;
+    setUpdating(true);
+    const res = await apiPost<any>("/api/updates/apply", {
+      version: updateInfo.latestVersion,
+    });
+    if (res.ok) {
+      // Services will restart — show message and wait
+      setUpdateInfo({ ...updateInfo, updateApplied: true });
+    }
+    setUpdating(false);
+  };
+
+  const handleOsUpdate = async () => {
+    setApplyingOs(true);
+    const res = await apiPost<any>("/api/updates/os-apply");
+    if (res.ok) {
+      // Refresh OS status
+      const osRes = await apiGet<any>("/api/updates/os-status");
+      if (osRes.ok) setOsInfo(osRes.data);
+    }
+    setApplyingOs(false);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{t('dashboard.updates.title')}</CardTitle>
+          <Button variant="ghost" size="sm" onClick={checkForUpdates} disabled={checking}>
+            {checking ? t('dashboard.updates.checking') : t('dashboard.updates.checkNow')}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* App Updates */}
+        <div>
+          <h3 className="text-sm font-semibold mb-2">{t('dashboard.updates.appVersion')}</h3>
+          {updateInfo ? (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                {t('dashboard.updates.currentVersion', { version: updateInfo.currentVersion })}
+              </p>
+              {updateInfo.updateApplied ? (
+                <div className="rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-3">
+                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                    {t('dashboard.updates.updateSuccess')}
+                  </p>
+                </div>
+              ) : updateInfo.updateAvailable ? (
+                <div className="rounded-md border border-primary/50 bg-primary/5 p-4 space-y-3">
+                  <p className="text-sm font-semibold">
+                    {t('dashboard.updates.available', { version: updateInfo.latestVersion })}
+                  </p>
+                  {updateInfo.changelog && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">{t('dashboard.updates.changes')}</p>
+                      <div className="text-xs text-muted-foreground max-h-32 overflow-y-auto whitespace-pre-wrap rounded bg-muted p-2">
+                        {updateInfo.changelog}
+                      </div>
+                    </div>
+                  )}
+                  <Button onClick={handleAppUpdate} disabled={updating} size="sm">
+                    {updating ? t('dashboard.updates.updating') : t('dashboard.updates.updateTo', { version: updateInfo.latestVersion })}
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                  {t('dashboard.updates.upToDate')}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('dashboard.updates.checking')}</p>
+          )}
+        </div>
+
+        {/* OS Updates */}
+        <div>
+          <h3 className="text-sm font-semibold mb-2">{t('dashboard.updates.osUpdates')}</h3>
+          {osInfo ? (
+            <div className="space-y-2">
+              {osInfo.count > 0 ? (
+                <>
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    {t('dashboard.updates.osPackagesAvailable', { count: String(osInfo.count) })}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setShowOsDetails(!showOsDetails)}>
+                      {t('dashboard.updates.viewDetails')}
+                    </Button>
+                    <Button size="sm" onClick={handleOsUpdate} disabled={applyingOs}>
+                      {applyingOs ? t('dashboard.updates.applyingOs') : t('dashboard.updates.applyOsUpdates')}
+                    </Button>
+                  </div>
+                  {showOsDetails && osInfo.packages?.length > 0 && (
+                    <div className="text-xs text-muted-foreground max-h-32 overflow-y-auto rounded bg-muted p-2 font-mono">
+                      {osInfo.packages.map((p: any) => `${p.name} → ${p.version}`).join('\n')}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                  {t('dashboard.updates.osUpToDate')}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('dashboard.updates.checking')}</p>
+          )}
+        </div>
+
+        {/* Last checked */}
+        {updateInfo?.checkedAt && (
+          <p className="text-xs text-muted-foreground">
+            {t('dashboard.updates.lastChecked', { time: new Date(updateInfo.checkedAt).toLocaleString() })}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -3567,6 +3567,28 @@ const STRINGS: Record<string, StringEntry> = {
     zh: '确认分配失败。',
     uk: 'Не вдалося підтвердити призначення.',
   },
+
+  // =========================================================================
+  // System Updates
+  // =========================================================================
+  'dashboard.updates.title': { en: 'System Updates', es: 'Actualizaciones del sistema', ar: 'تحديثات النظام', so: 'Cusboonaysiinta nidaamka', fr: 'Mises à jour système', zh: '系统更新', uk: 'Оновлення системи' },
+  'dashboard.updates.appVersion': { en: 'SafeCare Application', es: 'Aplicación SafeCare', ar: 'تطبيق SafeCare', so: 'Barnaamijka SafeCare', fr: 'Application SafeCare', zh: 'SafeCare 应用', uk: 'Додаток SafeCare' },
+  'dashboard.updates.currentVersion': { en: 'Current version: v{{version}}', es: 'Versión actual: v{{version}}', ar: 'الإصدار الحالي: v{{version}}', so: 'Nooca hadda: v{{version}}', fr: 'Version actuelle : v{{version}}', zh: '当前版本：v{{version}}', uk: 'Поточна версія: v{{version}}' },
+  'dashboard.updates.upToDate': { en: 'You are running the latest version.', es: 'Está ejecutando la última versión.', ar: 'أنت تستخدم أحدث إصدار.', so: 'Waxaad ku shaqaysaa nooca ugu dambeeyay.', fr: 'Vous utilisez la dernière version.', zh: '您正在运行最新版本。', uk: 'У вас встановлена остання версія.' },
+  'dashboard.updates.available': { en: 'Update available: v{{version}}', es: 'Actualización disponible: v{{version}}', ar: 'تحديث متاح: v{{version}}', so: 'Cusboonaysiin la heli karo: v{{version}}', fr: 'Mise à jour disponible : v{{version}}', zh: '有可用更新：v{{version}}', uk: 'Доступне оновлення: v{{version}}' },
+  'dashboard.updates.changes': { en: 'Changes:', es: 'Cambios:', ar: 'التغييرات:', so: 'Isbeddelada:', fr: 'Changements :', zh: '更改内容：', uk: 'Зміни:' },
+  'dashboard.updates.updateTo': { en: 'Update to v{{version}}', es: 'Actualizar a v{{version}}', ar: 'التحديث إلى v{{version}}', so: 'Cusboonaysii ilaa v{{version}}', fr: 'Mettre à jour vers v{{version}}', zh: '更新到 v{{version}}', uk: 'Оновити до v{{version}}' },
+  'dashboard.updates.updating': { en: 'Updating...', es: 'Actualizando...', ar: 'جارٍ التحديث...', so: 'Cusboonaysiinaya...', fr: 'Mise à jour...', zh: '正在更新...', uk: 'Оновлення...' },
+  'dashboard.updates.updateSuccess': { en: 'Update applied. Services are restarting.', es: 'Actualización aplicada. Los servicios se están reiniciando.', ar: 'تم تطبيق التحديث. يتم إعادة تشغيل الخدمات.', so: 'Cusboonaysiinta waa la dabaqay. Adeegyada waa dib loo bilaabayaa.', fr: 'Mise à jour appliquée. Les services redémarrent.', zh: '更新已应用。服务正在重启。', uk: 'Оновлення застосовано. Служби перезапускаються.' },
+  'dashboard.updates.osUpdates': { en: 'Operating System Security', es: 'Seguridad del sistema operativo', ar: 'أمان نظام التشغيل', so: 'Amniga nidaamka hawlgalka', fr: 'Sécurité du système d\'exploitation', zh: '操作系统安全', uk: 'Безпека операційної системи' },
+  'dashboard.updates.osPackagesAvailable': { en: '{{count}} packages can be updated', es: '{{count}} paquetes pueden actualizarse', ar: 'يمكن تحديث {{count}} حزمة', so: '{{count}} xirmooyin ayaa la cusboonaysiin karaa', fr: '{{count}} paquets peuvent être mis à jour', zh: '{{count}} 个软件包可以更新', uk: '{{count}} пакетів можна оновити' },
+  'dashboard.updates.osUpToDate': { en: 'All OS packages are up to date.', es: 'Todos los paquetes del SO están actualizados.', ar: 'جميع حزم النظام محدثة.', so: 'Dhammaan xirmooyin nidaamka waa cusboon.', fr: 'Tous les paquets du système sont à jour.', zh: '所有操作系统软件包都是最新的。', uk: 'Усі пакети ОС оновлені.' },
+  'dashboard.updates.viewDetails': { en: 'View Details', es: 'Ver detalles', ar: 'عرض التفاصيل', so: 'Arag faahfaahin', fr: 'Voir les détails', zh: '查看详情', uk: 'Переглянути деталі' },
+  'dashboard.updates.applyOsUpdates': { en: 'Apply OS Updates', es: 'Aplicar actualizaciones del SO', ar: 'تطبيق تحديثات النظام', so: 'Dabaq cusboonaysiinta OS', fr: 'Appliquer les mises à jour du système', zh: '应用操作系统更新', uk: 'Застосувати оновлення ОС' },
+  'dashboard.updates.applyingOs': { en: 'Applying OS updates...', es: 'Aplicando actualizaciones del SO...', ar: 'جارٍ تطبيق تحديثات النظام...', so: 'Waa la dabaqayaa cusboonaysiinta OS...', fr: 'Application des mises à jour du système...', zh: '正在应用操作系统更新...', uk: 'Застосування оновлень ОС...' },
+  'dashboard.updates.lastChecked': { en: 'Last checked: {{time}}', es: 'Última comprobación: {{time}}', ar: 'آخر فحص: {{time}}', so: 'Markii ugu dambeysay la hubiyay: {{time}}', fr: 'Dernière vérification : {{time}}', zh: '上次检查：{{time}}', uk: 'Остання перевірка: {{time}}' },
+  'dashboard.updates.checkNow': { en: 'Check Now', es: 'Comprobar ahora', ar: 'تحقق الآن', so: 'Hubi hadda', fr: 'Vérifier maintenant', zh: '立即检查', uk: 'Перевірити зараз' },
+  'dashboard.updates.checking': { en: 'Checking for updates...', es: 'Comprobando actualizaciones...', ar: 'جارٍ البحث عن تحديثات...', so: 'Hubinaya cusboonaysiinta...', fr: 'Recherche de mises à jour...', zh: '正在检查更新...', uk: 'Перевірка оновлень...' },
 };
 
 // ---------------------------------------------------------------------------
