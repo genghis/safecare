@@ -130,13 +130,28 @@ docker rm -v pigen_work 2>/dev/null || true
 mkdir -p "$OUTPUT_DIR"
 DATE=$(date +%Y%m%d)
 
-# pi-gen outputs to deploy/ as .zip or .img.xz
-IMG_FILE=$(find "$PIGEN_DIR/deploy" -name "*.zip" -o -name "*.img.xz" | head -1)
+# pi-gen outputs to deploy/ as .zip — we recompress to .img.xz for smaller download
+IMG_FILE=$(find "$PIGEN_DIR/deploy" -name "*.zip" -o -name "*.img.xz" -o -name "*.img" | head -1)
 
 if [ -n "$IMG_FILE" ]; then
-  EXT="${IMG_FILE##*.}"
-  FINAL_NAME="safecare-${DATE}.${EXT}"
-  cp "$IMG_FILE" "$OUTPUT_DIR/$FINAL_NAME"
+  # Extract raw .img if it's a zip
+  if [[ "$IMG_FILE" == *.zip ]]; then
+    log "Extracting .img from zip..."
+    unzip -o "$IMG_FILE" -d "$OUTPUT_DIR/"
+    RAW_IMG=$(find "$OUTPUT_DIR" -name "*.img" | head -1)
+  else
+    RAW_IMG="$IMG_FILE"
+  fi
+
+  if [ -n "$RAW_IMG" ]; then
+    log "Compressing with xz -9 (this takes a few minutes)..."
+    FINAL_NAME="safecare-${DATE}.img.xz"
+    xz -9 -T0 -k "$RAW_IMG"
+    mv "${RAW_IMG}.xz" "$OUTPUT_DIR/$FINAL_NAME"
+  else
+    FINAL_NAME="safecare-${DATE}.zip"
+    cp "$IMG_FILE" "$OUTPUT_DIR/$FINAL_NAME"
+  fi
   SIZE=$(du -h "$OUTPUT_DIR/$FINAL_NAME" | cut -f1)
   log ""
   log "============================================"
