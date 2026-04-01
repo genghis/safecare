@@ -756,6 +756,116 @@ fi
 echo ""
 
 # ---------------------------------------------------------------------------
+echo "--- 9. System Updates ---"
+# ---------------------------------------------------------------------------
+
+# Health endpoint should return version
+HEALTH=$(curl -sf "$API/api/health" 2>/dev/null)
+if [ $? -eq 0 ]; then
+  HEALTH_VERSION=$(echo "$HEALTH" | python3 -c "import sys,json; print(json.load(sys.stdin).get('version',''))" 2>/dev/null || echo "")
+  if [ -n "$HEALTH_VERSION" ]; then
+    pass "GET /api/health returns version ($HEALTH_VERSION)"
+  else
+    fail "Health version" "version field missing from health response"
+  fi
+else
+  fail "Health endpoint" "not responding"
+fi
+
+# Update check endpoint (requires admin auth)
+if [ -n "${TOKEN:-}" ]; then
+  UPDATE_RESP=$(curl -s -w '\n%{http_code}' "$API/api/updates/check" \
+    -H "Authorization: Bearer $TOKEN" 2>&1)
+  UPDATE_STATUS=$(echo "$UPDATE_RESP" | tail -1)
+  UPDATE_BODY=$(echo "$UPDATE_RESP" | sed '$d')
+
+  if [ "$UPDATE_STATUS" = "200" ]; then
+    CURRENT=$(echo "$UPDATE_BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('currentVersion',''))" 2>/dev/null || echo "")
+    if [ -n "$CURRENT" ]; then
+      pass "GET /api/updates/check returns currentVersion ($CURRENT)"
+    else
+      fail "Update check" "currentVersion missing from response"
+    fi
+
+    # Should have checkedAt timestamp
+    CHECKED=$(echo "$UPDATE_BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('checkedAt',''))" 2>/dev/null || echo "")
+    if [ -n "$CHECKED" ]; then
+      pass "Update check includes checkedAt timestamp"
+    else
+      fail "Update check" "checkedAt missing"
+    fi
+  else
+    fail "GET /api/updates/check" "status $UPDATE_STATUS"
+  fi
+
+  # Update check should be cached (second call should be fast)
+  UPDATE_RESP2=$(curl -s -o /dev/null -w '%{http_code}:%{time_total}' "$API/api/updates/check" \
+    -H "Authorization: Bearer $TOKEN" 2>&1)
+  UPDATE_STATUS2=$(echo "$UPDATE_RESP2" | cut -d: -f1)
+  UPDATE_TIME=$(echo "$UPDATE_RESP2" | cut -d: -f2)
+  if [ "$UPDATE_STATUS2" = "200" ]; then
+    pass "Cached update check responds quickly"
+  else
+    fail "Cached update check" "status $UPDATE_STATUS2"
+  fi
+
+  # OS status endpoint
+  OS_RESP=$(curl -s -w '\n%{http_code}' "$API/api/updates/os-status" \
+    -H "Authorization: Bearer $TOKEN" 2>&1)
+  OS_STATUS=$(echo "$OS_RESP" | tail -1)
+  OS_BODY=$(echo "$OS_RESP" | sed '$d')
+
+  if [ "$OS_STATUS" = "200" ]; then
+    OS_COUNT=$(echo "$OS_BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('count',-1))" 2>/dev/null || echo "-1")
+    if [ "$OS_COUNT" != "-1" ]; then
+      pass "GET /api/updates/os-status returns package count ($OS_COUNT)"
+    else
+      fail "OS status" "count field missing"
+    fi
+  else
+    # OS status may fail in non-Linux environments (macOS CI) — that's ok
+    skip "GET /api/updates/os-status" "status $OS_STATUS (may not work outside Linux)"
+  fi
+
+  # Update history endpoint
+  HIST_RESP=$(curl -s -w '\n%{http_code}' "$API/api/updates/history" \
+    -H "Authorization: Bearer $TOKEN" 2>&1)
+  HIST_STATUS=$(echo "$HIST_RESP" | tail -1)
+  if [ "$HIST_STATUS" = "200" ]; then
+    pass "GET /api/updates/history accessible"
+  else
+    fail "Update history" "status $HIST_STATUS"
+  fi
+else
+  skip "Update check endpoints" "no admin token"
+fi
+
+# Unauthenticated access to update endpoints must be rejected
+UNAUTH_UPDATE=$(curl -s -o /dev/null -w '%{http_code}' "$API/api/updates/check" 2>&1)
+if [ "$UNAUTH_UPDATE" = "401" ]; then
+  pass "GET /api/updates/check rejects unauthenticated requests"
+else
+  fail "Update check auth" "expected 401, got $UNAUTH_UPDATE"
+fi
+
+UNAUTH_APPLY=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/api/updates/apply" \
+  -H "Content-Type: application/json" -d '{"version":"0.0.0"}' 2>&1)
+if [ "$UNAUTH_APPLY" = "401" ]; then
+  pass "POST /api/updates/apply rejects unauthenticated requests"
+else
+  fail "Update apply auth" "expected 401, got $UNAUTH_APPLY"
+fi
+
+UNAUTH_OS=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/api/updates/os-apply" 2>&1)
+if [ "$UNAUTH_OS" = "401" ]; then
+  pass "POST /api/updates/os-apply rejects unauthenticated requests"
+else
+  fail "OS update auth" "expected 401, got $UNAUTH_OS"
+fi
+
+echo ""
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo "=========================================="

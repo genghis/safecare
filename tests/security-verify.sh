@@ -533,6 +533,55 @@ pass "JWT storage audit completed (download_tokens uses hashed tokens)"
 echo ""
 
 # ---------------------------------------------------------------------------
+echo "--- Update System Security ---"
+# ---------------------------------------------------------------------------
+
+# Update endpoints must require admin auth
+for ENDPOINT in "/api/updates/check" "/api/updates/os-status" "/api/updates/history"; do
+  STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$API$ENDPOINT" 2>&1)
+  if [ "$STATUS" = "401" ]; then
+    pass "GET $ENDPOINT requires authentication"
+  else
+    fail "$ENDPOINT auth" "returned $STATUS without auth (expected 401)"
+  fi
+done
+
+for ENDPOINT in "/api/updates/apply" "/api/updates/os-apply"; do
+  STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API$ENDPOINT" \
+    -H "Content-Type: application/json" -d '{}' 2>&1)
+  if [ "$STATUS" = "401" ]; then
+    pass "POST $ENDPOINT requires authentication"
+  else
+    fail "$ENDPOINT auth" "returned $STATUS without auth (expected 401)"
+  fi
+done
+
+# Driver token should NOT be able to access update endpoints
+if [ -n "${DRIVER_TOKEN:-}" ]; then
+  DRIVER_UPDATE=$(curl -s -o /dev/null -w '%{http_code}' "$API/api/updates/check" \
+    -H "Authorization: Bearer $DRIVER_TOKEN" 2>&1)
+  if [ "$DRIVER_UPDATE" = "403" ]; then
+    pass "Update check rejects driver-role tokens"
+  else
+    fail "Update RBAC" "driver token got $DRIVER_UPDATE (expected 403)"
+  fi
+else
+  skip "Update RBAC (driver)" "no driver token"
+fi
+
+# Docker images should not use :latest tag in production compose
+if [ -f "../docker/docker-compose.yml" ]; then
+  LATEST_COUNT=$(grep -c ':latest' ../docker/docker-compose.yml 2>/dev/null || echo "0")
+  if [ "$LATEST_COUNT" = "0" ]; then
+    pass "No :latest Docker image tags in docker-compose.yml"
+  else
+    fail "Docker image pinning" "$LATEST_COUNT services use :latest tag"
+  fi
+fi
+
+echo ""
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo "=========================================="
