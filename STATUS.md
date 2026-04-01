@@ -166,7 +166,7 @@ All user-facing strings translated to 6 languages. Language selectable in Settin
 | Exclusion zones | High | Draw "avoid" areas on map, OSRM edge-weighting. Currently zones are delivery-only. |
 | Communication proxy (blind number pool) | High | Twilio proxy so drivers/recipients never see each other's real numbers. Schema exists, no proxy logic. |
 | Tailscale networking | High | Optional Tailscale-only admin access + Funnel for driver API. Dashboard currently accessible on local network. |
-| Password change endpoint | High | No way for admins to change password. `revokeAllSessions()` ready to wire in. |
+| ~~Password change endpoint~~ | ~~Done~~ | POST /api/auth/admin/change-password + dashboard Settings UI. Revokes all sessions on change. |
 | Route variation | Medium | Same driver gets same route pattern every time. |
 | Push notification remote wipe | Medium | Current wipe uses polling. Push would be instant even with app backgrounded. |
 | Key rotation tooling | Medium | Scripted DEK re-encryption of existing data. |

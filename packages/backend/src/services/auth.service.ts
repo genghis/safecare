@@ -259,6 +259,38 @@ export class AuthService {
   }
 
   /**
+   * Change an admin's password after verifying the current one.
+   * Revokes all existing sessions to force re-login everywhere.
+   */
+  async changePassword(
+    adminId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<boolean> {
+    const rows = await db
+      .select({ passwordHash: adminUsers.passwordHash })
+      .from(adminUsers)
+      .where(eq(adminUsers.id, adminId));
+
+    const admin = rows[0];
+    if (!admin) return false;
+
+    const valid = await bcrypt.compare(currentPassword, admin.passwordHash);
+    if (!valid) return false;
+
+    const newHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await db
+      .update(adminUsers)
+      .set({ passwordHash: newHash })
+      .where(eq(adminUsers.id, adminId));
+
+    // Revoke all sessions — force re-login with new password
+    await revokeAllSessions(adminId);
+
+    return true;
+  }
+
+  /**
    * Check if an admin has TOTP enabled.
    */
   async hasTotpEnabled(adminId: string): Promise<boolean> {

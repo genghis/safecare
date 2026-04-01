@@ -212,6 +212,52 @@ export default async function authRoutes(fastify: FastifyInstance) {
     },
   );
 
+  /**
+   * POST /api/auth/admin/change-password
+   * Change the admin's password. Requires current password. Revokes all sessions.
+   */
+  fastify.post(
+    '/api/auth/admin/change-password',
+    { preHandler: [fastify.requireAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parsed = z
+        .object({
+          currentPassword: z.string().min(1),
+          newPassword: z.string().min(8),
+        })
+        .safeParse(request.body);
+
+      if (!parsed.success) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Current password and new password (8+ chars) required',
+        });
+      }
+
+      const { currentPassword, newPassword } = parsed.data;
+      const changed = await authService.changePassword(
+        request.user.sub,
+        currentPassword,
+        newPassword,
+      );
+
+      if (!changed) {
+        logAdminAction('admin_login_failed', request, { action: 'password_change' });
+        return reply.code(401).send({
+          success: false,
+          error: 'Current password is incorrect',
+        });
+      }
+
+      logAdminAction('admin_logout', request, { action: 'password_changed_all_sessions_revoked' });
+
+      return reply.send({
+        success: true,
+        data: { changed: true, sessionsRevoked: true },
+      });
+    },
+  );
+
   // ---------------------------------------------------------------------------
   // TOTP two-factor authentication endpoints
   // ---------------------------------------------------------------------------

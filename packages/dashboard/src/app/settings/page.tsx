@@ -815,6 +815,9 @@ export default function SettingsPage() {
         {/* Two-Factor Authentication */}
         <TwoFactorSection />
 
+        {/* Change Password */}
+        <ChangePasswordSection />
+
         {/* System Updates */}
         <SystemUpdatesSection />
       </div>
@@ -825,6 +828,97 @@ export default function SettingsPage() {
 // ---------------------------------------------------------------------------
 // System Updates section
 // ---------------------------------------------------------------------------
+
+function ChangePasswordSection() {
+  const { t } = useLocale();
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    setError("");
+    setSuccess(false);
+
+    if (newPw.length < 8) {
+      setError(t('dashboard.setup.passwordTooShort'));
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setError(t('dashboard.setup.passwordsDoNotMatch'));
+      return;
+    }
+
+    setSaving(true);
+    const res = await apiPost<any>("/api/auth/admin/change-password", {
+      currentPassword: currentPw,
+      newPassword: newPw,
+    });
+
+    if (res.ok) {
+      setSuccess(true);
+      setCurrentPw("");
+      setNewPw("");
+      setConfirmPw("");
+      // All sessions revoked — will need to re-login shortly
+    } else {
+      setError(res.error || t('dashboard.settings.invalidPassword'));
+    }
+    setSaving(false);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">{t('dashboard.login.passwordLabel')}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {error && (
+          <div className="rounded-md bg-destructive/10 p-3 text-sm font-medium text-destructive">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-3 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+            Password changed. All sessions revoked — you will need to log in again.
+          </div>
+        )}
+        <div className="space-y-2 max-w-md">
+          <label className="text-sm font-medium">{t('dashboard.settings.enterPassword')}</label>
+          <Input
+            type="password"
+            value={currentPw}
+            onChange={(e) => setCurrentPw(e.target.value)}
+            placeholder={t('dashboard.settings.enterPassword')}
+          />
+        </div>
+        <div className="space-y-2 max-w-md">
+          <label className="text-sm font-medium">{t('dashboard.setup.password')}</label>
+          <Input
+            type="password"
+            value={newPw}
+            onChange={(e) => setNewPw(e.target.value)}
+            placeholder={t('dashboard.setup.passwordPlaceholder')}
+          />
+        </div>
+        <div className="space-y-2 max-w-md">
+          <label className="text-sm font-medium">{t('dashboard.setup.confirmPassword')}</label>
+          <Input
+            type="password"
+            value={confirmPw}
+            onChange={(e) => setConfirmPw(e.target.value)}
+            placeholder={t('dashboard.setup.confirmPasswordPlaceholder')}
+          />
+        </div>
+        <Button onClick={handleSubmit} disabled={saving || !currentPw || !newPw}>
+          {saving ? t('dashboard.common.saving') : t('dashboard.drivers.saveChanges')}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 function SystemUpdatesSection() {
   const { t } = useLocale();
