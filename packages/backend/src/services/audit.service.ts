@@ -31,7 +31,13 @@ export type AuditAction =
   | 'system_unlocked'
   | 'purge_confirmed'
   | 'hourly_purge'
-  | 'immediate_purge';
+  | 'immediate_purge'
+  | 'app_update_started'
+  | 'app_update_applied'
+  | 'app_update_failed'
+  | 'os_update_started'
+  | 'os_update_applied'
+  | 'os_update_failed';
 
 function getClientIp(request: FastifyRequest): string {
   const forwarded = request.headers['x-forwarded-for'];

@@ -114,7 +114,7 @@ services:
   #   docker volume rm docker_osrmdata && docker compose up -d osrm
   # ---------------------------------------------------------------------------
   osrm:
-    image: osrm/osrm-backend:latest
+    image: osrm/osrm-backend:v5.27.1
     container_name: safecare-osrm
     restart: unless-stopped
     ports:
@@ -144,7 +144,7 @@ services:
   # See full docs: https://github.com/bbernhard/signal-cli-rest-api
   # ---------------------------------------------------------------------------
   signal:
-    image: bbernhard/signal-cli-rest-api:latest
+    image: bbernhard/signal-cli-rest-api:0.80
     container_name: safecare-signal
     restart: unless-stopped
     ports:

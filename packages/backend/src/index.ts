@@ -19,6 +19,7 @@ import webhookRoutes from './routes/webhook.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import setupRoutes from './routes/setup.routes.js';
+import updateRoutes from './routes/update.routes.js';
 import { initQueues, closeQueues } from './jobs/index.js';
 
 async function main() {
@@ -52,6 +53,7 @@ async function main() {
   await fastify.register(settingsRoutes);
   await fastify.register(geocodeRoutes);
   await fastify.register(zoneRoutes);
+  await fastify.register(updateRoutes);
 
   // --- Routes that require DEK (PII encryption/decryption) ---
   // These return 423 Locked if the system hasn't been unlocked yet.
@@ -70,7 +72,8 @@ async function main() {
 
   // --- Health check ---
   fastify.get('/api/health', async () => {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+    const { SAFECARE_VERSION } = await import('@safecare/shared');
+    return { status: 'ok', version: SAFECARE_VERSION, timestamp: new Date().toISOString() };
   });
 
   // --- Background jobs ---

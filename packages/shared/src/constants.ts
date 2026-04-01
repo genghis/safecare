@@ -1,3 +1,9 @@
+/** SafeCare application version — source of truth for update checks */
+export const SAFECARE_VERSION = '0.1.0';
+
+/** GitHub repository for update checks */
+export const SAFECARE_REPO = 'jasontitus/safecare';
+
 /** Time-to-live for download tokens, in minutes */
 export const DEFAULT_DOWNLOAD_TOKEN_TTL_MINUTES = 5;
 
