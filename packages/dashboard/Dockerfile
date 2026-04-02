@@ -17,7 +17,9 @@ COPY --from=deps /app/packages/dashboard/node_modules ./packages/dashboard/node_
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY packages/shared ./packages/shared
 COPY packages/dashboard ./packages/dashboard
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
+# Build shared package first (dashboard imports from it)
+RUN cd packages/shared && npx tsc
 WORKDIR /app/packages/dashboard
 RUN pnpm build
 
