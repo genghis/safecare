@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, type SQL } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { drivers } from '../db/schema.js';
 import { config } from '../config.js';
@@ -26,21 +26,59 @@ export interface UpdateDriverProfileInput {
   deliveryZoneIds?: string[];
 }
 
-const driverSelectFields = {
-  id: drivers.id,
-  name: sql<string>`pgp_sym_decrypt(${drivers.nameEnc}::bytea, ${config.DEK})`,
-  phone: sql<string>`pgp_sym_decrypt(${drivers.phoneEnc}::bytea, ${config.DEK})`,
-  email: sql<string>`pgp_sym_decrypt(${drivers.emailEnc}::bytea, ${config.DEK})`,
-  vettedStatus: drivers.vettedStatus,
-  vehicleSize: drivers.vehicleSize,
-  vehicleModel: drivers.vehicleModel,
-  maxDeliveries: drivers.maxDeliveries,
-  languages: drivers.languages,
-  availability: drivers.availability,
-  deliveryZoneIds: drivers.deliveryZoneIds,
-  teamName: drivers.teamName,
-  createdAt: drivers.createdAt,
-};
+interface DriverRecord extends Record<string, unknown> {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  vettedStatus: VettedStatus | null;
+  vehicleSize: VehicleSize | null;
+  vehicleModel: string | null;
+  maxDeliveries: number | null;
+  languages: string[] | null;
+  availability: AvailabilitySlot[] | string | null;
+  deliveryZoneIds: string[] | null;
+  teamName: string | null;
+  createdAt: Date | null;
+}
+
+function driverSelectQuery(whereClause?: SQL) {
+  return sql<DriverRecord>`
+    SELECT
+      id,
+      pgp_sym_decrypt(name_enc::bytea, ${config.DEK}) AS name,
+      pgp_sym_decrypt(phone_enc::bytea, ${config.DEK}) AS phone,
+      CASE
+        WHEN email_enc IS NULL THEN NULL
+        ELSE pgp_sym_decrypt(email_enc::bytea, ${config.DEK})
+      END AS email,
+      vetted_status AS "vettedStatus",
+      vehicle_size AS "vehicleSize",
+      vehicle_model AS "vehicleModel",
+      max_deliveries AS "maxDeliveries",
+      languages,
+      availability,
+      delivery_zone_ids AS "deliveryZoneIds",
+      team_name AS "teamName",
+      created_at AS "createdAt"
+    FROM drivers
+    ${whereClause ? sql`WHERE ${whereClause}` : sql``}
+  `;
+}
+
+function normalizeDriverRow(row: DriverRecord): DriverRecord {
+  const availability =
+    typeof row.availability === 'string'
+      ? JSON.parse(row.availability) as AvailabilitySlot[]
+      : (row.availability ?? []);
+
+  return {
+    ...row,
+    languages: row.languages ?? [],
+    availability,
+    deliveryZoneIds: row.deliveryZoneIds ?? [],
+  };
+}
 
 export class DriverService {
   async create(data: CreateDriverInput): Promise<string> {
@@ -68,32 +106,23 @@ export class DriverService {
   }
 
   async findById(id: string) {
-    const rows = await db
-      .select(driverSelectFields)
-      .from(drivers)
-      .where(eq(drivers.id, id));
-
-    return rows[0] ?? null;
+    const rows = await db.execute<DriverRecord>(driverSelectQuery(sql`id = ${id}`));
+    return rows[0] ? normalizeDriverRow(rows[0]) : null;
   }
 
   async findByPhone(phone: string) {
-    const rows = await db
-      .select(driverSelectFields)
-      .from(drivers)
-      .where(
-        eq(
-          drivers.phoneHash,
-          sql`encode(hmac(${phone}, ${config.HMAC_KEY}, 'sha256'), 'hex')`,
-        ),
-      );
+    const rows = await db.execute<DriverRecord>(
+      driverSelectQuery(
+        sql`phone_hash = encode(hmac(${phone}, ${config.HMAC_KEY}, 'sha256'), 'hex')`,
+      ),
+    );
 
-    return rows[0] ?? null;
+    return rows[0] ? normalizeDriverRow(rows[0]) : null;
   }
 
   async list() {
-    return db
-      .select(driverSelectFields)
-      .from(drivers);
+    const rows = await db.execute<DriverRecord>(driverSelectQuery());
+    return rows.map(normalizeDriverRow);
   }
 
   async listAvailableForDay(day: string) {

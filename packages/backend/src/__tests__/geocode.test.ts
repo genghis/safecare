@@ -93,6 +93,13 @@ describe('GeocodeService', () => {
       );
     });
 
+    it('fails closed instead of falling back to a public geocoder', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
+
+      await expect(service.search('test')).rejects.toThrow('Connection refused');
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
     it('respects limit parameter', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,

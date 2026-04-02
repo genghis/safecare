@@ -10,7 +10,7 @@ A secure logistics platform for managing volunteer food deliveries to at-risk fa
 4. **Recipients** are notified in their language via Signal, SMS, or WhatsApp
 5. **After delivery**, all route data is automatically purged from devices and server
 
-All geocoding, routing, and maps are self-hosted. No addresses leave your network.
+Recipient addresses stay local: geocoding and routing run on your hardware, and delivered map tiles are served by the SafeCare server from local tile storage rather than loaded from third-party map CDNs at route time.
 
 ## Quick Start
 
@@ -99,6 +99,7 @@ Monthly operating cost: $0 (Signal only) to ~$6/mo (Twilio SMS).
 - **[tests/README.md](tests/README.md)** — Test suite documentation
 - **[docs/THREAT-MODEL.md](docs/THREAT-MODEL.md)** — Security threat analysis
 - **[docs/CLOUD-PROVISIONING.md](docs/CLOUD-PROVISIONING.md)** — Map provisioning architecture
+- **[docs/REMOTE-ACCESS.md](docs/REMOTE-ACCESS.md)** — Recommended Tailscale / Cloudflare deployment patterns
 - **[PLAN.md](PLAN.md)** — Product plan, security architecture, phased roadmap
 - **[SPEC.md](SPEC.md)** — Product specification
 

@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import { resolveDashboardApiBase } from "@/lib/api-base";
 
 interface ApiOptions extends RequestInit {
   token?: string;
@@ -11,19 +11,45 @@ interface ApiResponse<T> {
   error?: string;
 }
 
-function getToken(): string | null {
+function getSessionStorage(): Storage | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("safecare_token");
+  if (typeof window.sessionStorage?.getItem !== "function") return null;
+  return window.sessionStorage;
+}
+
+function getLegacyStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  if (typeof window.localStorage?.getItem !== "function") return null;
+  return window.localStorage;
+}
+
+export function getToken(): string | null {
+  const sessionStorage = getSessionStorage();
+  if (sessionStorage) {
+    const token = sessionStorage.getItem("safecare_token");
+    if (token) return token;
+  }
+
+  const legacyStorage = getLegacyStorage();
+  if (!legacyStorage) return null;
+  const legacyToken = legacyStorage.getItem("safecare_token");
+  if (legacyToken && sessionStorage) {
+    sessionStorage.setItem("safecare_token", legacyToken);
+    legacyStorage.removeItem("safecare_token");
+  }
+  return legacyToken;
 }
 
 export function setToken(token: string): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("safecare_token", token);
+  const sessionStorage = getSessionStorage();
+  if (!sessionStorage) return;
+  sessionStorage.setItem("safecare_token", token);
+  getLegacyStorage()?.removeItem("safecare_token");
 }
 
 export function clearToken(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem("safecare_token");
+  getSessionStorage()?.removeItem("safecare_token");
+  getLegacyStorage()?.removeItem("safecare_token");
 }
 
 export async function api<T = unknown>(
@@ -49,7 +75,7 @@ export async function api<T = unknown>(
   }
 
   try {
-    const response = await fetch(`${API_BASE}${path}`, {
+    const response = await fetch(`${resolveDashboardApiBase()}${path}`, {
       headers,
       ...rest,
     });

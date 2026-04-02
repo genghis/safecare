@@ -24,6 +24,10 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DOCKER_DIR="$PROJECT_DIR/docker"
 KEEP=false
 SKIP_RESET=false
+SAFECARE_TEST_DEK="${SAFECARE_TEST_DEK:-1111111111111111111111111111111111111111111111111111111111111111}"
+SAFECARE_SMOKE_ARTIFACT="${SAFECARE_SMOKE_ARTIFACT:-$SCRIPT_DIR/.artifacts/core-smoke.json}"
+export SAFECARE_TEST_DEK
+export SAFECARE_SMOKE_ARTIFACT
 
 for arg in "$@"; do
   case $arg in
@@ -73,7 +77,10 @@ if [ "$SKIP_RESET" = "false" ]; then
   # ---------------------------------------------------------------------------
 
   echo -e "${YELLOW}[2/6] Starting fresh Docker instance...${NC}"
-  docker compose up -d 2>&1 | grep -E "Started|Created|Running" | head -10
+  export ALLOW_TEST_OTP_ECHO=true
+  export SAFECARE_TEST_DEK
+  export SAFECARE_SMOKE_ARTIFACT
+  docker compose up -d
 
   # Wait for health
   echo "  Waiting for services..."
@@ -105,7 +112,7 @@ fi
 
 echo -e "${YELLOW}[3/6] Running Playwright browser tests...${NC}"
 cd "$SCRIPT_DIR"
-npx playwright test --config=playwright.config.ts 2>&1 | grep -E "✓|✗|×|passed|failed|Error" || true
+npx playwright test fresh-install.spec.ts --config=playwright.config.ts
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -113,7 +120,7 @@ echo ""
 # ---------------------------------------------------------------------------
 
 echo -e "${YELLOW}[4/6] Running E2E smoke tests...${NC}"
-"$PROJECT_DIR/tests/e2e-smoke.sh" 2>&1 | tail -5
+"$PROJECT_DIR/tests/e2e-smoke.sh"
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -121,7 +128,7 @@ echo ""
 # ---------------------------------------------------------------------------
 
 echo -e "${YELLOW}[5/6] Running security verification...${NC}"
-"$PROJECT_DIR/tests/security-verify.sh" 2>&1 | tail -5
+"$PROJECT_DIR/tests/security-verify.sh"
 echo ""
 
 # ---------------------------------------------------------------------------

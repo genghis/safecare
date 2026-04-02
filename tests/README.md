@@ -73,7 +73,7 @@ cd tests/integration && npx playwright test
 
 - Admin login
 - Pre-built manifest has 50+ states and metros
-- Geocoding endpoint (local + public fallback)
+- Geocoding endpoint (local only; no public fallback)
 - Reverse geocoding
 - Detroit metro in manifest (or Michigan state)
 - Create Detroit delivery zone (Midtown)

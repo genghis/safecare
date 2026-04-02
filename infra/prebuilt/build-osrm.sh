@@ -17,6 +17,7 @@ START_TIME=$(date +%s)
 BUILD_DATE=$(date -u +%Y-%m-%d)
 WORK="/build"
 PARALLEL=2
+OSRM_IMAGE="ghcr.io/project-osrm/osrm-backend:v6.0.0"
 
 # Get bucket from instance metadata
 BUCKET=$(curl -sf "http://metadata.google.internal/computeMetadata/v1/instance/attributes/bucket" \
@@ -39,7 +40,7 @@ apt-get install -y -qq docker.io osmium-tool python3 bc curl > /dev/null
 systemctl start docker
 
 echo "  Pulling OSRM Docker image..."
-docker pull osrm/osrm-backend:latest 2>/dev/null
+docker pull "$OSRM_IMAGE" 2>/dev/null
 
 # ---------------------------------------------------------------------------
 # State definitions
@@ -163,15 +164,15 @@ process_state() {
   cp "$pbf" "$osrm_dir/data.osm.pbf"
 
   echo "  [$state] extracting..."
-  docker run --rm -v "$osrm_dir:/data" osrm/osrm-backend:latest \
+  docker run --rm -v "$osrm_dir:/data" "$OSRM_IMAGE" \
     osrm-extract -p /opt/car.lua /data/data.osm.pbf -t 4 2>/dev/null
 
   echo "  [$state] partitioning..."
-  docker run --rm -v "$osrm_dir:/data" osrm/osrm-backend:latest \
+  docker run --rm -v "$osrm_dir:/data" "$OSRM_IMAGE" \
     osrm-partition /data/data.osrm 2>/dev/null
 
   echo "  [$state] customizing..."
-  docker run --rm -v "$osrm_dir:/data" osrm/osrm-backend:latest \
+  docker run --rm -v "$osrm_dir:/data" "$OSRM_IMAGE" \
     osrm-customize /data/data.osrm 2>/dev/null
 
   # Remove PBF from output
@@ -260,15 +261,15 @@ for m in metros:
     cp "$pbf" "$osrm_dir/data.osm.pbf"
 
     echo "  [metro:$metro_id] extracting..."
-    docker run --rm -v "$osrm_dir:/data" osrm/osrm-backend:latest \
+    docker run --rm -v "$osrm_dir:/data" "$OSRM_IMAGE" \
       osrm-extract -p /opt/car.lua /data/data.osm.pbf -t 4 2>/dev/null
 
     echo "  [metro:$metro_id] partitioning..."
-    docker run --rm -v "$osrm_dir:/data" osrm/osrm-backend:latest \
+    docker run --rm -v "$osrm_dir:/data" "$OSRM_IMAGE" \
       osrm-partition /data/data.osrm 2>/dev/null
 
     echo "  [metro:$metro_id] customizing..."
-    docker run --rm -v "$osrm_dir:/data" osrm/osrm-backend:latest \
+    docker run --rm -v "$osrm_dir:/data" "$OSRM_IMAGE" \
       osrm-customize /data/data.osrm 2>/dev/null
 
     rm -f "$osrm_dir/data.osm.pbf"

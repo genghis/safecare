@@ -25,7 +25,7 @@ export default function Login() {
     setLoading(true);
     try {
       const result = await requestOtp(phone);
-      // In dev/test mode, the OTP is returned in the response
+      // In explicit test mode, the OTP can be echoed for automated suites.
       if ((result as any)?.otp) {
         setDevOtp((result as any).otp);
       }
@@ -120,6 +120,7 @@ export default function Login() {
           </label>
           <input
             id="phone"
+            data-testid="driver-phone-input"
             className="input"
             type="tel"
             autoComplete="tel"
@@ -134,6 +135,7 @@ export default function Login() {
             style={{ marginTop: 28, minHeight: 56, fontSize: 18 }}
             onClick={handleRequestOtp}
             disabled={loading || phone.length < 10}
+            data-testid="driver-request-otp"
           >
             {loading ? <span className="spinner" /> : t('driver.login.sendCode')}
           </button>
@@ -145,7 +147,7 @@ export default function Login() {
           </label>
           <p className="hint">{t('driver.login.otpHint', { phone })}</p>
 
-          {/* Show OTP in dev mode */}
+          {/* Show OTP only when the backend is explicitly in test-echo mode */}
           {devOtp && (
             <div
               style={{
@@ -165,6 +167,7 @@ export default function Login() {
 
           <input
             id="otp"
+            data-testid="driver-otp-input"
             className="input"
             type="text"
             inputMode="numeric"
@@ -184,6 +187,7 @@ export default function Login() {
             style={{ marginTop: 28, minHeight: 56, fontSize: 18 }}
             onClick={handleVerifyOtp}
             disabled={loading || otpCode.length < 6}
+            data-testid="driver-verify-otp"
           >
             {loading ? <span className="spinner" /> : t('driver.login.verify')}
           </button>

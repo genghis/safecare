@@ -238,6 +238,27 @@ describe('AuthService — Driver OTP Authentication', () => {
       expect(entry.ttl).toBe(300);
       expect(entry.value).toMatch(/^\d{6}$/);
     });
+
+    it('can clear a pending OTP after a failed delivery attempt', async () => {
+      await authService.driverRequestOTP('+15551234567');
+      await authService.clearDriverOTP('+15551234567');
+
+      expect(Object.keys(redisStore)).toHaveLength(0);
+    });
+  });
+
+  describe('driverExists', () => {
+    it('returns true when a driver phone hash exists', async () => {
+      dbState.selectReturnValue = [{ id: 'driver-1' }];
+      const result = await authService.driverExists('+15551234567');
+      expect(result).toBe(true);
+    });
+
+    it('returns false when no matching driver exists', async () => {
+      dbState.selectReturnValue = [];
+      const result = await authService.driverExists('+15551234567');
+      expect(result).toBe(false);
+    });
   });
 
   // -----------------------------------------------------------------------

@@ -114,7 +114,7 @@ services:
   #   docker volume rm docker_osrmdata && docker compose up -d osrm
   # ---------------------------------------------------------------------------
   osrm:
-    image: osrm/osrm-backend:v5.27.1
+    image: ghcr.io/project-osrm/osrm-backend:v6.0.0
     container_name: safecare-osrm
     restart: unless-stopped
     ports:
@@ -123,7 +123,7 @@ services:
       - osrmdata:/data
       - ./nominatim-data:/osm
       - ./osrm-init.sh:/osrm-init.sh:ro
-    entrypoint: ["/bin/bash", "/osrm-init.sh"]
+    entrypoint: ["/bin/sh", "/osrm-init.sh"]
     shm_size: 512m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/nearest/v1/driving/-87.6298,41.8781"]
@@ -144,7 +144,7 @@ services:
   # See full docs: https://github.com/bbernhard/signal-cli-rest-api
   # ---------------------------------------------------------------------------
   signal:
-    image: bbernhard/signal-cli-rest-api:0.80
+    image: bbernhard/signal-cli-rest-api:latest
     container_name: safecare-signal
     restart: unless-stopped
     ports:
@@ -177,6 +177,7 @@ services:
       GEOCODING_URL: http://nominatim:8080
       OSRM_URL: http://osrm:5000
       SIGNAL_CLI_URL: http://signal:8080
+      ALLOW_TEST_OTP_ECHO: ${ALLOW_TEST_OTP_ECHO:-false}
 
   dashboard:
     build:
@@ -191,7 +192,6 @@ services:
     env_file:
       - ../.env
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001
       PORT: 3000
       HOSTNAME: "0.0.0.0"
 
@@ -207,8 +207,6 @@ services:
     restart: unless-stopped
     ports:
       - "5173:5173"
-    environment:
-      VITE_API_URL: http://localhost:3001
 
 volumes:
   pgdata:

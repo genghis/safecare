@@ -3,6 +3,8 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { authService } from '../services/auth.service.js';
 import { logAdminAction } from '../services/audit.service.js';
+import { notificationService } from '../services/notification.service.js';
+import { config } from '../config.js';
 import { db } from '../db/index.js';
 import { adminUsers } from '../db/schema.js';
 
@@ -27,7 +29,9 @@ const verifyOtpSchema = z.object({
 
 const totpVerifyLoginSchema = z.object({
   tempToken: z.string().min(1),
-  totpCode: z.string().length(6),
+  totpCode: z
+    .string()
+    .regex(/^(\d{6}|[a-fA-F0-9]{8})$/, 'Enter a 6-digit code or 8-character backup code'),
 });
 
 const totpEnableSchema = z.object({
@@ -139,16 +143,36 @@ export default async function authRoutes(fastify: FastifyInstance) {
       }
 
       const { phone } = parsed.data;
-      const otp = await authService.driverRequestOTP(phone);
+      const driverExists = await authService.driverExists(phone);
+      if (!driverExists) {
+        return reply.send({
+          success: true,
+          data: { sent: true },
+        });
+      }
 
-      // Send OTP via configured notification channels
-      // TODO: actually send via SMS/Signal when configured
-      // For now, always return OTP in response for testing
-      const responseData: Record<string, any> = { sent: true, otp };
+      const otp = await authService.driverRequestOTP(phone);
+      const testEchoRequested = request.headers['x-safecare-test-otp'] === '1';
+
+      if (config.ALLOW_TEST_OTP_ECHO && testEchoRequested) {
+        return reply.send({
+          success: true,
+          data: { sent: true, otp },
+        });
+      }
+
+      const delivery = await notificationService.sendOneTimeCode(phone, otp);
+      if (!delivery.success) {
+        await authService.clearDriverOTP(phone);
+        return reply.code(503).send({
+          success: false,
+          error: 'OTP delivery is not configured securely',
+        });
+      }
 
       return reply.send({
         success: true,
-        data: responseData,
+        data: { sent: true },
       });
     },
   );

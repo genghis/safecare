@@ -3,12 +3,8 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
+import { apiGet, getToken } from "@/lib/api";
 import { LocaleProvider } from "@/lib/locale";
-
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("safecare_token");
-}
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -22,16 +18,44 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     pathname === "/unlock";
 
   useEffect(() => {
-    if (noAuth) {
-      setAuthChecked(true);
-      return;
-    }
-    // Protected pages: require a token
-    if (!getToken()) {
+    let cancelled = false;
+
+    async function checkAccess() {
+      if (noAuth) {
+        if (!cancelled) setAuthChecked(true);
+        return;
+      }
+
+      const token = getToken();
+      if (token) {
+        if (!cancelled) setAuthChecked(true);
+        return;
+      }
+
+      // Fresh installs must reach unlock/setup before normal auth gating.
+      const setupRes = await apiGet<any>("/api/setup/status");
+      if (cancelled) return;
+
+      if (setupRes.ok) {
+        if (setupRes.data?.locked) {
+          router.replace("/unlock");
+          return;
+        }
+        if (!setupRes.data?.setupComplete) {
+          router.replace("/setup");
+          return;
+        }
+      }
+
       router.replace("/login");
-      return;
     }
-    setAuthChecked(true);
+
+    setAuthChecked(false);
+    void checkAccess();
+
+    return () => {
+      cancelled = true;
+    };
   }, [pathname, noAuth, router]);
 
   if (noAuth) {

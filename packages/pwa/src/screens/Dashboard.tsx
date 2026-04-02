@@ -553,6 +553,7 @@ export default function Dashboard() {
             </p>
             <button
               className="btn btn-primary btn-lg"
+              data-testid="driver-check-in"
               onClick={handleCheckIn}
               disabled={loading}
               style={{ margin: "0 auto" }}
@@ -579,6 +580,7 @@ export default function Dashboard() {
             </p>
             <button
               className="btn btn-secondary"
+              data-testid="driver-check-routes"
               onClick={handlePollAndDownload}
               disabled={refreshing}
               style={{ margin: "0 auto", minWidth: 200 }}

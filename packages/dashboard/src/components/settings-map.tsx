@@ -1,22 +1,9 @@
 "use client";
 
-import L from "leaflet";
 import { MapContainer, TileLayer, useMapEvents, useMap } from "react-leaflet";
 import { useEffect } from "react";
 import "leaflet/dist/leaflet.css";
-
-// Fix default marker icons
-if (typeof window !== "undefined") {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl:
-      "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    shadowUrl:
-      "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  });
-}
+import { resolveDashboardTileUrlTemplate } from "@/lib/api-base";
 
 export interface SettingsMapBounds {
   south: number;
@@ -75,6 +62,8 @@ export default function SettingsMap({
   zoom,
   onBoundsChange,
 }: SettingsMapProps) {
+  const tileUrlTemplate = resolveDashboardTileUrlTemplate();
+
   return (
     <div className="relative w-full h-[400px] rounded-md overflow-hidden">
       <MapContainer
@@ -83,10 +72,7 @@ export default function SettingsMap({
         className="w-full h-full"
         style={{ width: "100%", height: "100%" }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer attribution="SafeCare tile cache" url={tileUrlTemplate} />
         <BoundsTracker onBoundsChange={onBoundsChange} />
         <RecenterMap lat={lat} lng={lng} zoom={zoom} />
       </MapContainer>

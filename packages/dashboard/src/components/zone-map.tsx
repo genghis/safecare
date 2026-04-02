@@ -2,15 +2,9 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import L from "leaflet";
-import {
-  MapContainer,
-  TileLayer,
-  Polygon,
-  Marker,
-  useMapEvents,
-  useMap,
-} from "react-leaflet";
+import { MapContainer, TileLayer, Polygon, Marker, useMapEvents, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { resolveDashboardTileUrlTemplate } from "@/lib/api-base";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -37,22 +31,6 @@ export interface ZoneMapProps {
   onAddPoint: (lat: number, lng: number) => void;
   onUpdatePoints: (points: ZonePoint[]) => void;
   defaultCenter?: { lat: number; lng: number; zoom: number };
-}
-
-// ---------------------------------------------------------------------------
-// Fix default marker icon paths (Leaflet + bundler issue)
-// Must be inside a check so Next.js build doesn't blow up.
-// ---------------------------------------------------------------------------
-
-if (typeof window !== "undefined") {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl:
-      "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -165,6 +143,8 @@ export default function ZoneMap({
   onUpdatePoints,
   defaultCenter,
 }: ZoneMapProps) {
+  const tileUrlTemplate = resolveDashboardTileUrlTemplate();
+
   function handleVertexDrag(index: number, lat: number, lng: number) {
     const updated = editingPoints.map((p, i) =>
       i === index ? { lat, lng } : p
@@ -185,10 +165,7 @@ export default function ZoneMap({
         className="w-full h-full"
         style={{ width: "100%", height: "100%" }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer attribution="SafeCare tile cache" url={tileUrlTemplate} />
         <ClickHandler onAddPoint={onAddPoint} />
         <FitBounds zones={zones} editingPoints={editingPoints} />
 

@@ -406,9 +406,18 @@ JOTFORM_API_KEY=
 PORT=3001
 HOST=0.0.0.0
 NODE_ENV=production
+# Optional upstream source for missing tiles. Leave blank when tiles are
+# preloaded on the appliance and should be served locally only.
+TILE_DOWNLOAD_URL_TEMPLATE=
+TILE_DOWNLOAD_SUBDOMAINS=
+TILE_MIN_ZOOM=12
+TILE_MAX_ZOOM=16
 
-# Dashboard
-NEXT_PUBLIC_API_URL=http://localhost:3001
+# Frontend overrides (usually left blank; the apps derive from the current host)
+NEXT_PUBLIC_API_URL=
+NEXT_PUBLIC_TILE_URL_TEMPLATE=
+VITE_API_URL=
+VITE_TILE_URL_TEMPLATE=
 """
 
 

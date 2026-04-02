@@ -40,6 +40,12 @@ export interface TileBounds {
   east: number;
 }
 
+export interface TileCoordinate {
+  z: number;
+  x: number;
+  y: number;
+}
+
 export class RoutingService {
   /**
    * Call the OSRM server to compute a driving route through the given stops.
@@ -110,30 +116,92 @@ export class RoutingService {
   }
 
   /**
-   * Compute all OSM tile URLs needed to cover the bounding box at the
-   * specified zoom levels. Used by the PWA for offline tile pre-caching.
+   * Compute the tile coordinates needed to cover the bounding box at the
+   * specified zoom levels.
    */
-  getTileUrls(bounds: TileBounds, minZoom = 12, maxZoom = 16): string[] {
-    const subdomains = ['a', 'b', 'c'];
-    const urls: string[] = [];
-    let subdomainIdx = 0;
+  getTileCoordinates(
+    bounds: TileBounds,
+    minZoom = config.TILE_MIN_ZOOM,
+    maxZoom = config.TILE_MAX_ZOOM,
+  ): TileCoordinate[] {
+    const coordinates: TileCoordinate[] = [];
 
     for (let z = minZoom; z <= maxZoom; z++) {
-      const xMin = this.lngToTileX(bounds.west, z);
-      const xMax = this.lngToTileX(bounds.east, z);
-      const yMin = this.latToTileY(bounds.north, z); // north = smaller y
-      const yMax = this.latToTileY(bounds.south, z); // south = larger y
+      const { xMin, xMax, yMin, yMax } = this.getTileRange(bounds, z);
 
       for (let x = xMin; x <= xMax; x++) {
         for (let y = yMin; y <= yMax; y++) {
-          const s = subdomains[subdomainIdx % subdomains.length];
-          subdomainIdx++;
-          urls.push(`https://${s}.tile.openstreetmap.org/${z}/${x}/${y}.png`);
+          coordinates.push({ z, x, y });
         }
       }
     }
 
+    return coordinates;
+  }
+
+  /**
+   * Compute all tile URLs needed to cover the bounding box at the specified
+   * zoom levels. Used by the PWA for offline tile pre-caching.
+   */
+  getTileUrls(
+    bounds: TileBounds,
+    minZoom = config.TILE_MIN_ZOOM,
+    maxZoom = config.TILE_MAX_ZOOM,
+    template = config.TILE_URL_TEMPLATE,
+  ): string[] {
+    if (!template) {
+      return [];
+    }
+
+    const subdomains = config.TILE_SUBDOMAINS.length > 0 ? config.TILE_SUBDOMAINS : ['a', 'b', 'c'];
+    let subdomainIdx = 0;
+
+    const urls: string[] = [];
+    for (const { z, x, y } of this.getTileCoordinates(bounds, minZoom, maxZoom)) {
+      const s = subdomains[subdomainIdx % subdomains.length];
+      subdomainIdx++;
+      urls.push(
+        template
+          .replaceAll('{s}', s)
+          .replaceAll('{z}', String(z))
+          .replaceAll('{x}', String(x))
+          .replaceAll('{y}', String(y)),
+      );
+    }
+
     return urls;
+  }
+
+  boundsIncludeTile(
+    bounds: TileBounds,
+    z: number,
+    x: number,
+    y: number,
+    paddingDegrees = 0.05,
+  ): boolean {
+    const expandedBounds = {
+      south: bounds.south - paddingDegrees,
+      west: bounds.west - paddingDegrees,
+      north: bounds.north + paddingDegrees,
+      east: bounds.east + paddingDegrees,
+    };
+    const { xMin, xMax, yMin, yMax } = this.getTileRange(expandedBounds, z);
+
+    return x >= xMin && x <= xMax && y >= yMin && y <= yMax;
+  }
+
+  private getTileRange(bounds: TileBounds, zoom: number): {
+    xMin: number;
+    xMax: number;
+    yMin: number;
+    yMax: number;
+  } {
+    return {
+      xMin: this.lngToTileX(bounds.west, zoom),
+      xMax: this.lngToTileX(bounds.east, zoom),
+      yMin: this.latToTileY(bounds.north, zoom), // north = smaller y
+      yMax: this.latToTileY(bounds.south, zoom), // south = larger y
+    };
   }
 
   /**

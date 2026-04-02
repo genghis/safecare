@@ -5,6 +5,7 @@ import json, subprocess, os
 WORK = "/build"
 BUCKET = "safecare-maps-osrm"
 US_PBF = f"{WORK}/us-latest.osm.pbf"
+OSRM_IMAGE = "ghcr.io/project-osrm/osrm-backend:v6.0.0"
 
 with open(f"{WORK}/metros.json") as f:
     metros = json.load(f)["metros"]
@@ -41,7 +42,7 @@ for m in metros:
                   "osrm-partition /data/data.osrm",
                   "osrm-customize /data/data.osrm"]:
         subprocess.run(["docker", "run", "--rm", "-v", f"{osrm_dir}:/data",
-                       "osrm/osrm-backend:latest"] + step.split(),
+                       OSRM_IMAGE] + step.split(),
                        capture_output=True)
 
     os.remove(f"{osrm_dir}/data.osm.pbf")

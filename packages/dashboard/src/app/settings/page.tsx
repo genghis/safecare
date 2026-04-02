@@ -11,7 +11,8 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { apiGet, apiPut, apiPost } from "@/lib/api";
+import { apiGet, apiPut, apiPost, getToken, clearToken } from "@/lib/api";
+import { resolveDashboardApiBase } from "@/lib/api-base";
 import { useLocale } from "@/lib/locale";
 
 // ---------------------------------------------------------------------------
@@ -281,6 +282,225 @@ function TwoFactorSection() {
             </div>
           </form>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function extractFilename(contentDisposition: string | null): string | null {
+  if (!contentDisposition) return null;
+  const match = contentDisposition.match(/filename="([^"]+)"/i);
+  return match?.[1] ?? null;
+}
+
+async function saveBackupBlob(blob: Blob, suggestedName: string): Promise<boolean> {
+  const savePicker = (
+    window as Window & {
+      showSaveFilePicker?: (options?: {
+        suggestedName?: string;
+        types?: Array<{
+          description?: string;
+          accept: Record<string, string[]>;
+        }>;
+      }) => Promise<{
+        createWritable: () => Promise<{
+          write: (data: Blob) => Promise<void>;
+          close: () => Promise<void>;
+        }>;
+      }>;
+    }
+  ).showSaveFilePicker;
+
+  if (savePicker) {
+    try {
+      const handle = await savePicker({
+        suggestedName,
+        types: [
+          {
+            description: "SafeCare encrypted backup",
+            accept: {
+              "application/octet-stream": [".scbackup"],
+            },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return true;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = suggestedName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+  return true;
+}
+
+function BackupExportSection() {
+  const [passphrase, setPassphrase] = useState("");
+  const [confirmPassphrase, setConfirmPassphrase] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handleExport = async () => {
+    setError("");
+    setSuccess("");
+
+    if (passphrase.length < 12) {
+      setError("Use a passphrase with at least 12 characters.");
+      return;
+    }
+
+    if (passphrase !== confirmPassphrase) {
+      setError("The passphrases do not match.");
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      setError("Your session has expired. Please log in again.");
+      return;
+    }
+
+    setExporting(true);
+
+    try {
+      const response = await fetch(
+        `${resolveDashboardApiBase()}/api/settings/export-backup`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ passphrase }),
+        },
+      );
+
+      if (response.status === 401) {
+        clearToken();
+        window.location.replace("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        setError(body?.error || "Failed to create encrypted backup.");
+        return;
+      }
+
+      const blob = await response.blob();
+      const filename =
+        extractFilename(response.headers.get("content-disposition")) ||
+        "safecare-backup.scbackup";
+      const saved = await saveBackupBlob(blob, filename);
+
+      if (!saved) {
+        return;
+      }
+
+      setSuccess(
+        "Encrypted backup saved. Put the file on a USB drive and keep the passphrase somewhere separate.",
+      );
+      setPassphrase("");
+      setConfirmPassphrase("");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to create encrypted backup.",
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Encrypted Backup</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Download a single encrypted backup file before reinstalling or moving
+          the server. This is meant to be saved off-device, ideally to a USB
+          drive.
+        </p>
+        <div className="rounded-md border bg-muted/40 p-4 text-sm text-muted-foreground space-y-1">
+          <p>
+            Includes organization settings, admin accounts, recipients, drivers,
+            zones, dispatch sessions, deliveries, and driver check-ins.
+          </p>
+          <p>
+            Map tiles and other reprovisioned system files are not included in
+            this backup.
+          </p>
+          <p>
+            Anyone with both the backup file and this passphrase can read the
+            exported data.
+          </p>
+        </div>
+
+        {error && (
+          <div
+            className="rounded-md bg-destructive/10 p-3 text-sm font-medium text-destructive"
+            data-testid="settings-backup-error"
+          >
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div
+            className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-700"
+            data-testid="settings-backup-success"
+          >
+            {success}
+          </div>
+        )}
+
+        <div className="space-y-2 max-w-md">
+          <label className="text-sm font-medium">Backup passphrase</label>
+          <Input
+            data-testid="settings-backup-passphrase"
+            type="password"
+            value={passphrase}
+            onChange={(e) => setPassphrase(e.target.value)}
+            placeholder="Choose a strong passphrase"
+          />
+          <p className="text-xs text-muted-foreground">
+            SafeCare cannot recover this passphrase for you later.
+          </p>
+        </div>
+
+        <div className="space-y-2 max-w-md">
+          <label className="text-sm font-medium">Confirm passphrase</label>
+          <Input
+            data-testid="settings-backup-confirm"
+            type="password"
+            value={confirmPassphrase}
+            onChange={(e) => setConfirmPassphrase(e.target.value)}
+            placeholder="Re-enter the same passphrase"
+          />
+        </div>
+
+        <Button
+          data-testid="settings-backup-download"
+          onClick={handleExport}
+          disabled={exporting || !passphrase || !confirmPassphrase}
+        >
+          {exporting ? "Preparing backup..." : "Download Encrypted Backup"}
+        </Button>
       </CardContent>
     </Card>
   );
@@ -817,6 +1037,9 @@ export default function SettingsPage() {
 
         {/* Change Password */}
         <ChangePasswordSection />
+
+        {/* Encrypted Backup */}
+        <BackupExportSection />
 
         {/* System Updates */}
         <SystemUpdatesSection />

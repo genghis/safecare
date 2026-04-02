@@ -4,6 +4,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../config.js', () => ({
   config: {
     OSRM_URL: 'http://osrm.test:5000',
+    TILE_URL_TEMPLATE: 'https://tiles.internal/{z}/{x}/{y}.png',
+    TILE_SUBDOMAINS: ['a', 'b', 'c'],
+    TILE_MIN_ZOOM: 12,
+    TILE_MAX_ZOOM: 16,
   },
 }));
 
@@ -12,6 +16,7 @@ const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
 const { RoutingService } = await import('../services/routing.service.js');
+const { config } = await import('../config.js');
 
 describe('RoutingService', () => {
   let service: InstanceType<typeof RoutingService>;
@@ -19,6 +24,7 @@ describe('RoutingService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service = new RoutingService();
+    config.TILE_URL_TEMPLATE = 'https://tiles.internal/{z}/{x}/{y}.png';
   });
 
   describe('getRoute', () => {
@@ -139,9 +145,7 @@ describe('RoutingService', () => {
 
       expect(urls.length).toBeGreaterThan(0);
       urls.forEach((url: string) => {
-        expect(url).toMatch(
-          /^https:\/\/[abc]\.tile\.openstreetmap\.org\/14\/\d+\/\d+\.png$/,
-        );
+        expect(url).toMatch(/^https:\/\/tiles\.internal\/14\/\d+\/\d+\.png$/);
       });
     });
 
@@ -159,11 +163,57 @@ describe('RoutingService', () => {
       expect(z15.length).toBeGreaterThan(z14.length);
     });
 
+    it('can target the local SafeCare tile endpoint', () => {
+      const bounds = {
+        south: 41.85,
+        west: -87.65,
+        north: 41.90,
+        east: -87.60,
+      };
+
+      const urls = service.getTileUrls(
+        bounds,
+        14,
+        14,
+        'https://office.example.org/api/tiles/{z}/{x}/{y}.png',
+      );
+
+      expect(urls.length).toBeGreaterThan(0);
+      urls.forEach((url: string) => {
+        expect(url).toMatch(/^https:\/\/office\.example\.org\/api\/tiles\/14\/\d+\/\d+\.png$/);
+      });
+    });
+
     it('returns empty for empty bounds', () => {
+      config.TILE_URL_TEMPLATE = '';
       const bounds = { south: 0, west: 0, north: 0, east: 0 };
       const urls = service.getTileUrls(bounds, 14, 14);
-      // At zoom 14, a point will still generate at least one tile
-      expect(urls.length).toBeGreaterThanOrEqual(1);
+      expect(urls).toEqual([]);
+    });
+  });
+
+  describe('boundsIncludeTile', () => {
+    it('accepts tiles within the configured operating region', () => {
+      const bounds = {
+        south: 41.85,
+        west: -87.65,
+        north: 41.90,
+        east: -87.60,
+      };
+      const [tile] = service.getTileCoordinates(bounds, 14, 14);
+
+      expect(service.boundsIncludeTile(bounds, tile.z, tile.x, tile.y)).toBe(true);
+    });
+
+    it('rejects tiles far outside the configured operating region', () => {
+      const bounds = {
+        south: 41.85,
+        west: -87.65,
+        north: 41.90,
+        east: -87.60,
+      };
+
+      expect(service.boundsIncludeTile(bounds, 14, 0, 0)).toBe(false);
     });
   });
 });

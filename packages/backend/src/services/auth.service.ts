@@ -315,6 +315,23 @@ export class AuthService {
   }
 
   /**
+   * Check whether a driver exists for the given phone number.
+   */
+  async driverExists(phone: string): Promise<boolean> {
+    const rows = await db
+      .select({ id: drivers.id })
+      .from(drivers)
+      .where(
+        eq(
+          drivers.phoneHash,
+          sql`encode(hmac(${phone}, ${config.HMAC_KEY}, 'sha256'), 'hex')`,
+        ),
+      );
+
+    return rows.length > 0;
+  }
+
+  /**
    * Generate and store an OTP for a driver phone number.
    * Returns the OTP (in production, this would be sent via SMS).
    */
@@ -328,6 +345,15 @@ export class AuthService {
     await redis.setex(`${OTP_PREFIX}${phoneHash}`, OTP_TTL_SECONDS, otp);
 
     return otp;
+  }
+
+  async clearDriverOTP(phone: string): Promise<void> {
+    const phoneHash = crypto
+      .createHmac('sha256', config.HMAC_KEY)
+      .update(phone)
+      .digest('hex');
+
+    await redis.del(`${OTP_PREFIX}${phoneHash}`);
   }
 
   /**

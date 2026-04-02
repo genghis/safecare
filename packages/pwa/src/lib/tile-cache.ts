@@ -1,5 +1,5 @@
 /**
- * OSM tile pre-caching for offline map navigation.
+ * SafeCare map tile pre-caching for offline navigation.
  *
  * Uses the Cache API to store tile images so the service worker can serve
  * them when the device is offline. Tiles are downloaded in batches to avoid
@@ -12,7 +12,7 @@ const TILE_CACHE_NAME = "safecare-tiles-v1";
 const BATCH_SIZE = 10;
 
 /**
- * Pre-cache a list of OSM tile URLs into the Cache API.
+ * Pre-cache a list of SafeCare-served tile URLs into the Cache API.
  *
  * Downloads tiles in batches of {@link BATCH_SIZE} to avoid overwhelming
  * the network. Failed tiles are silently skipped so one bad URL does not

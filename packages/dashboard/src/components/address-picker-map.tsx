@@ -2,16 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import L from "leaflet";
-import {
-  MapContainer,
-  TileLayer,
-  Polygon,
-  Marker,
-  useMapEvents,
-  useMap,
-} from "react-leaflet";
+import { MapContainer, TileLayer, Polygon, Marker, useMapEvents, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { apiPost } from "@/lib/api";
+import { resolveDashboardTileUrlTemplate } from "@/lib/api-base";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,22 +40,6 @@ export interface AddressPickerMapProps {
   onAddressChange: (address: string) => void;
   zones?: Zone[];
   defaultCenter?: { lat: number; lng: number; zoom: number };
-}
-
-// ---------------------------------------------------------------------------
-// Fix default marker icons
-// ---------------------------------------------------------------------------
-
-if (typeof window !== "undefined") {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl:
-      "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    shadowUrl:
-      "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -161,6 +139,7 @@ export default function AddressPickerMap({
   zones = [],
   defaultCenter,
 }: AddressPickerMapProps) {
+  const tileUrlTemplate = resolveDashboardTileUrlTemplate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -303,10 +282,7 @@ export default function AddressPickerMap({
           className="w-full h-full"
           style={{ width: "100%", height: "100%" }}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <TileLayer attribution="SafeCare tile cache" url={tileUrlTemplate} />
           <ClickHandler onMapClick={handleMapClick} />
           <FitToPoint lat={lat} lng={lng} />
           <FlyToPoint lat={lat} lng={lng} trigger={flyTrigger} />
@@ -338,8 +314,6 @@ export default function AddressPickerMap({
             />
           )}
         </MapContainer>
-
-        {/* Instruction */}
         {lat === null && (
           <div className="absolute top-2 left-12 z-[1000] bg-background/80 backdrop-blur-sm text-xs px-3 py-1.5 rounded-md border shadow-sm pointer-events-none">
             Search above or click the map to set the delivery location.

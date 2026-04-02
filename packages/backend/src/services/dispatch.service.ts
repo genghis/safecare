@@ -1,4 +1,4 @@
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import crypto from 'crypto';
 import { db } from '../db/index.js';
 import {
@@ -81,7 +81,8 @@ export class DispatchService {
       .from(dispatchSessions)
       .where(
         sql`${dispatchSessions.status} IN ('draft', 'active')`,
-      );
+      )
+      .orderBy(desc(dispatchSessions.createdAt));
 
     return rows[0] ?? null;
   }

@@ -59,9 +59,11 @@ if [[ ! "$backup_answer" =~ ^[Yy]$ ]]; then
 fi
 
 # ---- Read current DEK -----------------------------------------------------
-CURRENT_DEK=$(grep '^DEK=' "$ENV_FILE" | cut -d'=' -f2)
-if [[ -z "$CURRENT_DEK" ]]; then
-  warn "No current DEK found in .env"
+echo -e "${YELLOW}The current DEK is no longer stored in .env by default.${NC}"
+read -rp "Enter the CURRENT DEK (64 hex chars), or leave blank if unknown: " CURRENT_DEK
+if [[ -n "$CURRENT_DEK" ]] && [[ ! "$CURRENT_DEK" =~ ^[0-9a-fA-F]{64}$ ]]; then
+  err "Current DEK must be 64 hex characters."
+  exit 1
 fi
 
 # ---- Generate new DEK -----------------------------------------------------
@@ -78,21 +80,15 @@ if [[ ! "$proceed" =~ ^[Yy]$ ]]; then
   exit 0
 fi
 
-# ---- Update .env ----------------------------------------------------------
-if [[ -n "$CURRENT_DEK" ]]; then
-  sed -i "s/^DEK=.*/DEK=$NEW_DEK/" "$ENV_FILE"
-else
-  echo "DEK=$NEW_DEK" >> "$ENV_FILE"
-fi
-ok "Updated DEK in .env"
-
 # ---- Instructions ---------------------------------------------------------
 echo ""
 echo -e "${BOLD}----------------------------------------${NC}"
-echo -e "${GREEN}${BOLD}  DEK updated in .env${NC}"
+echo -e "${GREEN}${BOLD}  New DEK generated${NC}"
 echo -e "${BOLD}----------------------------------------${NC}"
 echo ""
 echo -e "${BOLD}Next steps to complete the rotation:${NC}"
+echo ""
+echo -e "  New DEK (store securely, not in .env): ${BOLD}$NEW_DEK${NC}"
 echo ""
 echo -e "  1. Run the re-encryption migration:"
 echo -e "     ${BLUE}pnpm db:reencrypt --old-dek $CURRENT_DEK${NC}"

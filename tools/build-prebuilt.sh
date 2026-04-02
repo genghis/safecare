@@ -35,6 +35,7 @@ shift || true
 STATES=("$@")
 
 GEOFABRIK_BASE="https://download.geofabrik.de/north-america/us"
+OSRM_IMAGE="ghcr.io/project-osrm/osrm-backend:v6.0.0"
 
 # All 50 states + DC with bounding boxes [south, west, north, east]
 declare -A STATE_BOUNDS=(
@@ -157,11 +158,11 @@ json.dump(regions, sys.stdout)
   mkdir -p "$OSRM_DIR"
   cp "$PBF_FILE" "$OSRM_DIR/data.osm.pbf"
 
-  docker run --rm -v "$OSRM_DIR:/data" osrm/osrm-backend:latest \
+  docker run --rm -v "$OSRM_DIR:/data" "$OSRM_IMAGE" \
     osrm-extract -p /opt/car.lua /data/data.osm.pbf -t 4 2>/dev/null
-  docker run --rm -v "$OSRM_DIR:/data" osrm/osrm-backend:latest \
+  docker run --rm -v "$OSRM_DIR:/data" "$OSRM_IMAGE" \
     osrm-partition /data/data.osrm 2>/dev/null
-  docker run --rm -v "$OSRM_DIR:/data" osrm/osrm-backend:latest \
+  docker run --rm -v "$OSRM_DIR:/data" "$OSRM_IMAGE" \
     osrm-customize /data/data.osrm 2>/dev/null
   rm -f "$OSRM_DIR/data.osm.pbf"
 

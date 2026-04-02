@@ -1,17 +1,26 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { authService } from '../services/auth.service.js';
-import { logAdminAction } from '../services/audit.service.js';
+import { logAdminAction, logSystemAction } from '../services/audit.service.js';
 import { provisionService } from '../services/provision.service.js';
 import Redis from 'ioredis';
 import { config, setDEK, isUnlocked } from '../config.js';
 import { db } from '../db/index.js';
 import { sql } from 'drizzle-orm';
+import { backupService } from '../services/backup.service.js';
 
 const redis = new Redis(config.REDIS_URL);
 
 const unlockSchema = z.object({
   dek: z.string().regex(/^[0-9a-f]{64}$/i, 'DEK must be 64 hex characters'),
+});
+
+const importBackupSchema = z.object({
+  passphrase: z
+    .string()
+    .min(12, 'Passphrase must be at least 12 characters long.')
+    .max(256, 'Passphrase is too long.'),
+  backup: z.string().min(1, 'Backup file is required.'),
 });
 
 export default async function setupRoutes(fastify: FastifyInstance) {
@@ -164,6 +173,67 @@ export default async function setupRoutes(fastify: FastifyInstance) {
         success: true,
         data: { unlocked: true },
       });
+    },
+  );
+
+  /**
+   * POST /api/setup/import-backup
+   * Restore an encrypted SafeCare backup during a fresh setup.
+   */
+  fastify.post(
+    '/api/setup/import-backup',
+    {
+      preHandler: [fastify.requireUnlocked],
+      bodyLimit: 50 * 1024 * 1024,
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parsed = importBackupSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid request body',
+          details: parsed.error.issues,
+        });
+      }
+
+      const adminExists = await authService.adminExists();
+      if (adminExists) {
+        return reply.code(409).send({
+          success: false,
+          error: 'Backup import is only available before the first admin account is created.',
+        });
+      }
+
+      try {
+        const result = await backupService.importEncryptedBackup(
+          parsed.data.backup,
+          parsed.data.passphrase,
+        );
+
+        await logSystemAction('backup_imported', {
+          recipientCount: result.summary.recipientCount,
+          driverCount: result.summary.driverCount,
+          zoneCount: result.summary.zoneCount,
+          dispatchSessionCount: result.summary.dispatchSessionCount,
+          deliveryCount: result.summary.deliveryCount,
+          checkInCount: result.summary.checkInCount,
+        });
+
+        return reply.send({
+          success: true,
+          data: {
+            restored: true,
+            requiresMapProvisioning: result.requiresMapProvisioning,
+            summary: result.summary,
+          },
+        });
+      } catch (err) {
+        request.log.error({ err }, 'Failed to import encrypted backup');
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid backup file or passphrase.',
+        });
+      }
     },
   );
 }

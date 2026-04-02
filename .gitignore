@@ -21,6 +21,9 @@ scripts/rpi/build/output/
 *.img
 *.img.xz
 docker/nominatim-data/
+tests/integration/.artifacts/
+tests/integration/playwright-report/
+tests/integration/test-results/
 
 # Terraform
 infra/**/.terraform/
