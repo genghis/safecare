@@ -85,6 +85,7 @@ export default function BackupKeyOverlay({
 
         <button
           onClick={onDismiss}
+          data-testid="driver-backup-dismiss"
           style={{
             width: "100%",
             padding: "16px",

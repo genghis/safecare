@@ -32,6 +32,7 @@ export default function DeliveryCard({ delivery, onPress }: DeliveryCardProps) {
   return (
     <button
       className="card"
+      data-testid="delivery-card"
       onClick={onPress}
       style={{
         display: "flex",

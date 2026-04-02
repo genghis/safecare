@@ -196,6 +196,7 @@ export default function UnlockPage() {
                   stopCamera();
                   setMode("manual");
                 }}
+                data-testid="unlock-manual-toggle"
                 className="w-full text-center text-sm font-medium text-primary hover:underline"
               >
                 {t('dashboard.unlock.enterManually')}
@@ -214,6 +215,7 @@ export default function UnlockPage() {
                 </label>
                 <Input
                   id="dek-input"
+                  data-testid="unlock-manual-key"
                   type="text"
                   placeholder="a1b2c3d4..."
                   value={manualKey}
@@ -234,6 +236,7 @@ export default function UnlockPage() {
                 onClick={() => submitKey(manualKey)}
                 disabled={manualKey.length !== 64 || loading}
                 className="w-full"
+                data-testid="unlock-submit"
               >
                 {loading ? t('dashboard.unlock.unlocking') : t('dashboard.unlock.unlock')}
               </Button>

@@ -9,13 +9,17 @@
 
 import { storeEncrypted, readEncrypted } from "@/lib/db";
 import { getCurrentKey } from "@/lib/crypto";
+import { resolvePwaApiBase } from "@/lib/config";
 
 // ---------------------------------------------------------------------------
 // Base URL
 // ---------------------------------------------------------------------------
 
-const BASE_URL: string =
-  import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
+function getStorage(): Storage | null {
+  if (typeof localStorage === "undefined") return null;
+  if (typeof localStorage.getItem !== "function") return null;
+  return localStorage;
+}
 
 // ---------------------------------------------------------------------------
 // In-memory JWT (not localStorage — less surface for XSS exfiltration)
@@ -35,11 +39,11 @@ export function getToken(): string | null {
   // Migration fallback: read from localStorage if it was stored there previously.
   // New sessions never write to localStorage. This path will be removed in a future release.
   try {
-    const stored = localStorage.getItem('safecare_driver_token');
+    const stored = getStorage()?.getItem('safecare_driver_token');
     if (stored) {
       jwt = stored;
       // Clean it up immediately — don't leave it in plaintext storage
-      localStorage.removeItem('safecare_driver_token');
+      getStorage()?.removeItem('safecare_driver_token');
       return stored;
     }
   } catch {}
@@ -48,8 +52,8 @@ export function getToken(): string | null {
 
 export function clearToken(): void {
   jwt = null;
-  try { localStorage.removeItem('safecare_driver_token'); } catch {}
-  try { localStorage.removeItem('safecare_install_dismissed'); } catch {}
+  try { getStorage()?.removeItem('safecare_driver_token'); } catch {}
+  try { getStorage()?.removeItem('safecare_install_dismissed'); } catch {}
 }
 
 /**
@@ -109,7 +113,7 @@ async function request<T = unknown>(
     headers["Authorization"] = `Bearer ${jwt}`;
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const response = await fetch(`${resolvePwaApiBase()}${path}`, {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,

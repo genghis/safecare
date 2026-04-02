@@ -31,6 +31,7 @@ let recipientId = "";
 let zoneId = "";
 let sessionId = "";
 let deliveryId = "";
+let latestRoute: any = null;
 
 // Helper to call the API
 async function api(
@@ -38,9 +39,10 @@ async function api(
   method: string,
   path: string,
   body?: any,
-  token?: string
+  token?: string,
+  extraHeaders?: Record<string, string>
 ) {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...(extraHeaders || {}) };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   if (body) headers["Content-Type"] = "application/json";
 
@@ -342,7 +344,7 @@ test.describe.serial("Full End-to-End Flow", () => {
     if (!otp) {
       const otpRes = await api(request, "POST", "/api/auth/driver/request-otp", {
         phone: driverPhone,
-      });
+      }, undefined, { "x-safecare-test-otp": "1" });
       otp = otpRes.data.otp;
     }
 
@@ -366,7 +368,7 @@ test.describe.serial("Full End-to-End Flow", () => {
     // Get driver token
     const otpRes = await api(request, "POST", "/api/auth/driver/request-otp", {
       phone: driverPhone,
-    });
+    }, undefined, { "x-safecare-test-otp": "1" });
     const verifyRes = await api(request, "POST", "/api/auth/driver/verify-otp", {
       phone: driverPhone, otp: otpRes.data.otp,
     });
@@ -402,7 +404,7 @@ test.describe.serial("Full End-to-End Flow", () => {
     // Get driver token
     const otpRes = await api(request, "POST", "/api/auth/driver/request-otp", {
       phone: driverPhone,
-    });
+    }, undefined, { "x-safecare-test-otp": "1" });
     const otp = otpRes.data.otp;
     const verifyRes = await api(
       request,
@@ -442,6 +444,7 @@ test.describe.serial("Full End-to-End Flow", () => {
     expect(routeRes.status).toBe(200);
 
     const route = routeRes.data;
+    latestRoute = route;
 
     // Verify stops
     expect(route.stops).toBeTruthy();
@@ -469,23 +472,20 @@ test.describe.serial("Full End-to-End Flow", () => {
     expect(route.tileBounds.west).toBeLessThan(route.tileBounds.east);
     expect(route.tileUrls).toBeTruthy();
     expect(route.tileUrls.length).toBeGreaterThan(0);
-
-    // Verify tile URLs are valid OSM tile URLs
     const tileUrl = route.tileUrls[0];
-    expect(tileUrl).toMatch(
-      /^https:\/\/[abc]\.tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png$/
-    );
+    expect(tileUrl).toContain("/api/tiles/");
+    expect(tileUrl).not.toContain("tile.openstreetmap.org");
   });
 
   // -----------------------------------------------------------------------
-  test("13. OSM tile URLs are actually downloadable", async ({ request }) => {
-    // Test a known OSM tile URL directly (doesn't depend on route download)
-    // Tile for Detroit area at zoom 14
-    const tileUrl = "https://a.tile.openstreetmap.org/14/4405/6065.png";
-    const tileResp = await request.get(tileUrl);
-    expect(tileResp.status()).toBe(200);
-    const contentType = tileResp.headers()["content-type"];
-    expect(contentType).toContain("image");
+  test("13. Route tile URLs never fall back to the public OSM CDN", async () => {
+    if (!latestRoute) {
+      test.skip();
+    }
+
+    for (const tileUrl of latestRoute.tileUrls || []) {
+      expect(tileUrl).not.toContain("tile.openstreetmap.org");
+    }
   });
 
   // -----------------------------------------------------------------------

@@ -16,7 +16,7 @@ import {
   useMemo,
 } from "react";
 import type { ReactNode } from "react";
-import { apiGet } from "@/lib/api";
+import { resolveDashboardApiBase } from "@/lib/api-base";
 
 // Inline the types to avoid shared package import issues in Next.js
 type SupportedLocale = "en" | "es" | "ar" | "so" | "fr" | "zh" | "uk";
@@ -85,9 +85,11 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
       // Load org language from settings
       try {
-        const res = await apiGet<any>("/api/settings");
-        if (res.ok && res.data?.language) {
-          const lang = res.data.language as SupportedLocale;
+        const response = await fetch(`${resolveDashboardApiBase()}/api/settings`);
+        const data = await response.json().catch(() => null);
+
+        if (response.ok && data?.data?.language) {
+          const lang = data.data.language as SupportedLocale;
           if (SUPPORTED.includes(lang)) {
             setLocaleState(lang);
           }

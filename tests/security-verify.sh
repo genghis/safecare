@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# Intentionally avoid `set -e` so the verification suite can report the full
+# set of security regressions in one run.
+set -uo pipefail
 
 # ---------------------------------------------------------------------------
 # SafeCare Security Verification Tests
@@ -18,6 +20,9 @@ set -euo pipefail
 API="${1:-http://localhost:3001}"
 DB_CONTAINER="safecare-postgres"
 DB_USER="safecare"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SMOKE_ARTIFACT="${SAFECARE_SMOKE_ARTIFACT:-$PROJECT_DIR/tests/integration/.artifacts/core-smoke.json}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -26,6 +31,9 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 SKIP=0
+ARTIFACT_ADMIN_EMAIL=""
+ARTIFACT_ADMIN_PASSWORD=""
+ARTIFACT_DEK=""
 
 pass() { PASS=$((PASS+1)); echo -e "  ${GREEN}PASS${NC} $1"; }
 fail() { FAIL=$((FAIL+1)); echo -e "  ${RED}FAIL${NC} $1: $2"; }
@@ -33,23 +41,77 @@ skip() { SKIP=$((SKIP+1)); echo -e "  ${YELLOW}SKIP${NC} $1: $2"; }
 
 db() { docker exec "$DB_CONTAINER" psql -U "$DB_USER" -t -c "$1" 2>/dev/null; }
 
+artifact_get() {
+  local key="$1"
+  python3 - "$SMOKE_ARTIFACT" "$key" <<'PY'
+import json, sys
+path, key = sys.argv[1], sys.argv[2]
+try:
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    value = data.get(key, "")
+    if isinstance(value, bool):
+        print("true" if value else "false")
+    else:
+        print(value)
+except Exception:
+    print("")
+PY
+}
+
 echo "=========================================="
 echo "  SafeCare Security Verification"
 echo "  API: $API"
 echo "=========================================="
 echo ""
 
+if [ -f "$SMOKE_ARTIFACT" ]; then
+  ARTIFACT_ADMIN_EMAIL="$(artifact_get adminEmail)"
+  ARTIFACT_ADMIN_PASSWORD="$(artifact_get adminPassword)"
+  ARTIFACT_DEK="$(artifact_get dek)"
+  pass "Loaded smoke artifact ($SMOKE_ARTIFACT)"
+else
+  skip "Smoke artifact" "not found at $SMOKE_ARTIFACT"
+fi
+
+SETUP=$(curl -sf "$API/api/setup/status" 2>/dev/null || echo "")
+LOCKED=$(echo "$SETUP" | python3 -c "import sys,json; d=json.load(sys.stdin); print('true' if d.get('data',{}).get('locked') else 'false')" 2>/dev/null || echo "false")
+if [ "$LOCKED" = "true" ]; then
+  if [ -n "$ARTIFACT_DEK" ]; then
+    UNLOCK=$(curl -s -X POST "$API/api/setup/unlock" \
+      -H "Content-Type: application/json" \
+      -d "{\"dek\":\"$ARTIFACT_DEK\"}" 2>&1)
+    UNLOCK_OK=$(echo "$UNLOCK" | python3 -c "import sys,json; print('yes' if json.load(sys.stdin).get('success') else 'no')" 2>/dev/null)
+    if [ "$UNLOCK_OK" = "yes" ]; then
+      pass "Unlocked system with smoke artifact DEK"
+    else
+      fail "Setup unlock" "$UNLOCK"
+    fi
+  else
+    skip "Setup unlock" "system is locked and no smoke artifact DEK is available"
+  fi
+fi
+
 # Get admin token
 TOKEN=""
-for email in "admin@example.com" "admin@example.com"; do
-  for pw in "changeme" "password"; do
-    LOGIN=$(curl -s -X POST "$API/api/auth/admin/login" \
-      -H "Content-Type: application/json" \
-      -d "{\"email\":\"$email\",\"password\":\"$pw\"}" 2>&1)
-    TOKEN=$(echo "$LOGIN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('token',''))" 2>/dev/null || echo "")
-    [ -n "$TOKEN" ] && break 2
+if [ -n "$ARTIFACT_ADMIN_EMAIL" ] && [ -n "$ARTIFACT_ADMIN_PASSWORD" ]; then
+  LOGIN=$(curl -s -X POST "$API/api/auth/admin/login" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$ARTIFACT_ADMIN_EMAIL\",\"password\":\"$ARTIFACT_ADMIN_PASSWORD\"}" 2>&1)
+  TOKEN=$(echo "$LOGIN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('token',''))" 2>/dev/null || echo "")
+fi
+
+if [ -z "$TOKEN" ]; then
+  for email in "admin@example.com" "admin@example.com"; do
+    for pw in "changeme" "password"; do
+      LOGIN=$(curl -s -X POST "$API/api/auth/admin/login" \
+        -H "Content-Type: application/json" \
+        -d "{\"email\":\"$email\",\"password\":\"$pw\"}" 2>&1)
+      TOKEN=$(echo "$LOGIN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('token',''))" 2>/dev/null || echo "")
+      [ -n "$TOKEN" ] && break 2
+    done
   done
-done
+fi
 
 if [ -z "$TOKEN" ]; then
   echo "Could not authenticate. Some tests will be skipped."
@@ -413,33 +475,33 @@ echo "--- 9. Notification Message Privacy ---"
 
 # Verify notification messages don't contain PII
 # Check the i18n strings
-I18N_CHECK=$(python3 -c "
+I18N_CHECK=$(python3 - "$PROJECT_DIR/packages/shared/src/i18n.ts" <<'PY' 2>/dev/null
 import sys
-sys.path.insert(0, '.')
-# Read the i18n file directly
-with open('packages/shared/src/i18n.ts') as f:
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as f:
     content = f.read()
 
-# Check that notification messages don't contain name/address placeholders
 pii_words = ['name', 'address', 'phone', 'street', 'apt', 'unit']
 notifications = []
 in_notification = False
 for line in content.split('\n'):
     if 'notification.delivery' in line:
         in_notification = True
-    elif in_notification and \"en:\" in line:
+    elif in_notification and "en:" in line:
         notifications.append(line)
         in_notification = False
 
 issues = []
-for n in notifications:
-    lower = n.lower()
+for line in notifications:
+    lower = line.lower()
     for word in pii_words:
         if '{{' + word + '}}' in lower:
             issues.append(f'found {{{{{word}}}}} in notification')
 
 print(','.join(issues) if issues else 'clean')
-" 2>/dev/null)
+PY
+)
 
 if [ "$I18N_CHECK" = "clean" ]; then
   pass "Notification messages contain no PII placeholders"

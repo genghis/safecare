@@ -11,6 +11,8 @@ import { config } from '../config.js';
 import { RATE_LIMIT_DRIVER_RPM } from '@safecare/shared';
 import type { DriverSyncPayload } from '@safecare/shared';
 import type { RecipientContact } from '../services/notification.service.js';
+import { getExternalRequestUrl } from '../utils/webhook-auth.js';
+import { tileService } from '../services/tile.service.js';
 
 const downloadRouteSchema = z.object({
   token: z.string().min(1),
@@ -282,7 +284,9 @@ export default async function driverAppRoutes(fastify: FastifyInstance) {
 
           const tileBounds = routingService.getTileBounds(waypoints);
           routePacket.tileBounds = tileBounds;
-          routePacket.tileUrls = routingService.getTileUrls(tileBounds);
+          const requestUrl = getExternalRequestUrl(request, config.PUBLIC_BASE_URL);
+          const tileTemplate = tileService.getPublicTileUrlTemplate(new URL(requestUrl).origin);
+          routePacket.tileUrls = routingService.getTileUrls(tileBounds, undefined, undefined, tileTemplate);
 
           return reply.send({
             success: true,

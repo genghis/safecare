@@ -88,8 +88,10 @@ describe('api.ts — API client', () => {
 
       expect(getToken()).toBe('test-jwt-token');
       // Ensure localStorage was NOT used
-      expect(localStorage.getItem('token')).toBeNull();
-      expect(localStorage.getItem('jwt')).toBeNull();
+      const storage =
+        typeof localStorage?.getItem === 'function' ? localStorage : null;
+      expect(storage?.getItem('token') ?? null).toBeNull();
+      expect(storage?.getItem('jwt') ?? null).toBeNull();
     });
 
     it('setToken / getToken work correctly', () => {

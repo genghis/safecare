@@ -6,6 +6,7 @@ SafeCare needs two types of map data for each deployment:
 
 1. **OSRM routing files** — pre-computed driving directions. Downloaded from cloud (instant).
 2. **Nominatim search index** — address geocoding. Built locally from a PBF file (takes time but keeps address queries private).
+3. **Tile cache for driver maps** — map tiles cached onto the SafeCare server, then served locally to dashboard and driver devices.
 
 ## How It Works
 
@@ -19,9 +20,20 @@ A quarterly build job processes all 50 US states into OSRM routing archives host
 
 ### Nominatim (Local, 15-60 min background)
 
-Each deployment imports a viewport-trimmed PBF into its local Nominatim instance. This runs in the background — the system is usable immediately (public Nominatim API fallback for geocoding while local import runs).
+Each deployment imports a viewport-trimmed PBF into its local Nominatim instance. The system now fails closed for address search until the local geocoder is ready, so recipient addresses are never sent to a public geocoding service.
 
 This must be local because geocoding queries contain recipient addresses (PII).
+
+### Driver Map Tiles (Local serving from the SafeCare box)
+
+The dashboard and driver PWA now fetch map tiles from the SafeCare server, not directly from a public tile CDN at route time.
+
+SafeCare supports two tile-source patterns:
+
+- **Default:** store tiles under `TILE_STORAGE_PATH` on the SafeCare server and serve them locally at `/api/tiles/{z}/{x}/{y}.png`
+- **Optional backfill:** set `TILE_DOWNLOAD_URL_TEMPLATE` if you want SafeCare to fetch and cache missing tiles from a separate tile source
+
+With the default local-only setup, no external tile fetch happens at all. If you enable an optional backfill source, that source sees only tile coordinates during cache verification or cache misses, never recipient addresses.
 
 **Estimated Nominatim import times (viewport-trimmed PBF):**
 
@@ -99,14 +111,16 @@ When an admin clicks "Provision Maps":
 1. Check manifest for pre-built OSRM covering the viewport → download (~30 sec)
 2. Download the state PBF for Nominatim (~30 sec)
 3. OSRM starts immediately with pre-built data (routing works instantly)
-4. Nominatim imports the PBF in the background (15-60 min)
-5. Geocoding uses public Nominatim API fallback until local import finishes
-6. Once local Nominatim is ready, it takes over (all queries stay local)
+4. Verify that the local tile set for the operating region / route zoom levels is present on the SafeCare server
+5. Nominatim imports the PBF in the background (15-60 min)
+6. Geocoding remains unavailable until the local Nominatim import finishes
+7. Once local Nominatim is ready, all queries stay local
 
 ## Privacy
 
 - **OSRM files**: public road network data. No PII.
 - **PBF files**: public OpenStreetMap data. No PII.
+- **Tile availability checks / optional backfill**: tile coordinates only, no recipient addresses.
 - **Geocoding queries**: contain recipient addresses. Always processed locally.
 - **Route queries**: contain delivery coordinates. Always processed locally.
 

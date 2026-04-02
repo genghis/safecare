@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# Intentionally avoid `set -e` so the smoke suite can record multiple failures
+# instead of aborting on the first broken endpoint.
+set -uo pipefail
 
 # ---------------------------------------------------------------------------
 # SafeCare End-to-End Smoke Tests
@@ -19,6 +21,9 @@ set -euo pipefail
 API="${1:-http://localhost:3001}"
 DASHBOARD="${2:-http://localhost:3000}"
 PWA="${3:-http://localhost:5173}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SMOKE_ARTIFACT="${SAFECARE_SMOKE_ARTIFACT:-$PROJECT_DIR/tests/integration/.artifacts/core-smoke.json}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -27,10 +32,40 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 SKIP=0
+TOKEN=""
+AUTH=""
+DRIVER_ID=""
+DRIVER_PHONE=""
+RECIP_ID=""
+SESSION_ID=""
+DELIVERY_ID=""
+DTOKEN=""
+DRIVER_TOKEN=""
+ARTIFACT_ADMIN_EMAIL=""
+ARTIFACT_ADMIN_PASSWORD=""
+ARTIFACT_DEK=""
 
 pass() { PASS=$((PASS+1)); echo -e "  ${GREEN}PASS${NC} $1"; }
 fail() { FAIL=$((FAIL+1)); echo -e "  ${RED}FAIL${NC} $1: $2"; }
 skip() { SKIP=$((SKIP+1)); echo -e "  ${YELLOW}SKIP${NC} $1: $2"; }
+
+artifact_get() {
+  local key="$1"
+  python3 - "$SMOKE_ARTIFACT" "$key" <<'PY'
+import json, sys
+path, key = sys.argv[1], sys.argv[2]
+try:
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    value = data.get(key, "")
+    if isinstance(value, bool):
+        print("true" if value else "false")
+    else:
+        print(value)
+except Exception:
+    print("")
+PY
+}
 
 # Helper: make API call and check status code
 api() {
@@ -63,6 +98,20 @@ echo "  Dashboard: $DASHBOARD"
 echo "  PWA:       $PWA"
 echo "=========================================="
 echo ""
+
+if [ -f "$SMOKE_ARTIFACT" ]; then
+  ARTIFACT_ADMIN_EMAIL="$(artifact_get adminEmail)"
+  ARTIFACT_ADMIN_PASSWORD="$(artifact_get adminPassword)"
+  ARTIFACT_DEK="$(artifact_get dek)"
+  DRIVER_ID="$(artifact_get driverId)"
+  DRIVER_PHONE="$(artifact_get driverPhone)"
+  RECIP_ID="$(artifact_get recipientId)"
+  SESSION_ID="$(artifact_get sessionId)"
+  DELIVERY_ID="$(artifact_get deliveryId)"
+  pass "Loaded smoke artifact ($SMOKE_ARTIFACT)"
+else
+  skip "Smoke artifact" "not found at $SMOKE_ARTIFACT"
+fi
 
 # ---------------------------------------------------------------------------
 echo "--- 1. Service Health ---"
@@ -97,6 +146,23 @@ else
   fail "Setup status" "endpoint not responding"
 fi
 
+LOCKED=$(echo "${SETUP:-}" | python3 -c "import sys,json; d=json.load(sys.stdin); print('true' if d.get('data',{}).get('locked') else 'false')" 2>/dev/null || echo "false")
+if [ "$LOCKED" = "true" ]; then
+  if [ -n "$ARTIFACT_DEK" ]; then
+    UNLOCK=$(curl -s -X POST "$API/api/setup/unlock" \
+      -H "Content-Type: application/json" \
+      -d "{\"dek\":\"$ARTIFACT_DEK\"}" 2>&1)
+    UNLOCK_OK=$(echo "$UNLOCK" | python3 -c "import sys,json; print('yes' if json.load(sys.stdin).get('success') else 'no')" 2>/dev/null)
+    if [ "$UNLOCK_OK" = "yes" ]; then
+      pass "Unlocked system with smoke artifact DEK"
+    else
+      fail "Setup unlock" "$UNLOCK"
+    fi
+  else
+    skip "Setup unlock" "system is locked and no smoke artifact DEK is available"
+  fi
+fi
+
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -106,25 +172,37 @@ echo "--- 2. Admin Registration & Auth ---"
 TEST_EMAIL="test-$(date +%s)@smoke.test"
 TEST_PASS="smoketest123"
 
-# Register (may fail if admin already exists -- that's OK)
-REG=$(curl -s -X POST "$API/api/auth/admin/register" \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"$TEST_EMAIL\",\"password\":\"$TEST_PASS\"}" 2>&1)
-
-REG_OK=$(echo "$REG" | python3 -c "import sys,json; d=json.load(sys.stdin); print('yes' if d.get('success') or 'already' in d.get('error','').lower() or 'disabled' in d.get('error','').lower() else 'no')" 2>/dev/null)
-
-if [ "$REG_OK" = "yes" ]; then
-  pass "Admin registration (or already exists)"
-else
-  fail "Admin registration" "$REG"
+# Try artifact credentials first
+if [ -n "$ARTIFACT_ADMIN_EMAIL" ] && [ -n "$ARTIFACT_ADMIN_PASSWORD" ]; then
+  LOGIN=$(curl -s -X POST "$API/api/auth/admin/login" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$ARTIFACT_ADMIN_EMAIL\",\"password\":\"$ARTIFACT_ADMIN_PASSWORD\"}" 2>&1)
+  TOKEN=$(echo "$LOGIN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('token',''))" 2>/dev/null || echo "")
+  if [ -n "$TOKEN" ] && [ "$TOKEN" != "" ]; then
+    pass "Admin login (smoke artifact credentials)"
+  fi
 fi
 
-# Try to login with test creds or existing admin
-LOGIN=$(curl -s -X POST "$API/api/auth/admin/login" \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"$TEST_EMAIL\",\"password\":\"$TEST_PASS\"}" 2>&1)
+# Register a fresh admin only if the artifact credentials didn't work
+if [ -z "$TOKEN" ]; then
+  REG=$(curl -s -X POST "$API/api/auth/admin/register" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$TEST_EMAIL\",\"password\":\"$TEST_PASS\"}" 2>&1)
 
-TOKEN=$(echo "$LOGIN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('token',''))" 2>/dev/null || echo "")
+  REG_OK=$(echo "$REG" | python3 -c "import sys,json; d=json.load(sys.stdin); print('yes' if d.get('success') or 'already' in d.get('error','').lower() or 'disabled' in d.get('error','').lower() else 'no')" 2>/dev/null)
+
+  if [ "$REG_OK" = "yes" ]; then
+    pass "Admin registration (or already exists)"
+  else
+    fail "Admin registration" "$REG"
+  fi
+
+  LOGIN=$(curl -s -X POST "$API/api/auth/admin/login" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$TEST_EMAIL\",\"password\":\"$TEST_PASS\"}" 2>&1)
+
+  TOKEN=$(echo "$LOGIN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('data',{}).get('token',''))" 2>/dev/null || echo "")
+fi
 
 if [ -n "$TOKEN" ] && [ "$TOKEN" != "" ]; then
   pass "Admin login"
@@ -375,12 +453,13 @@ echo "--- 8. Driver App Flow ---"
 # ---------------------------------------------------------------------------
 
 DRIVER_PHONE="${DRIVER_PHONE:-}"
-DTOKEN=""
+DTOKEN="${DTOKEN:-}"
 
-if [ -n "$DRIVER_ID" ] && [ -n "$DRIVER_PHONE" ]; then
+if [ -n "${DRIVER_ID:-}" ] && [ -n "${DRIVER_PHONE:-}" ]; then
   # Request OTP
   OTP_RESP=$(curl -s -X POST "$API/api/auth/driver/request-otp" \
     -H "Content-Type: application/json" \
+    -H "x-safecare-test-otp: 1" \
     -d "{\"phone\":\"$DRIVER_PHONE\"}" 2>&1)
   OTP=$(echo "$OTP_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('otp',''))" 2>/dev/null)
   if [ -n "$OTP" ] && [ "$OTP" != "" ]; then
@@ -396,6 +475,7 @@ if [ -n "$DRIVER_ID" ] && [ -n "$DRIVER_PHONE" ]; then
       -d "{\"phone\":\"$DRIVER_PHONE\",\"otp\":\"$OTP\"}" 2>&1)
     DTOKEN=$(echo "$VERIFY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('token',''))" 2>/dev/null)
     if [ -n "$DTOKEN" ] && [ "$DTOKEN" != "" ]; then
+      DRIVER_TOKEN="$DTOKEN"
       pass "POST /api/auth/driver/verify-otp"
     else
       fail "POST /api/auth/driver/verify-otp" "$VERIFY"
@@ -503,7 +583,7 @@ if [ -n "$TOKEN" ] && [ -n "$DTOKEN" ] && [ -n "$SESSION_ID" ] && [ -n "$DELIVER
     if [ "$HAS_TILES" -gt 0 ] 2>/dev/null; then
       pass "Route download: $HAS_TILES tile URLs for offline caching"
     else
-      fail "Route download: tileUrls" "got $HAS_TILES"
+      fail "Route download: tileUrls" "missing"
     fi
 
     if [ "$HAS_BOUNDS" = "yes" ]; then

@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/bin/sh
+set -eu
 
 # OSRM initialization script
 # Waits for the OSM PBF file, then pre-processes it for routing.

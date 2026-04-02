@@ -116,10 +116,10 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | TOTP 2FA (backend) | Implemented | All 6 endpoints + backup recovery codes (8 single-use codes generated on enable, bcrypt-hashed in DB). |
 | TOTP 2FA (dashboard) | Implemented | Settings page enable/disable flow, login page TOTP step, 2FA setup nudge banner. |
 | Dashboard route protection | Implemented | LayoutShell auth guard checks for token before rendering any sidebar page. Redirects to /login if no token. API client auto-redirects on 401. |
-| Logout | Implemented | Sidebar "Logout" button clears token from localStorage and redirects to /login. |
+| Logout | Implemented | Sidebar "Logout" button clears the admin session token and redirects to /login. |
 | Session management with explicit logout | Implemented | JWTs include jti tracked in Redis. Logout revokes session. `revokeAllSessions()` ready for password change. |
 | Admin audit log | Implemented | Logs login/logout/failed login/TOTP/unlock/revoke with admin_id, IP, details. 90-day retention. |
-| Tailscale-only access | Not done | Dashboard only accessible on private tailnet, not the internet. |
+| Tailscale-only access | Deployment setup required | Recommended topology is documented in docs/REMOTE-ACCESS.md. Dashboard should stay private to the tailnet. |
 
 **This is the highest-impact threat.** An attacker with admin access sees everything. Mitigations:
 
@@ -130,7 +130,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 5. **Don't use the admin account on public WiFi** — use a VPN or tailnet
 
 **Remaining gap:**
-- No password change endpoint yet — when added, should call `revokeAllSessions(adminId)` to invalidate all existing JWTs
+- Networking hardening is still deployment-dependent. The codebase supports a split public/private topology, but the nonprofit still needs to deploy Tailscale or a tunnel correctly.
 
 ---
 
@@ -181,10 +181,10 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 
 | Layer | Status | Protection |
 |-------|--------|------------|
-| HTTPS for all API traffic | Implemented (via Tailscale/tunnel) | All data encrypted in transit. |
+| HTTPS for all API traffic | Deployment setup required | Use Tailscale and/or a public tunnel as documented in docs/REMOTE-ACCESS.md. |
 | Airplane mode during deliveries | Implemented (prompts) | No network traffic near recipient homes. |
-| Tailscale for admin access | Planned | Admin traffic goes through encrypted WireGuard tunnel. |
-| Tailscale Funnel for driver API | Planned | Only specific API paths exposed, not the full server. |
+| Tailscale for admin access | Recommended | Admin traffic should go through encrypted tailnet access. |
+| Tailscale Funnel or Cloudflare Tunnel for driver API | Recommended | Public internet should reach only the driver and webhook paths, not the full server. |
 | Offline-first driver app | Implemented | After route download, drivers don't need connectivity to navigate. |
 
 ---
@@ -291,6 +291,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 3. **Scan the QR to unlock after every reboot** — the system is locked by design; this protects data if seized
 4. **Enable full-disk encryption** on the server (LUKS on Linux, FileVault on Mac, BitLocker on Windows)
 5. **Use Tailscale** so the dashboard is never on the public internet
+   See [docs/REMOTE-ACCESS.md](REMOTE-ACCESS.md) for the recommended split-host deployment patterns.
 6. **Vet every driver** before approving them
 7. **Review purge warnings** regularly
 8. **Don't screenshot** recipient lists or export data

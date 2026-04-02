@@ -19,7 +19,7 @@ Last updated: 2026-03-30
 | Backend API (Fastify) | Done | Recipients, drivers, deliveries, dispatch, zones, distribution, geocoding, notifications |
 | JotForm webhook intake | Done | POST /api/webhooks/jotform |
 | Admin dashboard (Next.js) | Done | Login, recipients, drivers, deliveries, dispatch, distribution, zones, settings |
-| Add Recipient with map-based address picker | Done | Leaflet + geocoding with public API fallback |
+| Add Recipient with map-based address picker | Done | Leaflet + self-hosted geocoding only |
 | Add Driver with availability scheduling | Done | Vehicle, team, day/time availability, vetting workflow |
 | Dispatch session + route release gate | Done | Admin creates session, drivers check in, admin releases |
 | Distribution planner (auto-assign) | Done | Zone-aware, capacity-aware, nearest-neighbour routing |
@@ -35,7 +35,7 @@ Last updated: 2026-03-30
 |---------|--------|-------|
 | Pre-built OSRM on GCS (safecare.app) | Done | 50 states + 50 metros, quarterly builds, ~$0.50/build |
 | OSRM routing container | Done | Docker service, MLD algorithm, pre-built or viewport-trimmed |
-| Self-hosted Nominatim geocoding | Done | Local import with public API fallback |
+| Self-hosted Nominatim geocoding | Done | Local import only; fails closed until ready |
 | Viewport-based operating region | Done | Map viewport IS the region, auto-selects best pre-built match |
 | Region size estimation + RAM warnings | Done | Live estimate, color-coded (green/amber/red) |
 | GPS-aware route ordering | Done | Nearest stop to driver first, then nearest-neighbour chain |
@@ -119,14 +119,14 @@ Last updated: 2026-03-30
 | Build VM | GCE spot (c2-standard-8) | Quarterly builds, ~$0.50/run |
 | Terraform | infra/prebuilt/ | GCS, service account, VM |
 
-## Test Suites (117 total)
+## Test Suites
 
 | Suite | Tests | File |
 |-------|-------|------|
 | PWA Unit Tests | 62 | packages/pwa/src/\_\_tests\_\_/ (crypto, db, api, sync, hooks) |
-| Backend Unit Tests | 108 | packages/backend/src/\_\_tests\_\_/ (auth, dispatch, session-key, etc.) |
-| E2E Smoke | 41 | tests/e2e-smoke.sh |
-| Security Verification | 36 | tests/security-verify.sh |
+| Backend Unit Tests | 136 | packages/backend/src/\_\_tests\_\_/ (auth, dispatch, session-key, middleware, routing, tiles, etc.) |
+| E2E Smoke | 35 | tests/e2e-smoke.sh |
+| Security Verification | 32 | tests/security-verify.sh |
 | Fresh Install (Playwright) | 10 | tests/integration/fresh-install.spec.ts |
 | Full Flow - Detroit (Playwright) | 17 | tests/integration/full-flow.spec.ts |
 
@@ -142,7 +142,7 @@ See [tests/README.md](tests/README.md) for details.
 | PostgreSQL | safecare-postgres | 5432 | postgres:16-alpine |
 | Redis | safecare-redis | 6379 | redis:7-alpine |
 | Nominatim | safecare-nominatim | 8088 | mediagis/nominatim:4.4 |
-| OSRM | safecare-osrm | 5000 | osrm/osrm-backend:latest |
+| OSRM | safecare-osrm | 5000 | ghcr.io/project-osrm/osrm-backend:v6.0.0 |
 | Signal | safecare-signal | 8089 | bbernhard/signal-cli-rest-api |
 
 ## i18n Coverage (443 string keys)
@@ -165,7 +165,7 @@ All user-facing strings translated to 6 languages. Language selectable in Settin
 |-----|----------|-------|
 | Exclusion zones | High | Draw "avoid" areas on map, OSRM edge-weighting. Currently zones are delivery-only. |
 | Communication proxy (blind number pool) | High | Twilio proxy so drivers/recipients never see each other's real numbers. Schema exists, no proxy logic. |
-| Tailscale networking | High | Optional Tailscale-only admin access + Funnel for driver API. Dashboard currently accessible on local network. |
+| Tailscale / tunnel networking | High | Recommended deployment documented in docs/REMOTE-ACCESS.md. Admin should stay private; public host should expose only driver + webhook paths. |
 | ~~Password change endpoint~~ | ~~Done~~ | POST /api/auth/admin/change-password + dashboard Settings UI. Revokes all sessions on change. |
 | Route variation | Medium | Same driver gets same route pattern every time. |
 | Push notification remote wipe | Medium | Current wipe uses polling. Push would be instant even with app backgrounded. |

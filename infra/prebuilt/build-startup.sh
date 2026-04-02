@@ -15,6 +15,7 @@ BUCKET="safecare-maps-maps"  # will be overridden by metadata
 WORK_DIR="/mnt/stateful_partition/build"
 PARALLEL_JOBS=6  # Number of states to process in parallel
 BUILD_DATE=$(date -u +%Y-%m-%d)
+OSRM_IMAGE="ghcr.io/project-osrm/osrm-backend:v6.0.0"
 
 # Get bucket name from instance metadata
 BUCKET=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/attributes/bucket" -H "Metadata-Flavor: Google" 2>/dev/null || echo "$BUCKET")
@@ -33,7 +34,7 @@ cd "$WORK_DIR"
 # ---------------------------------------------------------------------------
 
 echo "[1/6] Pulling Docker images..."
-docker pull osrm/osrm-backend:latest &
+docker pull "$OSRM_IMAGE" &
 docker pull mediagis/nominatim:4.4 &
 docker pull ghcr.io/osmcode/osmium-tool:latest &
 wait
@@ -164,15 +165,15 @@ process_state() {
   cp "$state_pbf" "$output_dir/osrm/data.osm.pbf"
 
   echo "  [$state] OSRM extract..."
-  docker run --rm -v "$output_dir/osrm:/data" osrm/osrm-backend:latest \
+  docker run --rm -v "$output_dir/osrm:/data" "$OSRM_IMAGE" \
     osrm-extract -p /opt/car.lua /data/data.osm.pbf -t 4 2>/dev/null
 
   echo "  [$state] OSRM partition..."
-  docker run --rm -v "$output_dir/osrm:/data" osrm/osrm-backend:latest \
+  docker run --rm -v "$output_dir/osrm:/data" "$OSRM_IMAGE" \
     osrm-partition /data/data.osrm 2>/dev/null
 
   echo "  [$state] OSRM customize..."
-  docker run --rm -v "$output_dir/osrm:/data" osrm/osrm-backend:latest \
+  docker run --rm -v "$output_dir/osrm:/data" "$OSRM_IMAGE" \
     osrm-customize /data/data.osrm 2>/dev/null
 
   # Remove the PBF from OSRM output (not needed, saves space)

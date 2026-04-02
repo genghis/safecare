@@ -9,6 +9,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { resolvePwaTileUrlTemplate } from "@/lib/config";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -82,6 +83,26 @@ function makeCurrentLocationIcon(): L.DivIcon {
   });
 }
 
+function buildPopupContent(stop: RouteStop): HTMLDivElement {
+  const container = document.createElement("div");
+  container.style.fontFamily = "sans-serif";
+  container.style.padding = "2px";
+
+  const title = document.createElement("strong");
+  title.textContent = `#${stop.sequence} ${stop.recipientName}`;
+
+  const address = document.createElement("span");
+  address.style.fontSize = "13px";
+  address.style.color = "#666";
+  address.textContent = stop.address;
+
+  container.appendChild(title);
+  container.appendChild(document.createElement("br"));
+  container.appendChild(address);
+
+  return container;
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -92,6 +113,7 @@ export default function RouteMap({
   currentLocation,
   onStopClick,
 }: RouteMapProps) {
+  const tileUrlTemplate = resolvePwaTileUrlTemplate();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
@@ -107,7 +129,7 @@ export default function RouteMap({
       attributionControl: false,
     }).setView([39.8283, -98.5795], 4); // default US center
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer(tileUrlTemplate, {
       maxZoom: 19,
       crossOrigin: "anonymous",
     }).addTo(map);
@@ -119,7 +141,7 @@ export default function RouteMap({
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tileUrlTemplate]);
 
   // Sync stops and route geometry onto the map
   useEffect(() => {
@@ -157,13 +179,10 @@ export default function RouteMap({
         icon: makeStopIcon(stop.sequence, stop.status),
       }).addTo(map);
 
-      marker.bindPopup(
-        `<div style="font-family:sans-serif;padding:2px">
-          <strong>#${stop.sequence} ${stop.recipientName}</strong><br/>
-          <span style="font-size:13px;color:#666">${stop.address}</span>
-        </div>`,
-        { closeButton: false, maxWidth: 220 },
-      );
+      marker.bindPopup(buildPopupContent(stop), {
+        closeButton: false,
+        maxWidth: 220,
+      });
 
       if (onStopClick) {
         marker.on("click", () => onStopClick(stop.deliveryId));
@@ -209,14 +228,20 @@ export default function RouteMap({
 
   return (
     <div
-      ref={containerRef}
       style={{
-        width: "100%",
-        height: 280,
-        borderRadius: "var(--radius-md)",
-        overflow: "hidden",
-        border: "1px solid var(--color-border)",
+        position: "relative",
       }}
-    />
+    >
+      <div
+        ref={containerRef}
+        style={{
+          width: "100%",
+          height: 280,
+          borderRadius: "var(--radius-md)",
+          overflow: "hidden",
+          border: "1px solid var(--color-border)",
+        }}
+      />
+    </div>
   );
 }

@@ -17,11 +17,11 @@ SafeCare is a secure logistics platform for volunteer food deliveries to at-risk
 | **Admin Dashboard** | Next.js (App Router) + shadcn/ui | Implemented |
 | **Driver App** | PWA (React + Vite + Leaflet) | Implemented |
 | **Mapping** | OSRM (self-hosted) + OpenStreetMap tiles | Implemented |
-| **Geocoding** | Nominatim (self-hosted) with public API fallback | Implemented |
+| **Geocoding** | Nominatim (self-hosted, fail-closed) | Implemented |
 | **Communication** | Twilio SMS/WhatsApp + Signal (signal-cli) | Implemented |
 | **Job Queue** | BullMQ + Redis | Implemented |
 | **Monorepo** | Turborepo + pnpm workspaces | Implemented |
-| **Networking** | Tailscale (admin) + Tailscale Funnel (driver API) | **Planned** |
+| **Networking** | Tailscale (admin) + Tailscale Funnel or Cloudflare Tunnel (driver API) | **Planned** |
 
 **Design change from original plan:** The driver app is a PWA instead of React Native/Expo. This avoids app store distribution entirely — drivers just open a URL. Client-side encryption uses Web Crypto API (AES-GCM-256) with sessionStorage instead of SQLCipher/Keychain. The tradeoff is no hardware-backed key storage, but the key never touches persistent storage.
 
@@ -112,7 +112,7 @@ See [STATUS.md](STATUS.md) for the full feature-by-feature breakdown. Summary:
 - **Phase 2 (Mapping & Air-Gap)**: Mostly complete — OSRM, Nominatim, offline tiles, GPS routing, airplane mode alerts (500m audio), client-side encryption, remote wipe, panic erase, off-disk DEK, RPi appliance provisioner
 - **Phase 3 (Communication)**: Mostly complete — SMS/WhatsApp/Signal, i18n (6 languages), recipient ack flow, orphaned food alerts, Twilio log scrubbing
 - **Phase 4 (Volunteer Management)**: Partial — driver profiles, vetting workflow done. Team gamification and constraint optimization not done.
-- **Phase 5 (Hardening)**: Mostly complete — server purge, TOTP 2FA + backup codes, auth guard, logout, session management, audit logging, emergency destroy, threat model, CI/CD, 184 tests
+- **Phase 5 (Hardening)**: Mostly complete — server purge, TOTP 2FA + backup codes, auth guard, logout, session management, audit logging, emergency destroy, threat model, CI/CD, 198 unit tests plus integration/security suites
 
 ---
 
@@ -124,8 +124,7 @@ See [STATUS.md](STATUS.md) for the full feature-by-feature breakdown. Summary:
 |-----|-------------|--------|
 | **Exclusion zones** | Admins draw "avoid" areas (e.g., known surveillance) on the map. OSRM edge-weighting routes around them. Currently zones are delivery-only. | Medium |
 | **Communication proxy (blind number pool)** | Drivers and recipients currently see each other's real phone numbers. Need a Twilio proxy so neither side sees the real number. Schema exists, no proxy logic. | Medium |
-| **Tailscale networking** | Dashboard accessible to anyone on the local network. Plan calls for Tailscale-only admin access + Tailscale Funnel for driver API. Optional setup in provisioner or dashboard settings. | Medium |
-| **Password change endpoint** | No way for admins to change password. `revokeAllSessions()` ready to wire in. | Small |
+| **Tailscale networking** | Dashboard accessible to anyone on the local network unless deployed behind the private/public split described in docs/REMOTE-ACCESS.md. | Medium |
 | **Route variation** | Same driver gets same route pattern. Spec says vary routes so patterns can't be observed. | Small |
 
 ### Medium Priority (usability/hardening)
@@ -164,14 +163,14 @@ Monthly operating cost: $0 (Signal only) to ~$6/mo (Twilio SMS).
 
 ## Test Coverage
 
-184 tests across the codebase:
+Current automated coverage includes 198 unit tests plus browser/API verification suites:
 
 | Suite | Tests |
 |-------|-------|
 | PWA unit (crypto, db, api, sync, hooks) | 62 |
-| Backend unit (auth, dispatch, session-key, audit, session-mgmt, encryption, middleware, distribution, zone, routing, purge) | 122 |
-| E2E smoke (API flow) | 41 |
-| Security verification (encryption, access control, purge) | 36 |
+| Backend unit (auth, dispatch, session-key, audit, session-mgmt, encryption, middleware, distribution, zone, routing, purge, tiles) | 136 |
+| E2E smoke (API flow) | 35 |
+| Security verification (encryption, access control, purge) | 32 |
 | Playwright integration (fresh install + full flow) | 27 |
 | RPi image verification (GCE ARM64) | 14 |
 

@@ -6,11 +6,15 @@ import { stat } from 'fs/promises';
 import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
 import { config } from '../config.js';
+import { tileService } from '../services/tile.service.js';
+import { backupService } from '../services/backup.service.js';
+import { logAdminAction } from '../services/audit.service.js';
 
 const redis = new Redis(config.REDIS_URL);
 
 const SETTINGS_KEY = 'org:settings';
 const PROVISION_STATUS_KEY = 'map:provision:status';
+const TILE_STATUS_KEY = 'map:tile:status';
 const MAP_DATA_PATH = process.env.MAP_DATA_PATH || '/app/map-data/data.osm.pbf';
 const USER_AGENT = 'SafeCare/1.0 (mutual-aid-delivery)';
 
@@ -55,6 +59,13 @@ const settingsSchema = z.object({
   orgName: z.string().optional().default(''),
   serviceArea: operatingRegionSchema,
   language: z.enum(['en', 'es', 'ar', 'so', 'fr', 'zh', 'uk']).optional(),
+});
+
+const exportBackupSchema = z.object({
+  passphrase: z
+    .string()
+    .min(12, 'Passphrase must be at least 12 characters long.')
+    .max(256, 'Passphrase is too long.'),
 });
 
 // Map state bounding boxes to determine which extracts cover a region
@@ -180,6 +191,52 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
     },
   );
 
+  /**
+   * POST /api/settings/export-backup
+   * Export a passphrase-encrypted backup archive for off-device storage.
+   */
+  fastify.post(
+    '/api/settings/export-backup',
+    { preHandler: [fastify.requireAdmin, fastify.requireUnlocked] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parsed = exportBackupSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid request body',
+          details: parsed.error.issues,
+        });
+      }
+
+      try {
+        const result = await backupService.createEncryptedBackup(parsed.data.passphrase);
+
+        void logAdminAction('backup_exported', request, {
+          recipientCount: result.summary.recipientCount,
+          driverCount: result.summary.driverCount,
+          zoneCount: result.summary.zoneCount,
+          dispatchSessionCount: result.summary.dispatchSessionCount,
+          deliveryCount: result.summary.deliveryCount,
+          checkInCount: result.summary.checkInCount,
+        });
+
+        reply
+          .header('Content-Type', 'application/octet-stream')
+          .header('Content-Disposition', `attachment; filename="${result.filename}"`)
+          .header('Content-Length', String(result.buffer.length))
+          .header('Cache-Control', 'no-store');
+
+        return reply.send(result.buffer);
+      } catch (err) {
+        request.log.error({ err }, 'Failed to create encrypted backup');
+        return reply.code(500).send({
+          success: false,
+          error: 'Failed to create encrypted backup.',
+        });
+      }
+    },
+  );
+
   // -------------------------------------------------------------------------
   // POST /api/settings/provision-maps
   // Downloads state-level OSM PBF data based on the service area center.
@@ -219,6 +276,8 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
       const regionLabel = extracts.length === 1
         ? extracts[0].replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
         : `${extracts.length} states`;
+
+      void warmTileCache(bounds, regionLabel, fastify.log);
 
       // For now, download extracts sequentially and merge isn't supported --
       // use the first extract if single state, or fall back to a regional extract
@@ -492,6 +551,8 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
       }
 
       const stored = JSON.parse(raw);
+      const tileRaw = await redis.get(TILE_STATUS_KEY);
+      const tileStatus = tileRaw ? JSON.parse(tileRaw) : null;
 
       // If Redis says "ready" or "importing", verify Nominatim is actually live
       if (stored.status === 'ready' || stored.status === 'importing') {
@@ -582,7 +643,13 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
 
       return reply.send({
         success: true,
-        data: stored,
+        data: {
+          ...stored,
+          tileStatus: tileStatus?.status,
+          tileProgress: tileStatus?.progress,
+          tileMessage: tileStatus?.message,
+          tileCount: tileStatus?.tileCount,
+        },
       });
     },
   );
@@ -757,6 +824,99 @@ async function downloadPbf(
         status: 'error',
         state: stateName,
         message,
+      }),
+    );
+  }
+}
+
+async function warmTileCache(
+  bounds: { south: number; west: number; north: number; east: number },
+  regionLabel: string,
+  log: { error: (...args: any[]) => void; info: (...args: any[]) => void },
+): Promise<void> {
+  try {
+    const usingUpstreamTileSource = tileService.hasUpstreamTileSource();
+
+    await redis.set(
+      TILE_STATUS_KEY,
+      JSON.stringify({
+        status: 'downloading',
+        progress: 0,
+        region: regionLabel,
+        message: usingUpstreamTileSource
+          ? 'Caching map tiles for driver offline use...'
+          : 'Checking local offline map tiles...',
+      }),
+    );
+
+    const result = await tileService.prefetchTiles(
+      bounds,
+      undefined,
+      undefined,
+      async (completed, total) => {
+      const progress = total > 0 ? Math.round((completed / total) * 100) : 100;
+      await redis.set(
+        TILE_STATUS_KEY,
+        JSON.stringify({
+          status: 'downloading',
+          progress,
+          region: regionLabel,
+          tileCount: total,
+          message: usingUpstreamTileSource
+            ? `Caching map tiles (${completed} / ${total})...`
+            : `Checking local map tiles (${completed} / ${total})...`,
+        }),
+      );
+      },
+    );
+
+    if (result.missing > 0) {
+      await redis.set(
+        TILE_STATUS_KEY,
+        JSON.stringify({
+          status: 'error',
+          progress:
+            result.total > 0
+              ? Math.round(((result.total - result.missing) / result.total) * 100)
+              : 0,
+          region: regionLabel,
+          tileCount: result.total,
+          missingTileCount: result.missing,
+          message: usingUpstreamTileSource
+            ? `Offline map tile cache is incomplete. ${result.missing} tiles could not be downloaded from the configured tile source.`
+            : `Offline map tile set is incomplete. ${result.missing} tiles are missing from local storage.`,
+        }),
+      );
+
+      log.error(
+        `Tile cache incomplete for ${regionLabel}: ${result.missing} of ${result.total} tiles missing`,
+      );
+      return;
+    }
+
+    await redis.set(
+      TILE_STATUS_KEY,
+      JSON.stringify({
+        status: 'ready',
+        progress: 100,
+        region: regionLabel,
+        tileCount: result.total,
+        message:
+          usingUpstreamTileSource && result.fetched > 0
+            ? 'Offline map tiles are ready.'
+            : 'Offline map tiles are present on the SafeCare server.',
+      }),
+    );
+
+    log.info(`Tile cache ready for ${regionLabel}`);
+  } catch (err) {
+    log.error(err, 'Tile cache warmup failed');
+    await redis.set(
+      TILE_STATUS_KEY,
+      JSON.stringify({
+        status: 'error',
+        region: regionLabel,
+        message: err instanceof Error ? err.message : 'Tile cache warmup failed',
       }),
     );
   }

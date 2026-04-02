@@ -15,6 +15,7 @@ import zoneRoutes from './routes/zone.routes.js';
 import distributionRoutes from './routes/distribution.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import geocodeRoutes from './routes/geocode.routes.js';
+import tilesRoutes from './routes/tiles.routes.js';
 import webhookRoutes from './routes/webhook.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
@@ -52,6 +53,7 @@ async function main() {
   await fastify.register(setupRoutes);
   await fastify.register(settingsRoutes);
   await fastify.register(geocodeRoutes);
+  await fastify.register(tilesRoutes);
   await fastify.register(zoneRoutes);
   await fastify.register(updateRoutes);
 

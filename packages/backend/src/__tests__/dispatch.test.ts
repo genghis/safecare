@@ -10,6 +10,7 @@ let dbInsertValues: any[] = [];
 let dbUpdateSets: any[] = [];
 let dbSelectResults: any[] = [];
 let dbDeleteCalls: string[] = [];
+const redisStore = new Map<string, string>();
 
 const mockReturning = vi.fn(() => dbInsertValues);
 const mockInsertValues = vi.fn((vals: any) => {
@@ -54,6 +55,21 @@ vi.mock('../config.js', () => ({
   },
 }));
 
+vi.mock('ioredis', () => {
+  const RedisMock = vi.fn().mockImplementation(() => ({
+    setex: vi.fn(async (key: string, _ttl: number, value: string) => {
+      redisStore.set(key, value);
+      return 'OK';
+    }),
+    get: vi.fn(async (key: string) => redisStore.get(key) ?? null),
+    del: vi.fn(async (key: string) => {
+      redisStore.delete(key);
+      return 1;
+    }),
+  }));
+  return { default: RedisMock };
+});
+
 // Import the service under test AFTER mocks are set up
 import { DispatchService } from '../services/dispatch.service.js';
 
@@ -67,6 +83,7 @@ describe('DispatchService — Download Token Security', () => {
     dbUpdateSets = [];
     dbSelectResults = [];
     dbDeleteCalls = [];
+    redisStore.clear();
   });
 
   describe('releaseRoutes', () => {
@@ -140,6 +157,24 @@ describe('DispatchService — Download Token Security', () => {
       // expiresAt should be roughly 10 minutes from now
       expect(expiresAt).toBeGreaterThanOrEqual(before + 10 * 60 * 1000 - 100);
       expect(expiresAt).toBeLessThanOrEqual(after + 10 * 60 * 1000 + 100);
+    });
+  });
+
+  describe('getActiveSession', () => {
+    it('returns the newest active or draft session', async () => {
+      const orderBy = vi.fn(() => [
+        { id: 'session-newest', status: 'draft' },
+        { id: 'session-older', status: 'active' },
+      ]);
+
+      mockSelectFrom.mockReturnValueOnce({
+        where: vi.fn(() => ({ orderBy })),
+      });
+
+      const session = await dispatchService.getActiveSession();
+
+      expect(orderBy).toHaveBeenCalled();
+      expect(session).toEqual({ id: 'session-newest', status: 'draft' });
     });
   });
 
@@ -479,6 +514,7 @@ describe('DispatchService — Delivery Status Transitions', () => {
     dbInsertValues = [];
     dbUpdateSets = [];
     dbSelectResults = [];
+    redisStore.clear();
   });
 
   it('recordDelivery transitions a delivery to delivered status', async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ type LoginResponse = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,6 +27,7 @@ export default function LoginPage() {
   const [totpStep, setTotpStep] = useState(false);
   const [tempToken, setTempToken] = useState("");
   const [totpCode, setTotpCode] = useState("");
+  const restored = searchParams.get("restored") === "1";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -98,13 +100,18 @@ export default function LoginPage() {
                 <Input
                   id="totpCode"
                   type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]{6}"
-                  maxLength={6}
-                  placeholder="000000"
+                  inputMode="text"
+                  pattern="(\\d{6}|[a-fA-F0-9]{8})"
+                  maxLength={8}
+                  placeholder="000000 or a1b2c3d4"
                   value={totpCode}
                   onChange={(e) =>
-                    setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    setTotpCode(
+                      e.target.value
+                        .replace(/[^a-fA-F0-9]/g, "")
+                        .slice(0, 8)
+                        .toLowerCase()
+                    )
                   }
                   autoFocus
                   required
@@ -115,7 +122,10 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loading || totpCode.length !== 6}
+                disabled={
+                  loading ||
+                  !(/^(\d{6}|[a-f0-9]{8})$/.test(totpCode))
+                }
               >
                 {loading ? t('dashboard.settings.verifying') : t('dashboard.login.verify')}
               </Button>
@@ -154,6 +164,11 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {restored && (
+              <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                Backup restored. Sign in with your existing SafeCare admin account to continue setup on this machine.
+              </div>
+            )}
             {error && (
               <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
                 {error}

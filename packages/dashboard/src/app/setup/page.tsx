@@ -12,7 +12,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { apiPost, apiPut, apiGet, setToken } from "@/lib/api";
+import { apiPost, apiPut, apiGet, setToken, getToken } from "@/lib/api";
 import { useLocale } from "@/lib/locale";
 
 const SettingsMap = dynamic(() => import("@/components/settings-map"), {
@@ -37,6 +37,18 @@ interface ProvisionStatus {
   elapsed?: string;
 }
 
+interface BackupImportSummary {
+  orgName: string;
+  adminCount: number;
+  recipientCount: number;
+  driverCount: number;
+  zoneCount: number;
+  dispatchSessionCount: number;
+  deliveryCount: number;
+  checkInCount: number;
+  includesMapData: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Step definitions
 // ---------------------------------------------------------------------------
@@ -57,6 +69,7 @@ export default function SetupPage() {
   const { t } = useLocale();
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [setupMode, setSetupMode] = useState<"create" | "restore">("create");
 
   // Step 1: Account
   const [email, setEmail] = useState("");
@@ -65,6 +78,12 @@ export default function SetupPage() {
   const [orgName, setOrgName] = useState("");
   const [accountError, setAccountError] = useState("");
   const [creatingAccount, setCreatingAccount] = useState(false);
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [backupPassphrase, setBackupPassphrase] = useState("");
+  const [confirmBackupPassphrase, setConfirmBackupPassphrase] = useState("");
+  const [importError, setImportError] = useState("");
+  const [importingBackup, setImportingBackup] = useState(false);
+  const [restoredSummary, setRestoredSummary] = useState<BackupImportSummary | null>(null);
 
   // Step 2: Operating region
   const [lat, setLat] = useState(39.8283);
@@ -103,6 +122,10 @@ export default function SetupPage() {
         router.push("/");
       } else if (res.ok && res.data?.steps) {
         const s = res.data.steps;
+        if (s.adminCreated && !getToken()) {
+          router.push("/login");
+          return;
+        }
         if (s.adminCreated && s.operatingRegionSet && (s.mapsStatus === "ready" || s.mapsStatus === "importing")) {
           setStep(4); // Skip to notifications if maps are downloading
         } else if (s.adminCreated && s.operatingRegionSet) {
@@ -162,6 +185,53 @@ export default function SetupPage() {
       setAccountError(t('dashboard.setup.accountCreatedLoginFailed'));
     }
     setCreatingAccount(false);
+  }
+
+  async function handleImportBackup() {
+    setImportError("");
+
+    if (!backupFile) {
+      setImportError("Choose a SafeCare backup file first.");
+      return;
+    }
+
+    if (backupPassphrase.length < 12) {
+      setImportError("Use the same backup passphrase you chose during export.");
+      return;
+    }
+
+    if (backupPassphrase !== confirmBackupPassphrase) {
+      setImportError("The backup passphrases do not match.");
+      return;
+    }
+
+    setImportingBackup(true);
+
+    try {
+      const backup = await backupFile.text();
+      const res = await apiPost<{
+        restored: boolean;
+        requiresMapProvisioning: boolean;
+        summary: BackupImportSummary;
+      }>("/api/setup/import-backup", {
+        passphrase: backupPassphrase,
+        backup,
+      });
+
+      if (res.ok && res.data?.restored) {
+        setRestoredSummary(res.data.summary);
+        setBackupFile(null);
+        setBackupPassphrase("");
+        setConfirmBackupPassphrase("");
+        return;
+      }
+
+      setImportError(res.error || "Failed to restore the backup.");
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Failed to restore the backup.");
+    } finally {
+      setImportingBackup(false);
+    }
   }
 
   // Search for city
@@ -261,37 +331,168 @@ export default function SetupPage() {
         {step === 1 && (
           <Card>
             <CardHeader>
-              <CardTitle>{t('dashboard.setup.createAdminAccount')}</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {t('dashboard.setup.adminAccountDesc')}
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {accountError && (
-                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">{accountError}</div>
+              <CardTitle>
+                {restoredSummary ? "Backup restored" : "Choose how to start"}
+              </CardTitle>
+              {!restoredSummary && (
+                <p className="text-sm text-muted-foreground">
+                  Create a new SafeCare setup, or restore a previous encrypted backup before reinstalling.
+                </p>
               )}
-              <div className="space-y-1">
-                <label className="text-sm font-medium">{t('dashboard.setup.orgNameLabel')}</label>
-                <Input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder={t('dashboard.setup.orgNamePlaceholder')} />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium">{t('dashboard.common.email')}</label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@example.com" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium">{t('dashboard.setup.password')}</label>
-                <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('dashboard.setup.passwordPlaceholder')} />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium">{t('dashboard.setup.confirmPassword')}</label>
-                <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder={t('dashboard.setup.confirmPasswordPlaceholder')} />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleCreateAccount} disabled={creatingAccount || !email || !password || !confirmPassword} className="w-full" size="lg">
-                {creatingAccount ? t('dashboard.setup.creatingAccount') : t('dashboard.setup.createAndContinue')}
-              </Button>
-            </CardFooter>
+            </CardHeader>
+            {!restoredSummary && (
+              <CardContent className="space-y-4">
+                <div className="inline-flex rounded-lg border bg-muted p-1">
+                  <button
+                    type="button"
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                      setupMode === "create"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground"
+                    }`}
+                    onClick={() => {
+                      setSetupMode("create");
+                      setImportError("");
+                    }}
+                    data-testid="setup-mode-create"
+                  >
+                    Start new setup
+                  </button>
+                  <button
+                    type="button"
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                      setupMode === "restore"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground"
+                    }`}
+                    onClick={() => {
+                      setSetupMode("restore");
+                      setAccountError("");
+                    }}
+                    data-testid="setup-mode-restore"
+                  >
+                    Restore backup
+                  </button>
+                </div>
+
+                {setupMode === "create" && (
+                  <div className="space-y-4">
+                    {accountError && (
+                      <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">{accountError}</div>
+                    )}
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">{t('dashboard.setup.orgNameLabel')}</label>
+                      <Input data-testid="setup-org-name" value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder={t('dashboard.setup.orgNamePlaceholder')} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">{t('dashboard.common.email')}</label>
+                      <Input data-testid="setup-admin-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@example.com" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">{t('dashboard.setup.password')}</label>
+                      <Input data-testid="setup-admin-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('dashboard.setup.passwordPlaceholder')} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">{t('dashboard.setup.confirmPassword')}</label>
+                      <Input data-testid="setup-admin-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder={t('dashboard.setup.confirmPasswordPlaceholder')} />
+                    </div>
+                  </div>
+                )}
+
+                {setupMode === "restore" && (
+                  <div className="space-y-4">
+                    <div className="rounded-md border bg-muted/40 p-4 text-sm text-muted-foreground space-y-1">
+                      <p>
+                        Restore an encrypted `.scbackup` file from a previous SafeCare setup.
+                      </p>
+                      <p>
+                        This restores the saved organization data and admin accounts, but map tiles and imported map data still need to be reprovisioned on the new machine.
+                      </p>
+                    </div>
+
+                    {importError && (
+                      <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive" data-testid="setup-import-error">
+                        {importError}
+                      </div>
+                    )}
+
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">Backup file</label>
+                      <Input
+                        data-testid="setup-backup-file"
+                        type="file"
+                        accept=".scbackup,application/octet-stream"
+                        onChange={(e) => setBackupFile(e.target.files?.[0] ?? null)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">Backup passphrase</label>
+                      <Input
+                        data-testid="setup-backup-passphrase"
+                        type="password"
+                        value={backupPassphrase}
+                        onChange={(e) => setBackupPassphrase(e.target.value)}
+                        placeholder="Enter the backup passphrase"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">Confirm passphrase</label>
+                      <Input
+                        data-testid="setup-backup-confirm-passphrase"
+                        type="password"
+                        value={confirmBackupPassphrase}
+                        onChange={(e) => setConfirmBackupPassphrase(e.target.value)}
+                        placeholder="Enter the same passphrase again"
+                      />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            )}
+
+            {restoredSummary ? (
+              <>
+                <CardContent className="space-y-4">
+                  <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                    The backup was restored successfully. Sign in with one of the restored admin accounts to continue setup and reprovision maps on this machine.
+                  </div>
+                  <div className="rounded-md border bg-muted/40 p-4 text-sm">
+                    <p className="font-medium">{restoredSummary.orgName || "Restored organization"}</p>
+                    <p className="text-muted-foreground mt-2">
+                      {restoredSummary.adminCount} admin account{restoredSummary.adminCount === 1 ? "" : "s"}, {restoredSummary.recipientCount} recipient{restoredSummary.recipientCount === 1 ? "" : "s"}, {restoredSummary.driverCount} driver{restoredSummary.driverCount === 1 ? "" : "s"}, and {restoredSummary.deliveryCount} deliver{restoredSummary.deliveryCount === 1 ? "y" : "ies"} restored.
+                    </p>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={() => router.push("/login?restored=1")}
+                    data-testid="setup-import-continue-login"
+                  >
+                    Sign in to continue setup
+                  </Button>
+                </CardFooter>
+              </>
+            ) : (
+              <CardFooter>
+                {setupMode === "create" ? (
+                  <Button data-testid="setup-create-account" onClick={handleCreateAccount} disabled={creatingAccount || !email || !password || !confirmPassword} className="w-full" size="lg">
+                    {creatingAccount ? t('dashboard.setup.creatingAccount') : t('dashboard.setup.createAndContinue')}
+                  </Button>
+                ) : (
+                  <Button
+                    data-testid="setup-import-backup"
+                    onClick={handleImportBackup}
+                    disabled={importingBackup || !backupFile || !backupPassphrase || !confirmBackupPassphrase}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {importingBackup ? "Restoring backup..." : "Restore encrypted backup"}
+                  </Button>
+                )}
+              </CardFooter>
+            )}
           </Card>
         )}
 
@@ -318,6 +519,7 @@ export default function SetupPage() {
               <div className="relative z-[10000]" ref={resultsRef}>
                 <Input value={searchQuery} onChange={(e) => handleSearchInput(e.target.value)}
                   onFocus={() => searchResults.length > 0 && setShowResults(true)}
+                  data-testid="setup-region-search"
                   placeholder={t('dashboard.setup.searchCityPlaceholder')} />
                 {searching && <div className="absolute right-3 top-3 h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />}
                 {showResults && searchResults.length > 0 && (
@@ -356,7 +558,7 @@ export default function SetupPage() {
               })()}
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSaveRegion} disabled={savingRegion || !bounds} className="w-full" size="lg">
+              <Button data-testid="setup-save-region" onClick={handleSaveRegion} disabled={savingRegion || !bounds} className="w-full" size="lg">
                 {savingRegion ? t('dashboard.common.saving') : t('dashboard.setup.saveRegionAndContinue')}
               </Button>
             </CardFooter>
@@ -380,7 +582,7 @@ export default function SetupPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {provisionStatus.status === "not_started" && (
-                <Button onClick={handleProvision} disabled={provisioning} className="w-full" size="lg">
+                <Button data-testid="setup-provision-maps" onClick={handleProvision} disabled={provisioning} className="w-full" size="lg">
                   {provisioning ? t('dashboard.common.starting') : t('dashboard.setup.downloadMapData')}
                 </Button>
               )}
@@ -420,7 +622,7 @@ export default function SetupPage() {
                       {t('dashboard.setup.mapsImportingBackground')}
                     </p>
                   </div>
-                  <Button onClick={() => setStep(4)} className="w-full" size="lg">
+                  <Button data-testid="setup-continue-while-importing" onClick={() => setStep(4)} className="w-full" size="lg">
                     {t('dashboard.setup.continueWhileImporting')}
                   </Button>
                 </div>
@@ -432,15 +634,15 @@ export default function SetupPage() {
                     <span className="text-3xl text-emerald-600">&#10003;</span>
                   </div>
                   <p className="text-sm text-muted-foreground">{t('dashboard.setup.mapsReadyDesc')}</p>
-                  <Button onClick={() => setStep(4)} className="w-full" size="lg">{t('dashboard.common.continue')}</Button>
+                  <Button data-testid="setup-continue-from-maps" onClick={() => setStep(4)} className="w-full" size="lg">{t('dashboard.common.continue')}</Button>
                 </div>
               )}
 
               {provisionStatus.status === "error" && (
                 <div className="space-y-3">
                   <p className="text-sm text-destructive">{provisionStatus.message || t('dashboard.common.error')}</p>
-                  <Button onClick={handleProvision} disabled={provisioning} variant="outline">{t('dashboard.common.retry')}</Button>
-                  <Button onClick={() => setStep(4)} variant="ghost" className="ml-2">{t('dashboard.setup.skipForNow')}</Button>
+                  <Button data-testid="setup-retry-provision" onClick={handleProvision} disabled={provisioning} variant="outline">{t('dashboard.common.retry')}</Button>
+                  <Button data-testid="setup-skip-maps" onClick={() => setStep(4)} variant="ghost" className="ml-2">{t('dashboard.setup.skipForNow')}</Button>
                 </div>
               )}
             </CardContent>
@@ -508,8 +710,8 @@ export default function SetupPage() {
               )}
             </CardContent>
             <CardFooter className="flex gap-2">
-              <Button variant="ghost" onClick={() => setStep(5)}>{t('dashboard.setup.skipForNow')}</Button>
-              <Button onClick={() => setStep(5)} className="flex-1" size="lg">{t('dashboard.common.continue')}</Button>
+              <Button data-testid="setup-skip-notifications" variant="ghost" onClick={() => setStep(5)}>{t('dashboard.setup.skipForNow')}</Button>
+              <Button data-testid="setup-continue-notifications" onClick={() => setStep(5)} className="flex-1" size="lg">{t('dashboard.common.continue')}</Button>
             </CardFooter>
           </Card>
         )}
@@ -588,7 +790,7 @@ export default function SetupPage() {
               )}
             </CardContent>
             <CardFooter>
-              <Button onClick={() => router.push("/")} className="w-full" size="lg">
+              <Button data-testid="setup-finish" onClick={() => router.push("/")} className="w-full" size="lg">
                 {t('dashboard.setup.goToDashboard')}
               </Button>
             </CardFooter>

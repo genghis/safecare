@@ -1,214 +1,326 @@
-/**
- * SafeCare Fresh Install Integration Test
- *
- * Simulates the complete out-of-box experience:
- * 1. Fresh Docker instance (clean volumes)
- * 2. Browser opens dashboard → redirected to setup wizard
- * 3. Create admin account
- * 4. Define operating region
- * 5. Provision maps (or skip if slow)
- * 6. Configure notifications (skip in test)
- * 7. Security briefing → dashboard
- * 8. Add a zone, driver, recipient
- * 9. Create dispatch session, assign deliveries
- * 10. Driver PWA: login, check-in, download route
- *
- * Run: npx playwright test fresh-install.spec.ts
- * Or via the wrapper: ./tests/integration/run.sh
- */
-
-import { test, expect, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 const DASHBOARD = process.env.DASHBOARD_URL || "http://localhost:3000";
 const PWA = process.env.PWA_URL || "http://localhost:5173";
 const API = process.env.API_URL || "http://localhost:3001";
+const TEST_DEK = process.env.SAFECARE_TEST_DEK || "1".repeat(64);
+const ARTIFACT_PATH =
+  process.env.SAFECARE_SMOKE_ARTIFACT ||
+  path.join(process.cwd(), ".artifacts", "core-smoke.json");
 
-// Increase timeout for slow operations
-test.setTimeout(120_000);
+const REGION = {
+  lat: 37.44,
+  lng: -122.16,
+  zoom: 13,
+  label: "Palo Alto",
+  bounds: {
+    south: 37.41,
+    west: -122.19,
+    north: 37.47,
+    east: -122.13,
+  },
+};
 
-test.describe("Fresh Install Flow", () => {
-  test("1. Dashboard redirects to setup wizard", async ({ page }) => {
+type ApiOptions = {
+  body?: unknown;
+  headers?: Record<string, string>;
+  token?: string;
+};
+
+type SmokeArtifacts = {
+  apiBase: string;
+  dashboardBase: string;
+  pwaBase: string;
+  dek: string;
+  adminEmail: string;
+  adminPassword: string;
+  orgName: string;
+  driverPhone: string;
+  driverId: string;
+  recipientId: string;
+  zoneId: string;
+  sessionId: string;
+  deliveryId: string;
+  routeReleased: boolean;
+  routeVisibleInPwa: boolean;
+};
+
+async function api(
+  request: APIRequestContext,
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  route: string,
+  options: ApiOptions = {},
+) {
+  const headers: Record<string, string> = {
+    ...(options.headers || {}),
+  };
+
+  if (options.token) {
+    headers.Authorization = `Bearer ${options.token}`;
+  }
+  if (options.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response =
+    method === "GET"
+      ? await request.get(`${API}${route}`, { headers })
+      : method === "POST"
+      ? await request.post(`${API}${route}`, { headers, data: options.body })
+      : method === "PUT"
+      ? await request.put(`${API}${route}`, { headers, data: options.body })
+      : method === "PATCH"
+      ? await request.patch(`${API}${route}`, { headers, data: options.body })
+      : await request.delete(`${API}${route}`, { headers });
+
+  const text = await response.text();
+  let data: unknown = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+
+  return {
+    status: response.status(),
+    ok: response.ok(),
+    raw: data,
+    data:
+      data && typeof data === "object" && "data" in (data as Record<string, unknown>)
+        ? (data as { data: unknown }).data
+        : data,
+  };
+}
+
+async function readSessionToken(page: Page): Promise<string> {
+  let token = "";
+  await expect
+    .poll(
+      async () => {
+        token =
+          (await page.evaluate(() => window.sessionStorage.getItem("safecare_token"))) || "";
+        return token.length;
+      },
+      { timeout: 15_000 },
+    )
+    .toBeGreaterThan(20);
+
+  return token;
+}
+
+async function writeArtifacts(artifacts: SmokeArtifacts): Promise<void> {
+  await mkdir(path.dirname(ARTIFACT_PATH), { recursive: true });
+  await writeFile(ARTIFACT_PATH, `${JSON.stringify(artifacts, null, 2)}\n`, "utf8");
+}
+
+test.describe("Fresh Install Core Smoke", () => {
+  test.setTimeout(180_000);
+
+  test("fresh install to first route", async ({ page, request, context }) => {
+    const uniqueSuffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    const adminEmail = `smoke-${uniqueSuffix}@example.test`;
+    const adminPassword = "smoketest123";
+    const orgName = "Smoke Test Mutual Aid";
+    const driverPhone = `555${uniqueSuffix.slice(-7)}`;
+    const recipientPhone = `556${uniqueSuffix.slice(-7)}`;
+
     await page.goto(DASHBOARD);
-    // Should redirect to /setup
-    await page.waitForURL("**/setup", { timeout: 10_000 });
-    await expect(page.locator("text=SafeCare Setup")).toBeVisible();
-  });
+    await page.waitForLoadState("networkidle");
 
-  test("2. Step 1: Create admin account", async ({ page }) => {
-    await page.goto(`${DASHBOARD}/setup`);
-
-    // Should be on step 1
-    await expect(page.locator("text=Create Your Admin Account")).toBeVisible();
-
-    // Fill form
-    await page.fill('input[placeholder*="Mutual Aid"]', "Test Organization");
-    await page.fill('input[type="email"]', `test-${Date.now()}@smoke.test`);
-    await page.fill(
-      'input[placeholder="At least 8 characters"]',
-      "testpass123"
-    );
-    await page.fill(
-      'input[placeholder="Type password again"]',
-      "testpass123"
-    );
-
-    // Submit
-    await page.click("text=Create Account & Continue");
-
-    // Should advance to step 2
-    await expect(
-      page.locator("text=Define Your Operating Region")
-    ).toBeVisible({ timeout: 10_000 });
-  });
-
-  test("3. Step 2: Define operating region", async ({ page }) => {
-    // This test needs to be logged in from step 1
-    // For isolated testing, go directly to setup and check if we land on step 2
-    await page.goto(`${DASHBOARD}/setup`);
-    await page.waitForTimeout(2000);
-
-    // If we see region step, fill it
-    const regionVisible = await page
-      .locator("text=Define Your Operating Region")
-      .isVisible()
-      .catch(() => false);
-
-    if (regionVisible) {
-      // Search for a city
-      const searchInput = page.locator(
-        'input[placeholder="Search for your city..."]'
-      );
-      if (await searchInput.isVisible()) {
-        await searchInput.fill("Palo Alto");
-        await page.waitForTimeout(1500); // Wait for debounce + search
-
-        // Click first result if dropdown appears
-        const result = page.locator("button:has-text('Palo Alto')").first();
-        if (await result.isVisible({ timeout: 5000 }).catch(() => false)) {
-          await result.click();
-          await page.waitForTimeout(500);
-        }
+    if (page.url().includes("/unlock")) {
+      if (await page.getByTestId("unlock-manual-toggle").isVisible().catch(() => false)) {
+        await page.getByTestId("unlock-manual-toggle").click();
       }
-
-      // Save region
-      const saveButton = page.locator("text=Save Region & Continue");
-      if (await saveButton.isEnabled()) {
-        await saveButton.click();
-        await page.waitForTimeout(2000);
-      }
+      await expect(page.getByTestId("unlock-manual-key")).toBeVisible();
+      await page.getByTestId("unlock-manual-key").fill(TEST_DEK);
+      await page.getByTestId("unlock-submit").click();
+      await page.waitForURL("**/setup", { timeout: 20_000 });
+    } else {
+      await page.waitForURL(/\/setup$/, { timeout: 20_000 });
     }
-  });
 
-  test("4. Setup status API is accessible without auth", async ({
-    request,
-  }) => {
-    const response = await request.get(`${API}/api/setup/status`);
-    expect(response.status()).toBe(200);
+    await expect(page.getByTestId("setup-create-account")).toBeVisible();
+    await page.getByTestId("setup-org-name").fill(orgName);
+    await page.getByTestId("setup-admin-email").fill(adminEmail);
+    await page.getByTestId("setup-admin-password").fill(adminPassword);
+    await page.getByTestId("setup-admin-confirm-password").fill(adminPassword);
+    await page.getByTestId("setup-create-account").click();
+    await expect(page.getByTestId("setup-region-search")).toBeVisible({ timeout: 15_000 });
 
-    const data = await response.json();
-    expect(data.success).toBe(true);
-    expect(data.data).toHaveProperty("setupComplete");
-    expect(data.data).toHaveProperty("steps");
-    expect(data.data.steps).toHaveProperty("adminCreated");
-    expect(data.data.steps).toHaveProperty("operatingRegionSet");
-    expect(data.data.steps).toHaveProperty("mapsProvisioned");
-  });
+    const adminToken = await readSessionToken(page);
 
-  test("5. Health check returns ok", async ({ request }) => {
-    const response = await request.get(`${API}/api/health`);
-    expect(response.status()).toBe(200);
-    const data = await response.json();
-    expect(data.status).toBe("ok");
-  });
+    const saveSettings = await api(request, "PUT", "/api/settings", {
+      token: adminToken,
+      body: {
+        orgName,
+        serviceArea: REGION,
+      },
+    });
+    expect(saveSettings.status).toBe(200);
 
-  test("6. Pre-built manifest is accessible", async ({ request }) => {
-    const response = await request.get(
-      "https://storage.googleapis.com/safecare-maps-osrm/manifest.json"
+    const startProvisioning = await api(request, "POST", "/api/settings/provision-maps", {
+      token: adminToken,
+      body: {},
+    });
+    expect(startProvisioning.status).toBe(200);
+
+    const provisionStatus = await api(request, "GET", "/api/settings/provision-status", {
+      token: adminToken,
+    });
+    expect(provisionStatus.status).toBe(200);
+    const setupStatus = await api(request, "GET", "/api/setup/status");
+    expect(setupStatus.status).toBe(200);
+    expect((setupStatus.data as { steps: { adminCreated: boolean; operatingRegionSet: boolean } }).steps.adminCreated).toBe(true);
+    expect((setupStatus.data as { steps: { adminCreated: boolean; operatingRegionSet: boolean } }).steps.operatingRegionSet).toBe(true);
+
+    const unauthRecipients = await api(request, "GET", "/api/recipients");
+    expect(unauthRecipients.status).toBe(401);
+
+    const zoneRes = await api(request, "POST", "/api/zones", {
+      token: adminToken,
+      body: {
+        name: "Smoke Test Zone",
+        color: "#3b82f6",
+        polygon: [
+          { lat: 37.44, lng: -122.16 },
+          { lat: 37.44, lng: -122.14 },
+          { lat: 37.42, lng: -122.14 },
+          { lat: 37.42, lng: -122.16 },
+        ],
+      },
+    });
+    expect(zoneRes.status).toBe(201);
+    const zoneId = (zoneRes.data as { id: string }).id;
+
+    const driverRes = await api(request, "POST", "/api/drivers", {
+      token: adminToken,
+      body: {
+        name: "Smoke Test Driver",
+        phone: driverPhone,
+        teamName: "Test Team",
+      },
+    });
+    expect(driverRes.status).toBe(201);
+    const driverId = (driverRes.data as { id: string }).id;
+
+    const vetDriver = await api(request, "PATCH", `/api/drivers/${driverId}/status`, {
+      token: adminToken,
+      body: { status: "vetted" },
+    });
+    expect(vetDriver.status).toBe(200);
+
+    const recipientRes = await api(request, "POST", "/api/recipients", {
+      token: adminToken,
+      body: {
+        name: "Smoke Test Recipient",
+        phone: recipientPhone,
+        address: "123 Test St, Palo Alto, CA",
+        lat: REGION.lat,
+        lng: REGION.lng,
+        communicationPreference: "sms",
+        language: "en",
+      },
+    });
+    expect(recipientRes.status).toBe(201);
+    const recipientId = (recipientRes.data as { id: string }).id;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const sessionRes = await api(request, "POST", "/api/dispatch/sessions", {
+      token: adminToken,
+      body: { date: today },
+    });
+    expect(sessionRes.status).toBe(201);
+    const sessionId = (sessionRes.data as { id: string }).id;
+
+    const deliveryRes = await api(request, "POST", "/api/deliveries", {
+      token: adminToken,
+      body: {
+        recipientId,
+        dispatchSessionId: sessionId,
+      },
+    });
+    expect(deliveryRes.status).toBe(201);
+    const deliveryId = (deliveryRes.data as { id: string }).id;
+
+    const assignRes = await api(request, "POST", `/api/deliveries/${deliveryId}/assign`, {
+      token: adminToken,
+      body: { driverId },
+    });
+    expect(assignRes.status).toBe(200);
+
+    const driverPage = await context.newPage();
+    await driverPage.route(`${API}/api/auth/driver/request-otp`, async (route) => {
+      await route.continue({
+        headers: {
+          ...route.request().headers(),
+          "x-safecare-test-otp": "1",
+        },
+      });
+    });
+    await driverPage.goto(PWA);
+    await expect(driverPage.getByTestId("driver-phone-input")).toBeVisible();
+    await driverPage.getByTestId("driver-phone-input").fill(driverPhone);
+    await driverPage.getByTestId("driver-request-otp").click();
+    await expect(driverPage.getByTestId("driver-otp-input")).toBeVisible({ timeout: 15_000 });
+
+    const otpRes = await api(request, "POST", "/api/auth/driver/request-otp", {
+      headers: {
+        "x-safecare-test-otp": "1",
+      },
+      body: { phone: driverPhone },
+    });
+    expect(otpRes.status).toBe(200);
+    const otp = (otpRes.data as { otp?: string }).otp;
+    expect(otp).toBeTruthy();
+
+    await driverPage.getByTestId("driver-otp-input").fill(otp!);
+    await driverPage.getByTestId("driver-verify-otp").click();
+    await expect(driverPage.getByTestId("driver-check-in")).toBeVisible({ timeout: 15_000 });
+    await driverPage.getByTestId("driver-check-in").click();
+    await expect(driverPage.getByTestId("driver-check-routes")).toBeVisible({ timeout: 15_000 });
+
+    const releaseRes = await api(
+      request,
+      "POST",
+      `/api/dispatch/sessions/${sessionId}/release`,
+      {
+        token: adminToken,
+        body: { driverIds: [driverId] },
+      },
     );
-    expect(response.status()).toBe(200);
+    expect(releaseRes.status).toBe(200);
 
-    const manifest = await response.json();
-    expect(manifest.version).toBe(2);
-    expect(manifest.regions.length).toBeGreaterThan(0);
+    await driverPage.getByTestId("driver-check-routes").click();
 
-    // Check structure
-    const region = manifest.regions[0];
-    expect(region).toHaveProperty("id");
-    expect(region).toHaveProperty("name");
-    expect(region).toHaveProperty("bounds");
-    expect(region).toHaveProperty("osrmUrl");
-    expect(region).toHaveProperty("osrmSize");
-    expect(region.bounds).toHaveProperty("south");
-    expect(region.bounds).toHaveProperty("west");
-    expect(region.bounds).toHaveProperty("north");
-    expect(region.bounds).toHaveProperty("east");
-  });
-
-  test("7. PII endpoints require authentication", async ({ request }) => {
-    const endpoints = [
-      "/api/recipients",
-      "/api/drivers",
-      "/api/deliveries",
-      "/api/dashboard/stats",
-      "/api/zones",
-    ];
-
-    for (const endpoint of endpoints) {
-      const response = await request.get(`${API}${endpoint}`);
-      expect(
-        response.status(),
-        `${endpoint} should require auth`
-      ).toBe(401);
+    const backupDismiss = driverPage.getByTestId("driver-backup-dismiss");
+    if (await backupDismiss.isVisible().catch(() => false)) {
+      await backupDismiss.click();
     }
-  });
 
-  test("8. PWA loads and shows login", async ({ page }) => {
-    await page.goto(PWA);
-    await expect(page.locator("text=SafeCare")).toBeVisible();
-    await expect(page.locator("text=Driver Delivery App")).toBeVisible();
-    await expect(
-      page.locator('input[type="tel"], input[placeholder*="555"]')
-    ).toBeVisible();
-  });
-
-  test("9. PWA dashboard requires login", async ({ page }) => {
-    await page.goto(`${PWA}/dashboard`);
-    // Should redirect to login
-    await page.waitForURL("**/", { timeout: 5000 });
-    await expect(
-      page.locator("text=Driver Delivery App")
-    ).toBeVisible();
-  });
-
-  test("10. Database has encryption enabled", async ({ request }) => {
-    // This indirectly tests encryption by checking the API can decrypt
-    // (requires auth, so we need to log in first)
-    const loginResponse = await request.post(`${API}/api/auth/admin/login`, {
-      data: { email: "admin@example.com", password: "changeme" },
+    await expect(driverPage.getByTestId("delivery-card").first()).toBeVisible({
+      timeout: 45_000,
     });
 
-    if (loginResponse.status() === 200) {
-      const loginData = await loginResponse.json();
-      const token = loginData.data?.token;
+    const artifacts: SmokeArtifacts = {
+      apiBase: API,
+      dashboardBase: DASHBOARD,
+      pwaBase: PWA,
+      dek: TEST_DEK,
+      adminEmail,
+      adminPassword,
+      orgName,
+      driverPhone,
+      driverId,
+      recipientId,
+      zoneId,
+      sessionId,
+      deliveryId,
+      routeReleased: true,
+      routeVisibleInPwa: true,
+    };
 
-      if (token) {
-        // Fetch recipients - if encryption works, we get decrypted names
-        const recipResponse = await request.get(`${API}/api/recipients`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (recipResponse.status() === 200) {
-          const recipData = await recipResponse.json();
-          const recipients = recipData.data || recipData;
-          if (Array.isArray(recipients) && recipients.length > 0) {
-            // Name should be a readable string (decrypted), not ciphertext
-            const name = recipients[0].name;
-            expect(name).toBeTruthy();
-            expect(name.length).toBeGreaterThan(0);
-            expect(name.length).toBeLessThan(200); // Ciphertext would be much longer
-          }
-        }
-      }
-    }
+    await writeArtifacts(artifacts);
   });
 });

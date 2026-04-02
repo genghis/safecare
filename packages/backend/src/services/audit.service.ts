@@ -28,6 +28,8 @@ export type AuditAction =
   | 'driver_vetted'
   | 'settings_updated'
   | 'maps_provisioned'
+  | 'backup_exported'
+  | 'backup_imported'
   | 'system_unlocked'
   | 'purge_confirmed'
   | 'hourly_purge'

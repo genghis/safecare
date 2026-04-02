@@ -1,6 +1,7 @@
 import Redis from 'ioredis';
 import { config } from '../config.js';
 import { t, SupportedLocale, DEFAULT_LOCALE } from '@safecare/shared';
+import { getTwilioScrubQueue, queueSessionScrub } from '../jobs/index.js';
 
 type Channel = 'sms' | 'whatsapp' | 'signal';
 
@@ -74,6 +75,33 @@ export class NotificationService {
     return result;
   }
 
+  async sendOneTimeCode(phone: string, code: string): Promise<SendResult> {
+    const message = `Your SafeCare login code is ${code}. It expires in 5 minutes.`;
+
+    if (config.SIGNAL_CLI_URL && config.SIGNAL_PHONE_NUMBER) {
+      const signalResult = await this.sendSignal(phone, message);
+      if (signalResult.success) {
+        return signalResult;
+      }
+    }
+
+    return this.sendSms(phone, message);
+  }
+
+  private async trackMessageSid(sid?: string): Promise<void> {
+    if (!sid) {
+      return;
+    }
+
+    await this.redis.sadd(REDIS_SID_SET, sid);
+
+    try {
+      await queueSessionScrub(getTwilioScrubQueue(), [sid]);
+    } catch {
+      // Queue may not be ready yet; the daily sweep is the fallback.
+    }
+  }
+
   /**
    * Send an SMS via the Twilio REST API.
    */
@@ -117,10 +145,7 @@ export class NotificationService {
       const data = await response.json();
       const sid = data.sid as string;
 
-      // Track message SID in Redis for later scrubbing
-      if (sid) {
-        await this.redis.sadd(REDIS_SID_SET, sid);
-      }
+      await this.trackMessageSid(sid);
 
       return { success: true, channel: 'sms', messageId: sid };
     } catch (err) {
@@ -175,10 +200,7 @@ export class NotificationService {
       const data = await response.json();
       const sid = data.sid as string;
 
-      // Track message SID in Redis for later scrubbing
-      if (sid) {
-        await this.redis.sadd(REDIS_SID_SET, sid);
-      }
+      await this.trackMessageSid(sid);
 
       return { success: true, channel: 'whatsapp', messageId: sid };
     } catch (err) {

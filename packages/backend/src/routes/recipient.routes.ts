@@ -1,6 +1,13 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { config } from '../config.js';
 import { recipientService } from '../services/recipient.service.js';
+import {
+  constantTimeEquals,
+  normalizeCommunicationPreference,
+  normalizePhone,
+  sanitizePlainText,
+} from '../utils/security.js';
 
 const createRecipientSchema = z.object({
   name: z.string().min(1),
@@ -77,8 +84,18 @@ export default async function recipientRoutes(fastify: FastifyInstance) {
         });
       }
 
+      const sanitized = {
+        ...parsed.data,
+        name: sanitizePlainText(parsed.data.name),
+        address: sanitizePlainText(parsed.data.address),
+        phone: normalizePhone(parsed.data.phone),
+        language: parsed.data.language
+          ? sanitizePlainText(parsed.data.language)
+          : undefined,
+      };
+
       // Check for duplicate phone
-      const existing = await recipientService.findByPhone(parsed.data.phone);
+      const existing = await recipientService.findByPhone(sanitized.phone);
       if (existing) {
         return reply.code(409).send({
           success: false,
@@ -86,7 +103,7 @@ export default async function recipientRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const id = await recipientService.create(parsed.data);
+      const id = await recipientService.create(sanitized);
 
       return reply.code(201).send({
         success: true,
@@ -102,13 +119,43 @@ export default async function recipientRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/api/webhooks/jotform',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const body = request.body as Record<string, any>;
+      if (!config.JOTFORM_API_KEY) {
+        return reply.code(503).send({
+          success: false,
+          error: 'JotForm webhook is not configured',
+        });
+      }
+
+      const providedKey =
+        (request.headers['x-safecare-webhook-key'] as string | undefined) ??
+        ((request.query as Record<string, string | undefined>)?.apiKey ?? '');
+
+      if (!providedKey || !constantTimeEquals(providedKey, config.JOTFORM_API_KEY)) {
+        fastify.log.warn('Rejected JotForm webhook with invalid shared secret');
+        return reply.code(403).send({
+          success: false,
+          error: 'Invalid webhook signature',
+        });
+      }
+
+      const parsed = jotformWebhookSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid JotForm payload',
+          details: parsed.error.issues,
+        });
+      }
+
+      const body = parsed.data as Record<string, any>;
 
       // Extract fields from JotForm payload
-      const name = body.q3_fullName || body['q3_fullName'] || '';
-      const address = body.q4_address || body['q4_address'] || '';
-      const phone = body.q5_phoneNumber || body['q5_phoneNumber'] || '';
-      const commPref = body.q6_communicationPreference || 'sms';
+      const name = sanitizePlainText(body.q3_fullName || body['q3_fullName'] || '');
+      const address = sanitizePlainText(body.q4_address || body['q4_address'] || '');
+      const phone = normalizePhone(body.q5_phoneNumber || body['q5_phoneNumber'] || '');
+      const commPref = normalizeCommunicationPreference(
+        body.q6_communicationPreference || body['q6_communicationPreference'],
+      );
 
       if (!name || !address || !phone) {
         return reply.code(400).send({
@@ -120,9 +167,7 @@ export default async function recipientRoutes(fastify: FastifyInstance) {
       // Check for duplicate
       const existing = await recipientService.findByPhone(phone);
       if (existing) {
-        fastify.log.info(
-          `JotForm webhook: recipient with phone already exists, skipping`,
-        );
+        fastify.log.info('JotForm webhook: duplicate recipient ignored');
         return reply.send({ success: true, data: { id: existing.id, duplicate: true } });
       }
 
@@ -130,7 +175,7 @@ export default async function recipientRoutes(fastify: FastifyInstance) {
         name,
         address,
         phone,
-        communicationPreference: commPref === 'whatsapp' ? 'whatsapp' : 'sms',
+        communicationPreference: commPref,
       });
 
       fastify.log.info(`JotForm webhook: created recipient ${id}`);
