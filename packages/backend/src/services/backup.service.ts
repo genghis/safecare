@@ -65,6 +65,9 @@ export interface BackupEnvelope {
     name: 'scrypt';
     salt: string;
     keyLength: number;
+    N?: number;
+    r?: number;
+    p?: number;
   };
   iv: string;
   authTag: string;
@@ -444,8 +447,12 @@ function buildSummary(
   };
 }
 
+/** scrypt cost parameters — OWASP minimum is N=32768; we use 32768 for offline backup protection.
+ *  N=32768, r=8 requires ~32 MB which stays within Node.js default maxmem. */
+const SCRYPT_PARAMS = { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
+
 function deriveKey(passphrase: string, salt: Buffer, keyLength: number): Buffer {
-  return crypto.scryptSync(passphrase, salt, keyLength);
+  return crypto.scryptSync(passphrase, salt, keyLength, SCRYPT_PARAMS);
 }
 
 function toDateOrNull(value: unknown): Date | null {
@@ -556,6 +563,9 @@ export class BackupService {
         name: 'scrypt',
         salt: salt.toString('base64'),
         keyLength,
+        N: SCRYPT_PARAMS.N,
+        r: SCRYPT_PARAMS.r,
+        p: SCRYPT_PARAMS.p,
       },
       iv: iv.toString('base64'),
       authTag: authTag.toString('base64'),
@@ -576,7 +586,15 @@ export class BackupService {
     ) as BackupEnvelope;
 
     const salt = Buffer.from(parsed.kdf.salt, 'base64');
-    const key = deriveKey(passphrase, salt, parsed.kdf.keyLength);
+    // Read scrypt params from envelope (with fallback for old backups without them)
+    const kdfParams = parsed.kdf as { N?: number; r?: number; p?: number };
+    const scryptOpts = {
+      N: kdfParams.N ?? SCRYPT_PARAMS.N,
+      r: kdfParams.r ?? SCRYPT_PARAMS.r,
+      p: kdfParams.p ?? SCRYPT_PARAMS.p,
+      maxmem: SCRYPT_PARAMS.maxmem,
+    };
+    const key = crypto.scryptSync(passphrase, salt, parsed.kdf.keyLength, scryptOpts);
     const decipher = crypto.createDecipheriv(
       'aes-256-gcm',
       key,

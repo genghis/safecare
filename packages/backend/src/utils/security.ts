@@ -1,13 +1,14 @@
 import crypto from 'crypto';
 
+/**
+ * Constant-time string comparison that does not leak input length.
+ * HMACs both inputs with a random key to produce fixed-length digests,
+ * then compares the digests with timingSafeEqual.
+ */
 export function constantTimeEquals(a: string, b: string): boolean {
-  const left = Buffer.from(a, 'utf8');
-  const right = Buffer.from(b, 'utf8');
-
-  if (left.length !== right.length) {
-    return false;
-  }
-
+  const key = crypto.randomBytes(32);
+  const left = crypto.createHmac('sha256', key).update(a).digest();
+  const right = crypto.createHmac('sha256', key).update(b).digest();
   return crypto.timingSafeEqual(left, right);
 }
 

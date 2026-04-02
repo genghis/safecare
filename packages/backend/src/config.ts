@@ -75,8 +75,9 @@ export const config: {
   TILE_MIN_ZOOM: parseInt(process.env.TILE_MIN_ZOOM ?? '12', 10),
   TILE_MAX_ZOOM: parseInt(process.env.TILE_MAX_ZOOM ?? '16', 10),
   PROVISION_SERVICE_URL: process.env.PROVISION_SERVICE_URL ?? 'https://provision.safecare.dev',
-  ALLOW_TEST_OTP_ECHO:
-    process.env.NODE_ENV === 'test' || process.env.ALLOW_TEST_OTP_ECHO === 'true',
+  // Explicit opt-in only — never auto-enable based on NODE_ENV.
+  // Set ALLOW_TEST_OTP_ECHO=true in .env or docker-compose for test harnesses.
+  ALLOW_TEST_OTP_ECHO: process.env.ALLOW_TEST_OTP_ECHO === 'true',
 };
 
 /**
