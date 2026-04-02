@@ -107,8 +107,16 @@ Last updated: 2026-03-30
 | E2E smoke tests | Done | 35 API tests, full flow verification |
 | Security verification tests | Done | 32 tests, encryption/purge/access controls |
 | Playwright integration tests | Done | 27 browser tests, fresh install + Detroit flow |
+| Encrypted backup export + restore | Done | AES-256-GCM + scrypt KDF, passphrase-protected, restore during fresh setup |
+| Webhook signature validation | Done | Twilio HMAC signatures, JotForm shared-secret auth, fail-closed |
+| Local tile serving | Done | Self-hosted tile proxy + cache, no external CDN for map tiles |
+| OTP delivery gating | Done | Fails closed if SMS/Signal delivery fails, clears pending OTP |
+| Driver enumeration protection | Done | Same response for existing/non-existing driver phone numbers |
+| Geocoding fail-closed | Done | No public Nominatim fallback — addresses never leave local network |
+| Input sanitization utilities | Done | constantTimeEquals (HMAC-based), sanitizePlainText, normalizePhone |
+| Key rotation tooling | Done | Interactive rotate-keys.sh script for DEK re-encryption |
+| Remote access documentation | Done | docs/REMOTE-ACCESS.md — Tailscale/Cloudflare deployment patterns |
 | Remote wipe via push notification | Not done | |
-| Key rotation tooling | Not done | |
 
 ## Infrastructure
 
@@ -166,10 +174,7 @@ All user-facing strings translated to 6 languages. Language selectable in Settin
 | Exclusion zones | High | Draw "avoid" areas on map, OSRM edge-weighting. Currently zones are delivery-only. |
 | Communication proxy (blind number pool) | High | Twilio proxy so drivers/recipients never see each other's real numbers. Schema exists, no proxy logic. |
 | Tailscale / tunnel networking | High | Recommended deployment documented in docs/REMOTE-ACCESS.md. Admin should stay private; public host should expose only driver + webhook paths. |
-| ~~Password change endpoint~~ | ~~Done~~ | POST /api/auth/admin/change-password + dashboard Settings UI. Revokes all sessions on change. |
 | Route variation | Medium | Same driver gets same route pattern every time. |
 | Push notification remote wipe | Medium | Current wipe uses polling. Push would be instant even with app backgrounded. |
-| Key rotation tooling | Medium | Scripted DEK re-encryption of existing data. |
-| Docker image SHA pinning | Low | Some images use `:latest` tag. |
-| Backup encryption (pg_dump + age) | Low | |
+| Unit tests for security.ts | Medium | 5 security utility functions have no unit tests (constantTimeEquals, sanitizePlainText, normalizePhone, etc.) |
 | Team gamification | Low | Fun team names for morale. |

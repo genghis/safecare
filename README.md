@@ -75,7 +75,10 @@ Open **http://localhost:3000** — a setup wizard walks you through creating you
 - **Field-level encryption** — recipient PII encrypted with pgcrypto
 - **Driver phone encryption** — route data AES-GCM-256 encrypted in IndexedDB, key never on disk
 - **Remote wipe + panic erase** — admin can revoke driver routes remotely; drivers can instantly erase all data with a long-press button
+- **Encrypted backup + restore** — export all data passphrase-protected, restore on fresh install
+- **Webhook authentication** — Twilio signature validation, JotForm shared-secret auth
 - **Automatic data purge** — delivery records deleted + VACUUMed within 24 hours
+- **One-click updates** — check for new versions + OS patches from the dashboard
 - **Emergency destroy** — `scripts/destroy.sh` shreds everything
 
 ## Hardware Requirements
