@@ -2,7 +2,9 @@
 
 A secure logistics platform for managing volunteer food deliveries to at-risk families. Prioritizes recipient privacy through field-level encryption, self-hosted geocoding and routing, and data compartmentalization.
 
-![Dispatch page with an active session](docs/screenshots/dispatch-active.png)
+![Setup wizard walkthrough](docs/screenshots/setup-wizard.gif)
+
+From a fresh install to a running dashboard in under 10 minutes — account creation, region selection, map download, WhatsApp pairing, and security briefing, all in a guided wizard with no command line required.
 
 ## How It Works
 
@@ -82,6 +84,14 @@ Open **http://localhost:3000** — a setup wizard walks you through creating you
 - **Automatic data purge** — delivery records deleted + VACUUMed within 24 hours
 - **One-click updates** — check for new versions + OS patches from the dashboard
 - **Emergency destroy** — `scripts/destroy.sh` shreds everything
+
+## In Action
+
+The dispatch page during an active delivery session — driver check-ins, colored stat cards (pending / in-transit / delivered / acknowledged), and a real-time progress bar as drivers mark deliveries complete. The page auto-refreshes every 10 seconds and coordinators can selectively release routes to checked-in drivers or revoke them remotely.
+
+![Dispatch page with an active session](docs/screenshots/dispatch-active.png)
+
+More screenshots in [`docs/screenshots/`](docs/screenshots/) — dashboard home, recipients list, drivers, zones, WhatsApp lines, and every step of the setup wizard.
 
 ## Hardware Requirements
 
