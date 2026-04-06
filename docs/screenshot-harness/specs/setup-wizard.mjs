@@ -46,33 +46,40 @@ export async function run(ctx) {
   setupMocks({ mockApi });
   enableTileProxy('https://tile.openstreetmap.org/{z}/{x}/{y}.png');
 
-  // --- Frame capture loop (runs in parallel with spec actions) ---
+  // Prepare frame capture but don't start the loop yet — we want the
+  // GIF to open directly on the rendered empty form, not on the
+  // dashboard's "Loading..." placeholder before the /setup route
+  // finishes hydrating.
   const framesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'safecare-gif-'));
-  console.log(`🎞  Capturing frames to ${framesDir}`);
+  console.log(`🎞  Frames will be captured to ${framesDir}`);
 
   let frameIdx = 0;
-  let capturing = true;
+  let capturing = false;
   let frameErrorCount = 0;
+  let captureLoop = null;
 
-  const captureLoop = (async () => {
-    while (capturing) {
-      const framePath = path.join(framesDir, `frame-${String(frameIdx).padStart(5, '0')}.png`);
-      try {
-        await page.screenshot({ path: framePath, fullPage: false, timeout: 5000 });
-        frameIdx += 1;
-      } catch (err) {
-        // Don't let one hiccup kill the whole loop — screenshots can
-        // occasionally race with DOM updates or pending navigations.
-        // Tolerate up to 20 consecutive failures before giving up.
-        frameErrorCount += 1;
-        if (frameErrorCount > 20) {
-          console.warn(`  ⚠ Frame capture gave up after 20 errors: ${err.message}`);
-          break;
+  function startCaptureLoop() {
+    capturing = true;
+    captureLoop = (async () => {
+      while (capturing) {
+        const framePath = path.join(framesDir, `frame-${String(frameIdx).padStart(5, '0')}.png`);
+        try {
+          await page.screenshot({ path: framePath, fullPage: false, timeout: 5000 });
+          frameIdx += 1;
+        } catch (err) {
+          // Don't let one hiccup kill the whole loop — screenshots can
+          // occasionally race with DOM updates or pending navigations.
+          // Tolerate up to 20 consecutive failures before giving up.
+          frameErrorCount += 1;
+          if (frameErrorCount > 20) {
+            console.warn(`  ⚠ Frame capture gave up after 20 errors: ${err.message}`);
+            break;
+          }
         }
+        await new Promise((r) => setTimeout(r, FRAME_INTERVAL_MS));
       }
-      await new Promise((r) => setTimeout(r, FRAME_INTERVAL_MS));
-    }
-  })();
+    })();
+  }
 
   try {
     // ================================================================
@@ -80,8 +87,17 @@ export async function run(ctx) {
     // ================================================================
     console.log('\n→ Step 1: Account creation');
     await goto('/setup');
-    await wait(1200);
+    // Wait for the wizard form to actually be visible — past this
+    // point we know the dashboard has finished its initial loading
+    // screen and the empty form is on screen.
+    await page.waitForSelector('[data-testid="setup-org-name"]', { visible: true, timeout: 15_000 });
+    await wait(800);
     await shotFull(ctx, 'setup-01-account-empty');
+
+    // Now that the empty form is rendered, start the frame capture.
+    // The GIF opens cleanly on the empty form instead of the Loading… state.
+    console.log('🎬 Starting frame capture');
+    startCaptureLoop();
 
     await typeInto(page, '[data-testid="setup-org-name"]', 'Cedar Riverside Mutual Aid', 40);
     await wait(200);
@@ -219,11 +235,19 @@ export async function run(ctx) {
     console.log('\n✓ Full setup wizard capture complete');
   } finally {
     capturing = false;
-    await captureLoop;
+    if (captureLoop) {
+      await captureLoop;
+    }
     console.log(`🎞  Captured ${frameIdx} frames${frameErrorCount ? ` (${frameErrorCount} frame errors tolerated)` : ''}`);
   }
 
   // --- Convert frames → GIF + WebP ---
+  if (frameIdx === 0) {
+    console.warn('\n⚠ No frames captured — skipping GIF/WebP encoding.');
+    try { fs.rmSync(framesDir, { recursive: true, force: true }); } catch {}
+    return;
+  }
+
   console.log('\n🎞  Encoding GIF...');
   const gifPath = path.resolve(outputDir, 'setup-wizard.gif');
   await convertFramesToGif(framesDir, FRAME_FPS, gifPath);
