@@ -34,6 +34,43 @@ export const JWT_EXPIRY = '24h';
 /** Admin session expiry, in hours */
 export const SESSION_EXPIRY_HOURS = 8;
 
+// --- Ride coordination constants ---
+
+/** How many days ahead shifts appear on the driver shift board */
+export const SHIFT_BOARD_HORIZON_DAYS = 14;
+
+/** Default maximum rides per driver per week */
+export const DEFAULT_MAX_RIDES_PER_WEEK = 10;
+
+/** How long a driver has to confirm after claiming a shift, in hours */
+export const SHIFT_CLAIM_CONFIRMATION_WINDOW_HOURS = 24;
+
+/** Shift statuses and their display labels */
+export const SHIFT_STATUSES: Record<string, { label: string; description: string }> = {
+  open: { label: 'Open', description: 'Available for drivers to claim' },
+  claimed: { label: 'Claimed', description: 'Driver claimed, awaiting coordinator confirmation' },
+  confirmed: { label: 'Confirmed', description: 'Coordinator approved the driver' },
+  in_progress: { label: 'In Progress', description: 'Driver is on the way or ride is active' },
+  completed: { label: 'Completed', description: 'Ride finished successfully' },
+  cancelled: { label: 'Cancelled', description: 'Ride was cancelled' },
+  no_show: { label: 'No Show', description: 'Driver or passenger did not show up' },
+};
+
+/** Intake request sources */
+export const INTAKE_SOURCES: Record<string, { label: string; description: string }> = {
+  whatsapp: { label: 'WhatsApp', description: 'Message received via WhatsApp' },
+  signal: { label: 'Signal', description: 'Message received via Signal' },
+  jotform: { label: 'JotForm', description: 'Submitted through JotForm' },
+  web_form: { label: 'Web Form', description: 'Submitted through SafeCare web form' },
+  manual: { label: 'Manual Entry', description: 'Coordinator entered manually' },
+};
+
+/** Service types available in the system */
+export const SERVICE_TYPES: Record<string, { label: string; description: string }> = {
+  delivery: { label: 'Food Delivery', description: 'One-time food delivery to recipient' },
+  ride: { label: 'Ride', description: 'Scheduled transportation for passenger' },
+};
+
 /** Strictness level descriptions for dispatch sessions */
 export const STRICTNESS_LEVELS: Record<string, string> = {
   standard: 'Default settings with standard TTLs and rate limits',

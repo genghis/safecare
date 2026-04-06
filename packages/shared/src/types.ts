@@ -17,6 +17,21 @@ export type StrictnessLevel = 'standard' | 'high' | 'maximum';
 
 export type CommunicationPreference = 'sms' | 'whatsapp';
 
+export type ServiceType = 'delivery' | 'ride';
+
+export type ShiftStatus =
+  | 'open'        // visible on shift board, no driver yet
+  | 'claimed'     // driver has claimed, awaiting coordinator confirmation
+  | 'confirmed'   // coordinator approved the claim
+  | 'in_progress' // driver marked "on my way"
+  | 'completed'   // ride finished
+  | 'cancelled'   // cancelled by coordinator or driver
+  | 'no_show';    // driver or passenger didn't show
+
+export type IntakeSource = 'whatsapp' | 'signal' | 'jotform' | 'web_form' | 'manual';
+
+export type IntakeStatus = 'pending' | 'processed' | 'rejected';
+
 // --- Enums ---
 
 export enum UserRole {
@@ -36,6 +51,8 @@ export interface Recipient {
   communicationPreference: CommunicationPreference;
   whatsappConsent: boolean;
   verified: boolean;
+  displayId: string | null;       // short ID for schedules: "P2", "P3"
+  serviceTypes: ServiceType[];    // what services they receive
   createdAt: Date;
 }
 
@@ -63,7 +80,10 @@ export interface Driver {
   vettedStatus: VettedStatus;
   vehicleSize: VehicleSize;
   vehicleModel: string;
+  vehicleDescription: string | null; // free-text: "red ford focus, grey hat"
   maxDeliveries: number;        // max stops per shift based on vehicle + preference
+  maxRidesPerWeek: number;      // weekly ride capacity
+  serviceTypes: ServiceType[];  // what services this driver provides
   languages: string[];
   availability: AvailabilitySlot[];
   deliveryZoneIds: string[];    // zones this driver is willing to cover
@@ -158,6 +178,114 @@ export interface AdminUser {
   passwordHash: string;
   role: UserRole;
   totpSecret?: string;
+  createdAt: Date;
+}
+
+// --- Ride coordination interfaces ---
+
+export interface SavedLocation {
+  id: string;
+  recipientId: string;
+  label: string;              // "home", "work 1", "school"
+  address: string;            // decrypted address
+  lat: number;
+  lng: number;
+  neighborhood: string | null; // coarse area for shift board display
+  isDefault: boolean;
+  createdAt: Date;
+}
+
+export interface RideSchedule {
+  id: string;
+  recipientId: string;
+  pickupLocationId: string;
+  dropoffLocationId: string;
+  daysOfWeek: DayOfWeek[];
+  pickupTime: string;         // "HH:mm" 24h format
+  estimatedDurationMinutes: number;
+  label: string | null;       // "work 1 to home"
+  notes: string | null;
+  active: boolean;
+  createdBy: string | null;
+  createdAt: Date;
+}
+
+export interface Shift {
+  id: string;
+  rideScheduleId: string | null; // null if ad-hoc
+  recipientId: string;
+  driverId: string | null;       // null until claimed
+  pickupLocationId: string;
+  dropoffLocationId: string;
+  date: string;                  // YYYY-MM-DD
+  pickupTime: string;            // "HH:mm"
+  estimatedDurationMinutes: number;
+  label: string | null;          // "work 1 to home"
+  pickupNeighborhood: string | null;
+  dropoffNeighborhood: string | null;
+  status: ShiftStatus;
+  claimedAt: Date | null;
+  confirmedAt: Date | null;
+  startedAt: Date | null;
+  completedAt: Date | null;
+  cancelledAt: Date | null;
+  cancellationReason: string | null;
+  notes: string | null;
+  createdAt: Date;
+}
+
+/** What drivers see on the shift board — progressive disclosure (no addresses or phones) */
+export interface ShiftBoardEntry {
+  id: string;
+  date: string;
+  pickupTime: string;
+  estimatedDurationMinutes: number;
+  label: string | null;              // "work 1 to home"
+  pickupNeighborhood: string | null; // "Regina" (not full address)
+  dropoffNeighborhood: string | null;
+  recipientDisplayId: string | null; // "P2" (not real name)
+  status: ShiftStatus;
+  /** Only populated if this driver has ridden with this passenger before */
+  priorRideCount: number | null;
+  /** True if coordinator flagged this as a preferred pairing for this driver */
+  isPreferredPairing: boolean;
+}
+
+/** Full shift details revealed after driver claims and coordinator confirms */
+export interface ShiftClaimDetails {
+  shiftId: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  recipientPhone: string;        // or proxy number
+  recipientName: string;
+  recipientLanguage: string;
+  notes: string | null;
+  driverVehicleDescription: string | null; // for day-before message to passenger
+}
+
+export interface DriverPassengerAffinity {
+  id: string;
+  driverId: string;
+  recipientId: string;
+  rideCount: number;
+  preferred: boolean;
+  lastRideDate: string | null;
+  notes: string | null;
+  createdAt: Date;
+}
+
+export interface IntakeRequest {
+  id: string;
+  source: IntakeSource;
+  sourceIdentifier: string | null;
+  rawText: string | null;
+  parsedData: Record<string, unknown> | null;
+  status: IntakeStatus;
+  processedBy: string | null;
+  processedAt: Date | null;
+  linkedRecipientId: string | null;
+  linkedRideScheduleId: string | null;
+  rejectionReason: string | null;
   createdAt: Date;
 }
 
