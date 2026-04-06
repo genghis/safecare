@@ -44,13 +44,13 @@ Open **http://localhost:3000** — a setup wizard walks you through creating you
 
 ```
 ┌─────────────┐     ┌─────────┐     ┌────────────┐
-│  Dashboard   │────▶│ Backend │────▶│ PostgreSQL │
-│  :3000       │     │ :3001   │     │ (pgcrypto) │
+│ Dashboard   │────▶│ Backend │────▶│ PostgreSQL │
+│ :3000       │     │ :3001   │     │ (pgcrypto) │
 └─────────────┘     └────┬────┘     └────────────┘
                          │
 ┌─────────────┐          ├─────▶ Redis
-│  Driver PWA  │────────▶│
-│  (offline)   │         ├─────▶ OSRM (routing)
+│ Driver PWA  │─────────▶│
+│ (offline)   │          ├─────▶ OSRM (routing)
 └─────────────┘          │
                          ├─────▶ Nominatim (geocoding)
                          │
