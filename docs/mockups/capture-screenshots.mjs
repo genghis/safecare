@@ -17,6 +17,8 @@ const MOCKUP_PATH = path.join(__dirname, 'ride-coordination.html');
 const OUTPUT_DIR = path.join(__dirname, 'screenshots');
 
 const VIEWS = [
+  { id: 'todays-asks', name: 'todays-asks', title: "Today's Asks (unified)" },
+  { id: 'driver-profile', name: 'driver-profile', title: 'Driver & Vehicle Profile' },
   { id: 'shift-board', name: 'shift-board', title: 'Shift Board' },
   { id: 'ride-schedule', name: 'ride-schedule', title: 'Ride Schedules' },
   { id: 'intake', name: 'intake-queue', title: 'Intake Queue' },

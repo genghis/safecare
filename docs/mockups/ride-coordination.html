@@ -68,8 +68,12 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
         Dispatch
       </a>
-      <div class="pt-3 pb-1 px-3"><span class="text-xs font-medium text-muted uppercase tracking-wider">Rides</span></div>
-      <a class="flex items-center gap-3 px-3 py-2 rounded-md bg-accent text-foreground text-sm cursor-pointer" onclick="showView('shift-board')">
+      <div class="pt-3 pb-1 px-3"><span class="text-xs font-medium text-muted uppercase tracking-wider">Coordination</span></div>
+      <a class="flex items-center gap-3 px-3 py-2 rounded-md bg-accent text-foreground text-sm cursor-pointer" onclick="showView('todays-asks')">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Today's Asks
+      </a>
+      <a class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted hover:bg-accent transition-colors cursor-pointer" onclick="showView('shift-board')">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         Shift Board
       </a>
@@ -81,6 +85,11 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
         Intake Queue
       </a>
+      <div class="pt-3 pb-1 px-3"><span class="text-xs font-medium text-muted uppercase tracking-wider">People &amp; Vehicles</span></div>
+      <a class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted hover:bg-accent transition-colors cursor-pointer" onclick="showView('driver-profile')">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+        Drivers &amp; Vehicles
+      </a>
       <a class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted hover:bg-accent transition-colors cursor-pointer" onclick="showView('passenger')">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Passengers
@@ -91,12 +100,413 @@
   <!-- Main Content -->
   <main class="pl-64 min-h-screen">
 
+    <!-- ==================== TODAY'S ASKS (UNIFIED DISPATCH) ==================== -->
+    <div id="todays-asks" class="view active p-8">
+      <div class="flex justify-between items-start mb-8">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight">Today's Asks</h1>
+          <p class="text-muted mt-1">Everything that needs a driver today &mdash; rides, deliveries, and transit escorts in one feed.</p>
+        </div>
+        <div class="flex gap-2">
+          <select class="h-10 px-3 rounded-md border border-border bg-background text-sm">
+            <option>All service types</option>
+            <option>Rides only</option>
+            <option>Deliveries only</option>
+            <option>Transit escorts only</option>
+          </select>
+          <select class="h-10 px-3 rounded-md border border-border bg-background text-sm">
+            <option>All clean-vehicle</option>
+            <option>Clean required</option>
+            <option>Any vehicle</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div class="border border-border rounded-lg p-4 text-center">
+          <div class="text-3xl font-bold text-blue-500">3</div>
+          <div class="text-sm text-muted">Rides</div>
+        </div>
+        <div class="border border-border rounded-lg p-4 text-center">
+          <div class="text-3xl font-bold text-emerald-500">8</div>
+          <div class="text-sm text-muted">Delivery slots</div>
+        </div>
+        <div class="border border-border rounded-lg p-4 text-center">
+          <div class="text-3xl font-bold text-purple-500">2</div>
+          <div class="text-sm text-muted">Transit escorts</div>
+        </div>
+        <div class="border border-border rounded-lg p-4 text-center">
+          <div class="text-3xl font-bold text-amber-500">5</div>
+          <div class="text-sm text-muted">Open</div>
+        </div>
+        <div class="border border-border rounded-lg p-4 text-center">
+          <div class="text-3xl font-bold text-foreground">13</div>
+          <div class="text-sm text-muted">Total today</div>
+        </div>
+      </div>
+
+      <!-- Unified feed -->
+      <div class="space-y-3">
+
+        <!-- Delivery batch ask (the "need 5 cars" example) -->
+        <div class="border border-emerald-500/40 rounded-lg overflow-hidden bg-emerald-500/5">
+          <div class="px-5 py-4 flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3 flex-1">
+              <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-600/20 flex items-center justify-center">
+                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold">Saturday distro &mdash; need 5 more cars</span>
+                  <span class="badge bg-emerald-600/20 text-emerald-400">Delivery batch</span>
+                  <span class="badge bg-foreground/10 text-foreground">Sat 10:00 AM</span>
+                </div>
+                <div class="text-sm text-muted mt-1">~50 grocery boxes to deliver across Phillips, Cedar-Riverside, Seward. Pickup at the church basement.</div>
+                <div class="mt-2 flex gap-2 flex-wrap text-xs">
+                  <span class="bg-foreground/5 px-2 py-1 rounded">2 / 5 cars committed</span>
+                  <span class="bg-foreground/5 px-2 py-1 rounded">~10 boxes per car</span>
+                  <span class="bg-foreground/5 px-2 py-1 rounded">Any vehicle status OK</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <button class="h-8 px-3 rounded-md text-xs bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">Send to Signal</button>
+              <button class="h-8 px-3 rounded-md text-xs border border-border hover:bg-accent transition-colors">Open dispatch</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ride: clean car required (perinatal) -->
+        <div class="border border-blue-500/40 rounded-lg overflow-hidden bg-blue-500/5">
+          <div class="px-5 py-4 flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3 flex-1">
+              <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center">
+                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1"/></svg>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold">P9 &mdash; perinatal care appt</span>
+                  <span class="badge bg-blue-600/20 text-blue-400">Ride</span>
+                  <span class="badge bg-foreground/10 text-foreground">Mon 1:30 PM</span>
+                  <span class="text-muted text-xs">(es)</span>
+                </div>
+                <div class="text-sm text-muted mt-1">
+                  <span>Powderhorn</span>
+                  <span class="mx-1">→</span>
+                  <span>U of M Mother &amp; Baby clinic</span>
+                  <span class="text-muted ml-2">&middot; round trip ~2h</span>
+                </div>
+                <div class="mt-2 flex gap-2 flex-wrap text-xs">
+                  <span class="bg-amber-500/15 text-amber-400 px-2 py-1 rounded font-medium flex items-center gap-1">
+                    🛡 Clean vehicle required
+                  </span>
+                  <span class="bg-foreground/5 px-2 py-1 rounded flex items-center gap-1">
+                    👥 2 passengers
+                  </span>
+                  <span class="bg-foreground/5 px-2 py-1 rounded flex items-center gap-1">
+                    🪑 Family bringing own car seat
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <button class="h-8 px-3 rounded-md text-xs bg-blue-600 text-white hover:bg-blue-700 transition-colors">Find driver</button>
+              <button class="h-8 px-3 rounded-md text-xs border border-border hover:bg-accent transition-colors">Details</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ride: standard, claimed -->
+        <div class="border border-border rounded-lg overflow-hidden">
+          <div class="px-5 py-4 flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3 flex-1">
+              <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center">
+                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1"/></svg>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold">P2 &mdash; work 1 to home</span>
+                  <span class="badge bg-blue-600/20 text-blue-400">Ride</span>
+                  <span class="badge bg-foreground/10 text-foreground">Mon 1:30 PM</span>
+                  <span class="text-muted text-xs">(es)</span>
+                </div>
+                <div class="text-sm text-muted mt-1">Bloomington → Regina &middot; ~45 min</div>
+                <div class="mt-2 flex gap-2 flex-wrap text-xs">
+                  <span class="bg-foreground/5 px-2 py-1 rounded flex items-center gap-1">
+                    👥 1 passenger
+                  </span>
+                  <span class="bg-foreground/5 px-2 py-1 rounded">Any vehicle OK</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2 text-right">
+              <span class="badge bg-emerald-600 text-white">Confirmed</span>
+              <span class="text-xs text-muted">Sarah K. <span class="text-amber-400">★</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transit escort -->
+        <div class="border border-purple-500/40 rounded-lg overflow-hidden bg-purple-500/5">
+          <div class="px-5 py-4 flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3 flex-1">
+              <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold">P5 &mdash; bus escort to immigration office</span>
+                  <span class="badge bg-purple-600/20 text-purple-400">Transit escort</span>
+                  <span class="badge bg-foreground/10 text-foreground">Tue 10:00 AM</span>
+                  <span class="text-muted text-xs">(so)</span>
+                </div>
+                <div class="text-sm text-muted mt-1">Cedar-Riverside → Downtown via Route 3 + Blue Line. Volunteer rides bus with passenger, helps navigate office, returns together.</div>
+                <div class="mt-2 flex gap-2 flex-wrap text-xs">
+                  <span class="bg-purple-500/15 text-purple-400 px-2 py-1 rounded">No vehicle needed</span>
+                  <span class="bg-purple-500/15 text-purple-400 px-2 py-1 rounded">Somali speaker preferred</span>
+                  <span class="bg-foreground/5 px-2 py-1 rounded">~3h round trip</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <button class="h-8 px-3 rounded-md text-xs bg-purple-600 text-white hover:bg-purple-700 transition-colors">Find volunteer</button>
+              <button class="h-8 px-3 rounded-md text-xs border border-border hover:bg-accent transition-colors">Details</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delivery batch — recurring weekly -->
+        <div class="border border-border rounded-lg overflow-hidden">
+          <div class="px-5 py-4 flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3 flex-1">
+              <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-600/20 flex items-center justify-center">
+                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold">Weekly Tuesday food drop &mdash; Cedar-Riverside</span>
+                  <span class="badge bg-emerald-600/20 text-emerald-400">Delivery batch</span>
+                  <span class="badge bg-foreground/10 text-foreground">Tue 4:00 PM</span>
+                </div>
+                <div class="text-sm text-muted mt-1">12 households, ~20 boxes total. Routes auto-generated.</div>
+                <div class="mt-2 flex gap-2 flex-wrap text-xs">
+                  <span class="bg-foreground/5 px-2 py-1 rounded">3 / 3 cars committed</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2 text-right">
+              <span class="badge bg-emerald-600 text-white">Ready</span>
+              <button class="h-8 px-3 rounded-md text-xs border border-border hover:bg-accent transition-colors">Open dispatch</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs text-muted mt-6">
+        This view replaces the parallel "5 more cars at distro" + "ride to perinatal care" asks that coordinators currently juggle in Signal threads.
+        Color-coded by service type: <span class="text-emerald-400">deliveries</span>, <span class="text-blue-400">rides</span>, <span class="text-purple-400">transit escorts</span>.
+      </p>
+    </div>
+
+    <!-- ==================== DRIVER &amp; VEHICLE PROFILE ==================== -->
+    <div id="driver-profile" class="view p-8">
+      <div class="flex justify-between items-start mb-8">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-xl">SK</div>
+          <div>
+            <div class="flex items-center gap-3">
+              <h1 class="text-3xl font-bold tracking-tight">Sarah K.</h1>
+              <span class="badge bg-emerald-600/20 text-emerald-400">Vetted</span>
+            </div>
+            <p class="text-muted mt-1">Joined Jan 2026 &middot; Foxes team &middot; 87 deliveries &middot; 23 rides</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <button class="h-10 px-4 rounded-md border border-border text-sm font-medium hover:bg-accent transition-colors">Edit</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Vehicle card -->
+        <div class="border border-border rounded-lg lg:col-span-2">
+          <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <h2 class="text-lg font-semibold">Vehicle</h2>
+              <span class="badge bg-emerald-500/15 text-emerald-400 flex items-center gap-1">
+                🛡 Clean
+              </span>
+            </div>
+            <button class="text-xs text-muted hover:text-foreground">Change status</button>
+          </div>
+          <div class="p-6 space-y-5">
+
+            <!-- Vehicle description -->
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <div class="text-xs text-muted mb-1">Description</div>
+                <div>Red Ford Focus, 2018</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted mb-1">License plate</div>
+                <div class="font-mono">**********</div>
+                <div class="text-xs text-muted">(encrypted, only shown on shift confirm)</div>
+              </div>
+            </div>
+
+            <!-- Capacity — two axes -->
+            <div>
+              <div class="text-xs text-muted mb-2">Capacity</div>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="rounded-md border border-border p-3">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm flex items-center gap-2">
+                      <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                      Passengers
+                    </span>
+                    <span class="font-semibold text-blue-400">4 seats</span>
+                  </div>
+                  <div class="text-xs text-muted">Used for ride dispatch</div>
+                </div>
+                <div class="rounded-md border border-border p-3">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm flex items-center gap-2">
+                      <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                      Cargo
+                    </span>
+                    <span class="font-semibold text-emerald-400">~3 boxes</span>
+                  </div>
+                  <div class="text-xs text-muted">Used for delivery dispatch</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Insurance -->
+            <div class="rounded-md bg-emerald-500/5 border border-emerald-500/20 p-3 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="text-emerald-400 text-lg">✓</span>
+                <div>
+                  <div class="text-sm font-medium">Insurance verified</div>
+                  <div class="text-xs text-muted">Last checked Mar 15, 2026 &middot; expires Sep 2026</div>
+                </div>
+              </div>
+              <button class="text-xs text-muted hover:text-foreground">Update</button>
+            </div>
+
+            <!-- Service area -->
+            <div>
+              <div class="text-xs text-muted mb-2">Service radius</div>
+              <div class="flex gap-2">
+                <span class="badge bg-foreground/10 text-foreground">Neighborhood</span>
+                <span class="badge bg-blue-500/20 text-blue-400">Metro &mdash; selected</span>
+                <span class="badge bg-foreground/5 text-muted">Regional</span>
+              </div>
+              <p class="text-xs text-muted mt-2">Sarah will take rides anywhere in the metro area, but her delivery zones are limited to her two assigned neighborhoods.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Service types card -->
+        <div class="space-y-6">
+          <div class="border border-border rounded-lg">
+            <div class="px-6 py-4 border-b border-border">
+              <h2 class="text-lg font-semibold">Services</h2>
+            </div>
+            <div class="p-4 space-y-3">
+              <div class="flex items-center justify-between p-2">
+                <div class="flex items-center gap-3">
+                  <div class="w-4 h-4 rounded bg-emerald-600 flex items-center justify-center text-white text-[10px]">✓</div>
+                  <div>
+                    <div class="text-sm font-medium">Food delivery</div>
+                    <div class="text-xs text-muted">Phillips, Cedar-Riverside zones</div>
+                  </div>
+                </div>
+                <span class="text-xs text-muted">87</span>
+              </div>
+              <div class="flex items-center justify-between p-2">
+                <div class="flex items-center gap-3">
+                  <div class="w-4 h-4 rounded bg-emerald-600 flex items-center justify-center text-white text-[10px]">✓</div>
+                  <div>
+                    <div class="text-sm font-medium">Rides</div>
+                    <div class="text-xs text-muted">Metro-wide</div>
+                  </div>
+                </div>
+                <span class="text-xs text-muted">23</span>
+              </div>
+              <div class="flex items-center justify-between p-2">
+                <div class="flex items-center gap-3">
+                  <div class="w-4 h-4 rounded border border-border"></div>
+                  <div>
+                    <div class="text-sm font-medium text-muted">Transit escort</div>
+                    <div class="text-xs text-muted">Not signed up</div>
+                  </div>
+                </div>
+                <span class="text-xs text-muted">&mdash;</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Languages -->
+          <div class="border border-border rounded-lg p-6">
+            <h2 class="text-lg font-semibold mb-3">Languages</h2>
+            <div class="flex flex-wrap gap-2">
+              <span class="badge bg-foreground/10 text-foreground">English</span>
+              <span class="badge bg-foreground/10 text-foreground">Español</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preferred passenger pairings -->
+      <div class="border border-border rounded-lg mt-6">
+        <div class="px-6 py-4 border-b border-border">
+          <h2 class="text-lg font-semibold">Preferred passenger pairings</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 divide-x divide-border">
+          <div class="p-5">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="font-medium">P2 &mdash; Maria ****</span>
+                <span class="text-amber-400">★</span>
+              </div>
+              <span class="text-xs text-muted">14 rides</span>
+            </div>
+            <div class="text-xs text-muted">Mon, Wed, Fri &middot; work 1 commute</div>
+            <div class="w-full h-1.5 rounded-full bg-border mt-2 overflow-hidden">
+              <div class="h-full bg-amber-400 rounded-full" style="width: 100%"></div>
+            </div>
+          </div>
+          <div class="p-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-medium">P3 &mdash; Fatima ****</span>
+              <span class="text-xs text-muted">6 rides</span>
+            </div>
+            <div class="text-xs text-muted">Tue, Thu &middot; work 2 commute</div>
+            <div class="w-full h-1.5 rounded-full bg-border mt-2 overflow-hidden">
+              <div class="h-full bg-blue-500 rounded-full" style="width: 43%"></div>
+            </div>
+          </div>
+          <div class="p-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-medium">P9 &mdash; Marisol ****</span>
+              <span class="text-xs text-muted">3 rides</span>
+            </div>
+            <div class="text-xs text-muted">Perinatal care appointments</div>
+            <div class="w-full h-1.5 rounded-full bg-border mt-2 overflow-hidden">
+              <div class="h-full bg-blue-500 rounded-full" style="width: 21%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ==================== SHIFT BOARD VIEW ==================== -->
-    <div id="shift-board" class="view active p-8">
+    <div id="shift-board" class="view p-8">
       <div class="flex justify-between items-start mb-8">
         <div>
           <h1 class="text-3xl font-bold tracking-tight">Shift Board</h1>
-          <p class="text-muted mt-1">Drivers browse and claim available rides. Addresses shown only after coordinator confirms.</p>
+          <p class="text-muted mt-1">Drivers browse and claim available rides. Vehicle requirements (clean car, passenger count, car seat) shown upfront. Addresses revealed only after coordinator confirms.</p>
         </div>
         <div class="flex gap-3">
           <button class="h-10 px-4 rounded-md border border-border text-sm font-medium hover:bg-accent transition-colors">
@@ -156,7 +566,7 @@
               <th class="h-12 px-4 text-left font-medium text-muted">Time</th>
               <th class="h-12 px-4 text-left font-medium text-muted">Passenger</th>
               <th class="h-12 px-4 text-left font-medium text-muted">Route</th>
-              <th class="h-12 px-4 text-left font-medium text-muted">Duration</th>
+              <th class="h-12 px-4 text-left font-medium text-muted">Requirements</th>
               <th class="h-12 px-4 text-left font-medium text-muted">Status</th>
               <th class="h-12 px-4 text-left font-medium text-muted">Driver</th>
               <th class="h-12 px-4 text-left font-medium text-muted"></th>
@@ -177,7 +587,7 @@
                 <span class="text-muted">Bloomington</span>
                 <div class="text-xs text-muted mt-0.5">home to work 1</div>
               </td>
-              <td class="p-4 text-muted">~45 min</td>
+              <td class="p-4"><span class="text-xs text-muted">👥 1</span></td>
               <td class="p-4"><span class="badge bg-emerald-600 text-white">Confirmed</span></td>
               <td class="p-4">
                 <div class="flex items-center gap-2">
@@ -205,7 +615,7 @@
                 <span class="text-muted">Regina</span>
                 <div class="text-xs text-muted mt-0.5">work 1 to home</div>
               </td>
-              <td class="p-4 text-muted">~45 min</td>
+              <td class="p-4"><span class="text-xs text-muted">👥 1</span></td>
               <td class="p-4"><span class="badge bg-emerald-600 text-white">Confirmed</span></td>
               <td class="p-4">
                 <div class="flex items-center gap-2">
@@ -233,7 +643,7 @@
                 <span class="text-muted">Phillips</span>
                 <div class="text-xs text-muted mt-0.5">home to school</div>
               </td>
-              <td class="p-4 text-muted">~30 min</td>
+              <td class="p-4"><span class="text-xs text-muted">👥 1</span></td>
               <td class="p-4"><span class="badge bg-blue-500 text-white">Claimed</span></td>
               <td class="p-4 text-muted">
                 <div class="flex items-center gap-2">
@@ -258,7 +668,7 @@
                 <span class="text-muted">Cedar-Riverside</span>
                 <div class="text-xs text-muted mt-0.5">work 2 to home</div>
               </td>
-              <td class="p-4 text-muted">~25 min</td>
+              <td class="p-4"><span class="text-xs text-muted">👥 1</span></td>
               <td class="p-4"><span class="badge bg-amber-500 text-white">Open</span></td>
               <td class="p-4 text-muted italic">unclaimed</td>
               <td class="p-4">
@@ -280,7 +690,7 @@
                 <span class="text-muted">Downtown</span>
                 <div class="text-xs text-muted mt-0.5">home to work 1</div>
               </td>
-              <td class="p-4 text-muted">~20 min</td>
+              <td class="p-4"><span class="text-xs text-muted">👥 1</span></td>
               <td class="p-4"><span class="badge bg-emerald-600 text-white">Confirmed</span></td>
               <td class="p-4">Nadia H.</td>
               <td class="p-4">
@@ -300,7 +710,7 @@
                 <span class="text-muted">Seward</span>
                 <div class="text-xs text-muted mt-0.5">home to work 2</div>
               </td>
-              <td class="p-4 text-muted">~25 min</td>
+              <td class="p-4"><span class="text-xs text-muted">👥 1</span></td>
               <td class="p-4"><span class="badge bg-emerald-600 text-white">Confirmed</span></td>
               <td class="p-4">
                 <div class="flex items-center gap-2">
@@ -325,7 +735,7 @@
                 <span class="text-muted">Cedar-Riverside</span>
                 <div class="text-xs text-muted mt-0.5">school to home</div>
               </td>
-              <td class="p-4 text-muted">~30 min</td>
+              <td class="p-4"><span class="text-xs text-muted">👥 1</span></td>
               <td class="p-4"><span class="badge bg-amber-500 text-white">Open</span></td>
               <td class="p-4 text-muted italic">unclaimed</td>
               <td class="p-4">
@@ -347,7 +757,7 @@
                 <span class="text-muted">Bloomington</span>
                 <div class="text-xs text-muted mt-0.5">home to work 1</div>
               </td>
-              <td class="p-4 text-muted">~45 min</td>
+              <td class="p-4"><span class="text-xs text-muted">👥 1</span></td>
               <td class="p-4"><span class="badge bg-amber-500 text-white">Open</span></td>
               <td class="p-4 text-muted italic">unclaimed</td>
               <td class="p-4">
@@ -367,7 +777,7 @@
                 <span class="text-muted">Regina</span>
                 <div class="text-xs text-muted mt-0.5">work 1 to home</div>
               </td>
-              <td class="p-4 text-muted">~45 min</td>
+              <td class="p-4"><span class="text-xs text-muted">👥 1</span></td>
               <td class="p-4"><span class="badge bg-amber-500 text-white">Open</span></td>
               <td class="p-4 text-muted italic">unclaimed</td>
               <td class="p-4">
@@ -375,52 +785,52 @@
               </td>
             </tr>
 
-            <!-- Saturday distro event -->
-            <tr class="border-b border-border hover:bg-accent/50 transition-colors">
+            <!-- Saturday: clean-vehicle perinatal ride (highlighted) -->
+            <tr class="border-b border-border hover:bg-accent/50 transition-colors bg-amber-500/5">
               <td class="p-4 font-medium">Sat, Apr 12</td>
-              <td class="p-4">8:00 AM</td>
+              <td class="p-4">9:00 AM</td>
               <td class="p-4">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium">V-Rosa</span>
-                  <span class="badge bg-purple-600/20 text-purple-400 text-[10px]">VOLUNTEER</span>
-                </div>
-                <span class="text-muted ml-0 text-xs">(es)</span>
+                <span class="font-medium">P9</span>
+                <span class="text-muted ml-1 text-xs">(es)</span>
               </td>
               <td class="p-4">
                 <span class="text-muted">Powderhorn</span>
                 <span class="mx-1 text-muted">→</span>
-                <span class="text-muted">Seward</span>
-                <div class="text-xs text-purple-400 mt-0.5">escort to distro event</div>
+                <span class="text-muted">U of M Mother &amp; Baby</span>
+                <div class="text-xs text-muted mt-0.5">perinatal care &middot; round trip</div>
               </td>
-              <td class="p-4 text-muted">~20 min</td>
-              <td class="p-4"><span class="badge bg-amber-500 text-white">Open</span></td>
-              <td class="p-4 text-muted italic">unclaimed</td>
               <td class="p-4">
-                <button class="h-8 px-3 rounded-md text-xs border border-amber-500 text-amber-500 hover:bg-amber-500/10 transition-colors">Send Poll</button>
+                <div class="flex flex-col gap-1">
+                  <span class="text-xs bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded inline-flex items-center gap-1 w-fit">🛡 Clean</span>
+                  <span class="text-xs text-muted">👥 2 &middot; 🪑 own seat</span>
+                </div>
+              </td>
+              <td class="p-4"><span class="badge bg-amber-500 text-white">Open</span></td>
+              <td class="p-4 text-muted italic">2 eligible</td>
+              <td class="p-4">
+                <button class="h-8 px-3 rounded-md text-xs border border-amber-500 text-amber-500 hover:bg-amber-500/10 transition-colors">Find driver</button>
               </td>
             </tr>
+            <!-- Saturday: standard ride -->
             <tr class="hover:bg-accent/50 transition-colors">
               <td class="p-4"></td>
-              <td class="p-4">8:15 AM</td>
+              <td class="p-4">2:00 PM</td>
               <td class="p-4">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium">V-Ahmed</span>
-                  <span class="badge bg-purple-600/20 text-purple-400 text-[10px]">VOLUNTEER</span>
-                </div>
-                <span class="text-muted ml-0 text-xs">(so)</span>
+                <span class="font-medium">P7</span>
+                <span class="text-muted ml-1 text-xs">(en)</span>
               </td>
               <td class="p-4">
-                <span class="text-muted">Cedar-Riverside</span>
+                <span class="text-muted">Phillips</span>
                 <span class="mx-1 text-muted">→</span>
-                <span class="text-muted">Seward</span>
-                <div class="text-xs text-purple-400 mt-0.5">escort to distro event</div>
+                <span class="text-muted">Downtown</span>
+                <div class="text-xs text-muted mt-0.5">work 1 to home</div>
               </td>
-              <td class="p-4 text-muted">~15 min</td>
+              <td class="p-4">
+                <span class="text-xs text-muted">👥 1</span>
+              </td>
               <td class="p-4"><span class="badge bg-blue-500 text-white">Claimed</span></td>
               <td class="p-4">
-                <div class="flex items-center gap-2">
-                  <span>James M.</span>
-                </div>
+                <span>Nadia H.</span>
               </td>
               <td class="p-4">
                 <button class="h-8 px-3 rounded-md text-xs bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">Confirm</button>
