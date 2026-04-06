@@ -11,7 +11,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { apiGet, apiPut, apiPost, getToken, clearToken } from "@/lib/api";
+import { apiGet, apiPut, apiPost, apiPatch, apiDelete, getToken, clearToken } from "@/lib/api";
 import { resolveDashboardApiBase } from "@/lib/api-base";
 import { useLocale } from "@/lib/locale";
 
@@ -1032,6 +1032,9 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* WhatsApp Lines */}
+        <WhatsAppPoolSection />
+
         {/* Two-Factor Authentication */}
         <TwoFactorSection />
 
@@ -1045,6 +1048,277 @@ export default function SettingsPage() {
         <SystemUpdatesSection />
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// WhatsApp Pool Management
+// ---------------------------------------------------------------------------
+
+interface WaLine {
+  id: string;
+  label: string;
+  phoneNumber: string | null;
+  status: string;
+  isPrimary: boolean;
+  isRelayPool: boolean;
+  qrCode: string | null;
+  error: string | null;
+  lastConnectedAt: string | null;
+}
+
+function WhatsAppPoolSection() {
+  const { t } = useLocale();
+  const [lines, setLines] = useState<WaLine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [newIsRelay, setNewIsRelay] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchLines = useCallback(async () => {
+    const res = await apiGet<WaLine[]>("/api/whatsapp/lines");
+    if (res.ok && Array.isArray(res.data)) {
+      setLines(res.data);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchLines();
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [fetchLines]);
+
+  // Poll while any line is connecting/qr_ready
+  useEffect(() => {
+    const needsPoll = lines.some((l) => l.status === 'connecting' || l.status === 'qr_ready');
+    if (needsPoll && !pollRef.current) {
+      pollRef.current = setInterval(fetchLines, 2000);
+    } else if (!needsPoll && pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, [lines, fetchLines]);
+
+  async function handleAddLine() {
+    if (!newLabel.trim()) return;
+    setAdding(true);
+    const hasPrimary = lines.some((l) => l.isPrimary);
+    const res = await apiPost<{ id: string }>("/api/whatsapp/lines", {
+      label: newLabel.trim(),
+      isPrimary: !hasPrimary,
+      isRelayPool: newIsRelay,
+    });
+    if (res.ok) {
+      setNewLabel("");
+      setNewIsRelay(false);
+      setShowAddForm(false);
+      await fetchLines();
+    }
+    setAdding(false);
+  }
+
+  async function handleConnect(lineId: string) {
+    setConnectingId(lineId);
+    await apiPost(`/api/whatsapp/lines/${lineId}/connect`);
+    await fetchLines();
+    setConnectingId(null);
+  }
+
+  async function handleDisconnect(lineId: string) {
+    await apiPost(`/api/whatsapp/lines/${lineId}/disconnect`, { clearAuth: false });
+    await fetchLines();
+  }
+
+  async function handleRemove(lineId: string) {
+    await apiDelete(`/api/whatsapp/lines/${lineId}`);
+    await fetchLines();
+  }
+
+  async function handleSetPrimary(lineId: string) {
+    await apiPatch(`/api/whatsapp/lines/${lineId}`, { isPrimary: true });
+    await fetchLines();
+  }
+
+  async function handleToggleRelay(lineId: string, current: boolean) {
+    await apiPatch(`/api/whatsapp/lines/${lineId}`, { isRelayPool: !current });
+    await fetchLines();
+  }
+
+  const connectedCount = lines.filter((l) => l.status === 'connected').length;
+  const relayCount = lines.filter((l) => l.isRelayPool).length;
+  const relayConnected = lines.filter((l) => l.isRelayPool && l.status === 'connected').length;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              {t('dashboard.settings.waPoolTitle')}
+              {connectedCount > 0 && (
+                <span className="text-emerald-600 text-sm font-normal">
+                  {connectedCount}/{lines.length} {t('dashboard.settings.waConnectedCount')}
+                </span>
+              )}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t('dashboard.settings.waPoolDesc')}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setShowAddForm(!showAddForm)}>
+            {showAddForm ? t('dashboard.common.cancel') : t('dashboard.settings.waAddLine')}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {loading ? (
+          <p className="text-sm text-muted-foreground">{t('dashboard.common.loading')}</p>
+        ) : (
+          <>
+            {/* Add new line form */}
+            {showAddForm && (
+              <div className="rounded-md border border-dashed p-4 space-y-3">
+                <h4 className="text-sm font-medium">{t('dashboard.settings.waNewLine')}</h4>
+                <div className="space-y-2">
+                  <Input
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    placeholder={t('dashboard.settings.waLineLabelPlaceholder')}
+                    className="text-sm"
+                  />
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={newIsRelay}
+                      onChange={(e) => setNewIsRelay(e.target.checked)}
+                      className="rounded"
+                    />
+                    {t('dashboard.settings.waRelayPoolCheckbox')}
+                  </label>
+                </div>
+                <Button onClick={handleAddLine} disabled={adding || !newLabel.trim()} size="sm">
+                  {adding ? t('dashboard.common.saving') : t('dashboard.settings.waAddLine')}
+                </Button>
+              </div>
+            )}
+
+            {/* Line list */}
+            {lines.length === 0 ? (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-sm text-muted-foreground">{t('dashboard.settings.waNoLines')}</p>
+                <Button variant="outline" onClick={() => setShowAddForm(true)}>
+                  {t('dashboard.settings.waAddFirstLine')}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {lines.map((line) => (
+                  <div key={line.id} className="rounded-md border p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`h-2.5 w-2.5 rounded-full ${
+                          line.status === 'connected' ? 'bg-emerald-500'
+                            : line.status === 'qr_ready' ? 'bg-amber-500 animate-pulse'
+                            : line.status === 'connecting' ? 'bg-blue-500 animate-pulse'
+                            : 'bg-muted-foreground/30'
+                        }`} />
+                        <span className="text-sm font-medium">{line.label}</span>
+                        {line.isPrimary && (
+                          <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
+                            {t('dashboard.settings.waPrimary')}
+                          </span>
+                        )}
+                        {line.isRelayPool && (
+                          <span className="text-xs bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded font-medium">
+                            {t('dashboard.settings.waRelay')}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground capitalize">{line.status.replace('_', ' ')}</span>
+                    </div>
+
+                    {line.phoneNumber && (
+                      <p className="text-xs text-muted-foreground font-mono">+{line.phoneNumber}</p>
+                    )}
+
+                    {line.error && (
+                      <p className="text-xs text-destructive">{line.error}</p>
+                    )}
+
+                    {/* QR Code for pairing */}
+                    {line.status === 'qr_ready' && line.qrCode && (
+                      <div className="flex flex-col items-center gap-2 p-3 rounded-md border bg-white dark:bg-black">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(line.qrCode)}`}
+                          alt="WhatsApp QR"
+                          className="w-48 h-48"
+                        />
+                        <p className="text-xs text-muted-foreground">{t('dashboard.settings.waQrScan')}</p>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {line.status === 'disconnected' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleConnect(line.id)}
+                          disabled={connectingId === line.id}
+                        >
+                          {connectingId === line.id ? t('dashboard.settings.waConnecting') : t('dashboard.settings.waConnect')}
+                        </Button>
+                      )}
+                      {line.status === 'connected' && (
+                        <Button variant="outline" size="sm" onClick={() => handleDisconnect(line.id)}>
+                          {t('dashboard.settings.waDisconnect')}
+                        </Button>
+                      )}
+                      {!line.isPrimary && line.status === 'connected' && (
+                        <Button variant="ghost" size="sm" onClick={() => handleSetPrimary(line.id)}>
+                          {t('dashboard.settings.waSetPrimary')}
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleToggleRelay(line.id, line.isRelayPool)}
+                      >
+                        {line.isRelayPool ? t('dashboard.settings.waRemoveFromPool') : t('dashboard.settings.waAddToPool')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleRemove(line.id)}
+                      >
+                        {t('dashboard.settings.waRemoveLine')}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Pool stats */}
+            {relayCount > 0 && (
+              <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
+                <p className="font-medium text-sm text-foreground">{t('dashboard.settings.waRelayPoolStatus')}</p>
+                <p>{relayConnected} / {relayCount} {t('dashboard.settings.waRelayLinesReady')}</p>
+                <p className="text-muted-foreground">
+                  {t('dashboard.settings.waRelayExplanation')}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
