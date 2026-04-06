@@ -103,6 +103,7 @@ Monthly operating cost: $0 (Signal only) to ~$6/mo (Twilio SMS).
 - **[docs/THREAT-MODEL.md](docs/THREAT-MODEL.md)** — Security threat analysis
 - **[docs/CLOUD-PROVISIONING.md](docs/CLOUD-PROVISIONING.md)** — Map provisioning architecture
 - **[docs/REMOTE-ACCESS.md](docs/REMOTE-ACCESS.md)** — Recommended Tailscale / Cloudflare deployment patterns
+- **[docs/RIDE-COORDINATION.md](docs/RIDE-COORDINATION.md)** — Ride coordination design proposal (data model done, UI mockups, not yet built)
 - **[PLAN.md](PLAN.md)** — Product plan, security architecture, phased roadmap
 - **[SPEC.md](SPEC.md)** — Product specification
 
