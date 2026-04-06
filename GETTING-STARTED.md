@@ -184,9 +184,9 @@ docker compose up -d
 
 ## First-Time Setup Wizard
 
-When you first open SafeCare, a setup wizard guides you through the steps. Here's what the first two steps look like — account creation and region selection:
+When you first open SafeCare, a setup wizard guides you through each step. Here's the full flow from a fresh install to a ready dashboard — account creation, region selection, map download, WhatsApp pairing, security briefing, and the finished dashboard:
 
-![Setup wizard walkthrough](docs/screenshots/setup-wizard.gif)
+![Setup wizard walkthrough](docs/screenshots/setup-wizard.webp)
 
 ### Step 1: Create Your Admin Account
 

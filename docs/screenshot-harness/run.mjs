@@ -35,6 +35,7 @@ const SPECS = {
   whatsapp: () => import('./specs/whatsapp.mjs'),
   operations: () => import('./specs/operations.mjs'),
   'setup-wizard': () => import('./specs/setup-wizard.mjs'),
+  noop: () => import('./specs/noop.mjs'),
 };
 
 // Specs that need a FRESH system (no admin, not unlocked) so the setup
@@ -63,12 +64,16 @@ async function main() {
       console.log('⊘  SKIP_STACK=1 — assuming stack already running');
     }
 
-    const skipBootstrap = SPECS_SKIP_BOOTSTRAP.has(specName);
+    // Specs in SPECS_SKIP_BOOTSTRAP skip bootstrap by default.
+    // SKIP_BOOTSTRAP=1 can also be set to skip bootstrap for any spec
+    // (useful for running the e2e test suite against a fresh stack).
+    const skipBootstrap =
+      SPECS_SKIP_BOOTSTRAP.has(specName) || process.env.SKIP_BOOTSTRAP === '1';
     let token = null;
     if (!skipBootstrap) {
       ({ token } = await bootstrap());
     } else {
-      console.log('⊘  Skipping bootstrap — spec needs a fresh install state');
+      console.log('⊘  Skipping bootstrap — fresh install state');
     }
 
     console.log('🗄  Connecting to postgres for seeding...');
