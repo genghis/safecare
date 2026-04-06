@@ -36,12 +36,15 @@ interface Driver {
   id: string;
   name: string;
   phone: string;
-  vetted: boolean;
+  // Backend returns `vettedStatus` from the drivers table. Older code in
+  // this file used `vetted: boolean` / `status: string` that never existed
+  // on the API response — hence every driver appeared "Not Vetted" and
+  // "Offline" in the list.
+  vettedStatus: 'pending' | 'vetted' | 'suspended' | null;
   vehicleSize: string;
   vehicle: string;
   maxDeliveries: number;
   team: string;
-  status: string;
   availability: DriverAvailability[];
   zones: string[];
   createdAt: string;
@@ -288,12 +291,11 @@ export default function DriversPage() {
         id: (res.data as any)?.id ?? "",
         name: addName,
         phone: addPhone,
-        vetted: false,
+        vettedStatus: 'pending',
         vehicleSize: addVehicleSize,
         vehicle: addVehicleSize,
         maxDeliveries: addMaxDeliveries,
         team: addTeam,
-        status: "pending",
         availability: addAvailability,
         zones: [],
         createdAt: new Date().toISOString(),
@@ -335,7 +337,9 @@ export default function DriversPage() {
             <TableRow>
               <TableHead>{t('dashboard.drivers.colName')}</TableHead>
               <TableHead>{t('dashboard.drivers.colPhone')}</TableHead>
-              <TableHead>{t('dashboard.drivers.colStatus')}</TableHead>
+              {/* "Status" (online/offline) column removed — the backend
+                  does not expose a live check-in state on /api/drivers,
+                  so it always rendered as "Offline" for every driver. */}
               <TableHead>{t('dashboard.drivers.colVetted')}</TableHead>
               <TableHead>{t('dashboard.drivers.colVehicleSize')}</TableHead>
               <TableHead>{t('dashboard.drivers.colCapacity')}</TableHead>
@@ -384,11 +388,14 @@ export default function DriversPage() {
                     </TableCell>
                     <TableCell>{driver.phone}</TableCell>
                     <TableCell>
-                      <StatusBadge status={driver.status || "offline"} />
-                    </TableCell>
-                    <TableCell>
                       <StatusBadge
-                        status={driver.vetted ? "vetted" : "not_vetted"}
+                        status={
+                          driver.vettedStatus === 'vetted'
+                            ? 'vetted'
+                            : driver.vettedStatus === 'suspended'
+                              ? 'suspended'
+                              : 'not_vetted'
+                        }
                       />
                     </TableCell>
                     <TableCell>
@@ -879,9 +886,17 @@ function DriverDetailPanel({
         <div className="mt-6">
           <h3 className="text-sm font-medium mb-3">{t('dashboard.drivers.vettingStatus')}</h3>
           <div className="flex items-center gap-3">
-            <StatusBadge status={driver.status === "vetted" ? "vetted" : driver.status === "suspended" ? "suspended" : "not_vetted"} />
+            <StatusBadge
+              status={
+                driver.vettedStatus === 'vetted'
+                  ? 'vetted'
+                  : driver.vettedStatus === 'suspended'
+                    ? 'suspended'
+                    : 'not_vetted'
+              }
+            />
             <div className="flex gap-2">
-              {(driver.status === "pending" || !driver.status) && (
+              {(driver.vettedStatus === 'pending' || !driver.vettedStatus) && (
                 <>
                   <Button
                     size="sm"
@@ -899,7 +914,7 @@ function DriverDetailPanel({
                   </Button>
                 </>
               )}
-              {driver.status === "vetted" && (
+              {driver.vettedStatus === 'vetted' && (
                 <Button
                   size="sm"
                   variant="destructive"
@@ -908,7 +923,7 @@ function DriverDetailPanel({
                   {t('dashboard.drivers.suspend')}
                 </Button>
               )}
-              {driver.status === "suspended" && (
+              {driver.vettedStatus === 'suspended' && (
                 <Button
                   size="sm"
                   onClick={() => onStatusChange(driver.id, "vetted")}

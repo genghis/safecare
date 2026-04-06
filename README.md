@@ -2,6 +2,8 @@
 
 A secure logistics platform for managing volunteer food deliveries to at-risk families. Prioritizes recipient privacy through field-level encryption, self-hosted geocoding and routing, and data compartmentalization.
 
+![Dispatch page with an active session](docs/screenshots/dispatch-active.png)
+
 ## How It Works
 
 1. **Admin** sets up the operating region, adds recipients and drivers

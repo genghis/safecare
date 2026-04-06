@@ -9,7 +9,7 @@
  * Returns { token, dek } for downstream use.
  */
 
-import { URLS } from './stack.mjs';
+import { URLS, setDek } from './stack.mjs';
 
 export const DUMMY_ADMIN = {
   email: 'screenshots@safecare.local',
@@ -55,6 +55,7 @@ export async function bootstrap() {
   console.log('🔓 Unlocking system with fresh DEK...');
   const dek = randHex(32); // 64 hex chars
   await apiPost('/api/setup/unlock', { dek });
+  setDek(dek);
 
   console.log('✓  Bootstrap complete');
   return { token, dek };

@@ -25,6 +25,22 @@ const REDIS_URL = 'redis://localhost:6379';
 
 const procs = [];
 
+// Throwaway secrets generated at startup and shared with seed/bootstrap
+// modules via `getSecrets()`. DEK is set later once bootstrap unlocks.
+const secrets = {
+  JWT_SECRET: null,
+  HMAC_KEY: null,
+  DEK: null,
+};
+
+export function getSecrets() {
+  return secrets;
+}
+
+export function setDek(dek) {
+  secrets.DEK = dek;
+}
+
 export const URLS = {
   backend: BACKEND_URL,
   dashboard: DASHBOARD_URL,
@@ -148,16 +164,16 @@ function spawnLogged(name, cmd, args, env = {}) {
  * Start the backend in dev mode.
  */
 export async function startBackend() {
-  // Generate throwaway secrets
-  const JWT_SECRET = randHex(32);
-  const HMAC_KEY = randHex(32);
+  // Generate throwaway secrets (shared with seed module)
+  secrets.JWT_SECRET = randHex(32);
+  secrets.HMAC_KEY = randHex(32);
 
   console.log('🚀 Starting backend (pnpm dev)...');
   spawnLogged('backend', 'pnpm', ['--filter', '@safecare/backend', 'dev'], {
     DATABASE_URL: POSTGRES_URL,
     REDIS_URL,
-    JWT_SECRET,
-    HMAC_KEY,
+    JWT_SECRET: secrets.JWT_SECRET,
+    HMAC_KEY: secrets.HMAC_KEY,
     NODE_ENV: 'development',
     PORT: '3001',
     HOST: '0.0.0.0',

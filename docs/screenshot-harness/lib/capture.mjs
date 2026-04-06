@@ -40,13 +40,39 @@ export async function openDashboard({ token, outputDir }) {
 
   const page = await browser.newPage();
 
+  // Map of API path → canned response body for interception. Each entry is
+  // `{ path: string, body: object }`. Used by ctx.mockApi(path, body).
+  const mocks = new Map();
+
+  await page.setRequestInterception(true);
+  page.on('request', (req) => {
+    try {
+      const url = new URL(req.url());
+      const mock = mocks.get(url.pathname);
+      if (mock) {
+        req.respond({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: mock }),
+        });
+        return;
+      }
+    } catch {
+      /* fall through */
+    }
+    req.continue();
+  });
+
   // First, visit any URL on the origin so we can touch sessionStorage
   await page.goto(URLS.dashboard, { waitUntil: 'domcontentloaded' });
 
-  // Inject the admin token into sessionStorage (same key the dashboard uses)
-  await page.evaluate((t) => {
-    sessionStorage.setItem('safecare_token', t);
-  }, token);
+  // Inject the admin token into sessionStorage (same key the dashboard uses).
+  // Skipped for fresh-install specs that need to run the setup wizard.
+  if (token) {
+    await page.evaluate((t) => {
+      sessionStorage.setItem('safecare_token', t);
+    }, token);
+  }
 
   return {
     page,
@@ -55,17 +81,16 @@ export async function openDashboard({ token, outputDir }) {
 
     async goto(urlPath) {
       await page.goto(`${URLS.dashboard}${urlPath}`, { waitUntil: 'networkidle0' });
-      // Wait for i18n to load — until no button text starts with "dashboard."
-      // The LocaleProvider dynamically imports @safecare/shared which races
-      // with our screenshot capture.
+      // Wait for i18n to load — the LocaleProvider dynamically imports
+      // @safecare/shared on mount, which races with our first render.
+      // Check the sidebar nav (spans inside <a> elements) since that's
+      // where raw keys are most visible.
       await page.waitForFunction(
         () => {
-          const untranslated = Array.from(document.querySelectorAll('button')).some((b) =>
-            (b.textContent || '').trim().startsWith('dashboard.'),
-          );
-          return !untranslated;
+          const bodyText = document.body.innerText || '';
+          return !bodyText.includes('dashboard.nav.') && !bodyText.includes('dashboard.settings.');
         },
-        { timeout: 10_000 },
+        { timeout: 15_000 },
       ).catch(() => {
         console.warn('  ⚠ i18n did not finish loading — screenshots may show raw keys');
       });
@@ -97,6 +122,19 @@ export async function openDashboard({ token, outputDir }) {
 
     async waitForSelector(selector, opts) {
       await page.waitForSelector(selector, opts);
+    },
+
+    /**
+     * Intercept API responses for a given path and return canned data.
+     * Used to skip blocking checks (e.g. setup/status needs Nominatim).
+     * Pass `null` to remove a mock.
+     */
+    mockApi(path, body) {
+      if (body === null) {
+        mocks.delete(path);
+      } else {
+        mocks.set(path, body);
+      }
     },
 
     async close() {

@@ -33,7 +33,13 @@ const OUTPUT_DIR = path.join(REPO_ROOT, 'docs', 'screenshots');
 
 const SPECS = {
   whatsapp: () => import('./specs/whatsapp.mjs'),
+  operations: () => import('./specs/operations.mjs'),
+  'setup-wizard': () => import('./specs/setup-wizard.mjs'),
 };
+
+// Specs that need a FRESH system (no admin, not unlocked) so the setup
+// wizard actually renders instead of redirecting to /login or /.
+const SPECS_SKIP_BOOTSTRAP = new Set(['setup-wizard']);
 
 async function main() {
   const specName = process.argv[2];
@@ -57,7 +63,13 @@ async function main() {
       console.log('⊘  SKIP_STACK=1 — assuming stack already running');
     }
 
-    const { token } = await bootstrap();
+    const skipBootstrap = SPECS_SKIP_BOOTSTRAP.has(specName);
+    let token = null;
+    if (!skipBootstrap) {
+      ({ token } = await bootstrap());
+    } else {
+      console.log('⊘  Skipping bootstrap — spec needs a fresh install state');
+    }
 
     console.log('🗄  Connecting to postgres for seeding...');
     dbClient = await connectDb();

@@ -247,7 +247,10 @@ export default function ZonesPage() {
                     <div>
                       <p className="text-sm font-medium">{zone.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {zone.polygon.length} {zone.polygon.length !== 1 ? t('dashboard.zones.points') : t('dashboard.zones.point')}
+                        {t(
+                          zone.polygon.length !== 1 ? 'dashboard.zones.points' : 'dashboard.zones.point',
+                          { count: String(zone.polygon.length) },
+                        )}
                       </p>
                     </div>
                   </div>

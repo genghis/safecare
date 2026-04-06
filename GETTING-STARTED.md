@@ -184,7 +184,9 @@ docker compose up -d
 
 ## First-Time Setup Wizard
 
-When you first open SafeCare, a setup wizard guides you through three steps:
+When you first open SafeCare, a setup wizard guides you through the steps. Here's what the first two steps look like — account creation and region selection:
+
+![Setup wizard walkthrough](docs/screenshots/setup-wizard.gif)
 
 ### Step 1: Create Your Admin Account
 

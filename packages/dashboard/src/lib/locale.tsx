@@ -113,7 +113,12 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       if (tFunc) return tFunc(key, locale, vars);
       return key; // Fallback: show the key itself
     },
-    [locale],
+    // `loaded` is intentionally in the deps: tFunc is a module-level
+    // variable that gets set inside the mount effect. Without `loaded`
+    // here, consumers that don't independently re-render (e.g. the
+    // sidebar nav) would capture the initial `t` where tFunc is null
+    // and stay stuck on raw i18n keys forever.
+    [locale, loaded],
   );
 
   const value = useMemo(
