@@ -212,6 +212,37 @@ CREATE TABLE IF NOT EXISTS driver_passenger_affinity (
   UNIQUE(driver_id, recipient_id)
 );
 
+-- ---------- whatsapp_lines ----------
+-- Multiple WhatsApp numbers: one primary (outbound notifications) + pool for blind relay
+CREATE TABLE IF NOT EXISTS whatsapp_lines (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  label TEXT NOT NULL,
+  phone_number TEXT,                                -- E.164 once connected
+  status TEXT DEFAULT 'disconnected',               -- disconnected|connecting|qr_ready|connected
+  is_primary BOOLEAN DEFAULT false,                 -- main outbound notification line
+  is_relay_pool BOOLEAN DEFAULT false,              -- available for blind driver<->recipient relay
+  auth_dir TEXT NOT NULL,                           -- path to Baileys auth state
+  last_connected_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- ---------- whatsapp_relay_sessions ----------
+-- Active blind relay: driver <-> pool number <-> recipient
+CREATE TABLE IF NOT EXISTS whatsapp_relay_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  whatsapp_line_id UUID NOT NULL REFERENCES whatsapp_lines(id),
+  driver_phone_enc TEXT NOT NULL,
+  recipient_phone_enc TEXT NOT NULL,
+  dispatch_session_id UUID REFERENCES dispatch_sessions(id),
+  shift_id UUID REFERENCES shifts(id),
+  active BOOLEAN DEFAULT true,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_whatsapp_relay_line ON whatsapp_relay_sessions(whatsapp_line_id);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_relay_active ON whatsapp_relay_sessions(active);
+
 -- ---------- intake_requests ----------
 -- Raw ride/delivery requests from any channel, before coordinator processes them
 CREATE TABLE IF NOT EXISTS intake_requests (

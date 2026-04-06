@@ -105,8 +105,14 @@ The phone stays the same. Only the SIM and the WhatsApp registration change.
 
 17. **On your SafeCare computer**, open the dashboard in your browser.
 18. Click **Settings** in the menu.
-19. Scroll down to **WhatsApp Lines**.
-20. Click **"Add Line"**.
+19. Scroll down to **WhatsApp Lines**. On a fresh install it will look
+    like this:
+
+    ![Empty WhatsApp Lines section](screenshots/whatsapp-empty.png)
+
+20. Click **"Add Line"**. A form appears:
+
+    ![Add WhatsApp line form](screenshots/whatsapp-add-line.png)
 21. Type a label:
     - **For SIM #1:** type `Main Line`. Leave the "Use as relay line"
       checkbox **unchecked**.
@@ -124,7 +130,9 @@ The phone stays the same. Only the SIM and the WhatsApp registration change.
 26. **Point the phone's camera at the QR code on your computer screen.**
 27. After 1-2 seconds the phone says "Linking…" and then closes.
 28. **On your computer**, the line in SafeCare turns green with a checkmark.
-    The phone number appears under the label.
+    The phone number appears under the label, like this:
+
+    ![One WhatsApp line connected](screenshots/whatsapp-one-connected.png)
 
 ✅ **SIM #1 is done.** This number is now permanently linked to SafeCare and
 will keep working forever, even after you remove the SIM.
@@ -171,14 +179,11 @@ it. You're done.
 When all 5 SIMs are linked:
 
 1. Go back to **Settings → WhatsApp Lines** in SafeCare.
-2. You should see 5 lines, all with **green dots** next to them:
-   - **Main Line** — marked "Primary"
-   - **Relay #1** — marked "Relay"
-   - **Relay #2** — marked "Relay"
-   - **Relay #3** — marked "Relay"
-   - **Relay #4** — marked "Relay"
-3. At the bottom you'll see the **Relay Pool** status:
-   `4 / 4 relay lines connected and ready`
+2. You should see 5 lines, all with **green dots** next to them, plus the
+   **Relay Pool** status at the bottom reading `4 / 4 relay lines connected
+   and ready`:
+
+   ![All 5 WhatsApp lines connected with relay pool](screenshots/whatsapp-all-connected.png)
 
 If any line shows a gray dot, click **"Connect"** next to it. It should
 reconnect automatically using the saved link from earlier.

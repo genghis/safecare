@@ -12,6 +12,7 @@
     "db:studio": "pnpm --filter @safecare/backend db:studio"
   },
   "devDependencies": {
+    "pg": "^8.20.0",
     "puppeteer-core": "^24.40.0",
     "turbo": "^2.3.0",
     "typescript": "^5.7.0"
