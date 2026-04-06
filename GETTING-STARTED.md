@@ -305,9 +305,28 @@ Signal is the most private option. Messages are end-to-end encrypted and the ser
    ```
 4. Restart: `cd docker && docker compose restart backend`
 
-### WhatsApp
+### WhatsApp (Free -- uses your own WhatsApp account)
 
-WhatsApp requires Meta business verification (1-2 weeks) through Twilio. Use the same Twilio credentials as SMS, and recipients who prefer WhatsApp will receive messages there instead.
+WhatsApp messaging uses [Baileys](https://github.com/WhiskeySockets/Baileys), which connects SafeCare as a linked device on a regular WhatsApp account — just like linking WhatsApp Web on a computer. No Twilio, no Meta business verification, no monthly cost.
+
+**Setup:**
+
+1. Get a **dedicated prepaid phone number** for your group's WhatsApp (~$3/month). Don't use a personal number.
+2. Install WhatsApp on a phone with that number and complete registration
+3. In the SafeCare dashboard, go to **Settings > WhatsApp**
+4. Click **Connect WhatsApp** — a QR code appears
+5. On the WhatsApp phone, go to **Settings > Linked Devices > Link a Device** and scan the QR code
+6. That's it — SafeCare is now linked. The pairing persists across restarts.
+
+**Important notes:**
+
+- Keep the WhatsApp phone charged and connected to the internet (it needs to stay active for the link to work)
+- This uses an unofficial API — WhatsApp accounts can be banned for automation, though low-volume person-to-person messages rarely trigger detection
+- Use a **dedicated number**, not a personal one, so a ban doesn't affect anyone's personal WhatsApp
+- Always configure a **fallback channel** (Signal or SMS) — if the WhatsApp number gets banned, SafeCare automatically falls back
+- No message logs are stored on third-party servers (unlike Twilio), which is better for privacy
+
+**If the account gets banned:** Get a new prepaid number, register WhatsApp on it, and re-scan the QR code from the dashboard. The system reconnects in under a minute.
 
 ## Localization
 

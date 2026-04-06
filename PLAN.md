@@ -18,7 +18,7 @@ SafeCare is a secure logistics platform for volunteer food deliveries to at-risk
 | **Driver App** | PWA (React + Vite + Leaflet) | Implemented |
 | **Mapping** | OSRM (self-hosted) + OpenStreetMap tiles | Implemented |
 | **Geocoding** | Nominatim (self-hosted, fail-closed) | Implemented |
-| **Communication** | Twilio SMS/WhatsApp + Signal (signal-cli) | Implemented |
+| **Communication** | WhatsApp (Baileys) + Signal (signal-cli) + SMS (Twilio) | Implemented |
 | **Job Queue** | BullMQ + Redis | Implemented |
 | **Monorepo** | Turborepo + pnpm workspaces | Implemented |
 | **Networking** | Tailscale (admin) + Tailscale Funnel or Cloudflare Tunnel (driver API) | **Planned** |
@@ -98,7 +98,8 @@ The Data Encryption Key never touches the filesystem. It exists only in backend 
 |------|-----------|--------|
 | Delivery records (server) | 24h max | Hard DELETE + VACUUM |
 | Communication sessions | Hours | Hard DELETE |
-| Twilio message logs | Minutes | Twilio Delete API + daily sweep |
+| Twilio SMS logs | Minutes | Twilio Delete API + daily sweep |
+| WhatsApp messages | None stored | Baileys sends directly, no server-side logs |
 | Route data (driver phone) | Shift duration | sessionStorage clear + IndexedDB clear + tile cache clear |
 | Audit log | 90 days | Automated daily sweep |
 
@@ -110,7 +111,7 @@ See [STATUS.md](STATUS.md) for the full feature-by-feature breakdown. Summary:
 
 - **Phase 1 (Foundation)**: Complete — monorepo, encrypted DB, backend API, dashboard, driver PWA, Docker Compose, setup wizard, map provisioning
 - **Phase 2 (Mapping & Air-Gap)**: Mostly complete — OSRM, Nominatim, offline tiles, GPS routing, airplane mode alerts (500m audio), client-side encryption, remote wipe, panic erase, off-disk DEK, RPi appliance provisioner
-- **Phase 3 (Communication)**: Mostly complete — SMS/WhatsApp/Signal, i18n (6 languages), recipient ack flow, orphaned food alerts, Twilio log scrubbing
+- **Phase 3 (Communication)**: Mostly complete — WhatsApp (Baileys), Signal, SMS (Twilio), i18n (6 languages), recipient ack flow, orphaned food alerts, Twilio log scrubbing
 - **Phase 4 (Volunteer Management)**: Partial — driver profiles, vetting workflow done. Team gamification and constraint optimization not done.
 - **Phase 5 (Hardening)**: Mostly complete — server purge, TOTP 2FA + backup codes, auth guard, logout, session management, audit logging, emergency destroy, threat model, CI/CD, 198 unit tests plus integration/security suites
 
@@ -123,7 +124,7 @@ See [STATUS.md](STATUS.md) for the full feature-by-feature breakdown. Summary:
 | Gap | Description | Effort |
 |-----|-------------|--------|
 | **Exclusion zones** | Admins draw "avoid" areas (e.g., known surveillance) on the map. OSRM edge-weighting routes around them. Currently zones are delivery-only. | Medium |
-| **Communication proxy (blind number pool)** | Drivers and recipients currently see each other's real phone numbers. Need a Twilio proxy so neither side sees the real number. Schema exists, no proxy logic. | Medium |
+| **Communication proxy (blind number pool)** | Drivers and recipients currently see each other's real phone numbers. Need a proxy so neither side sees the real number. Schema exists, no proxy logic. | Medium |
 | **Tailscale networking** | Dashboard accessible to anyone on the local network unless deployed behind the private/public split described in docs/REMOTE-ACCESS.md. | Medium |
 | **Route variation** | Same driver gets same route pattern. Spec says vary routes so patterns can't be observed. | Small |
 
@@ -157,7 +158,7 @@ See [STATUS.md](STATUS.md) for the full feature-by-feature breakdown. Summary:
 | Home PC | 8-16 GB | SSD | Already have it |
 | VPS | 4-8 GB | SSD | ~$20-40/mo |
 
-Monthly operating cost: $0 (Signal only) to ~$6/mo (Twilio SMS).
+Monthly operating cost: $0 (Signal + WhatsApp) to ~$6/mo (adding Twilio SMS).
 
 ---
 

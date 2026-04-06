@@ -6,7 +6,7 @@ A secure, low-persistence logistics platform designed to manage volunteer food d
 
 ## 2. Core Security & Privacy Principles
 
-- **Low Data Persistence & Zero-Trust APIs:** Delivery data must be treated as ephemeral. Identifiable route data is purged upon delivery acknowledgment. Furthermore, any third-party communication APIs (Twilio, Meta) must be continuously scrubbed via automated log-deletion scripts to prevent metadata honeypots.
+- **Low Data Persistence & Zero-Trust APIs:** Delivery data must be treated as ephemeral. Identifiable route data is purged upon delivery acknowledgment. WhatsApp uses Baileys (direct connection, no third-party logs). SMS via Twilio must be continuously scrubbed via automated log-deletion scripts to prevent metadata honeypots.
 - **Zero-Exposure Routing:** Drivers operate primarily in Airplane Mode near recipient homes to prevent location tracking or device compromise from exposing addresses.
 - **Blind Communication:** Drivers and recipients never see each other's real phone numbers. All communication is proxied through a rotating central server or handled via decentralized, disposable hardware.
 - **Data Encryption:** Field-level encryption for all Personally Identifiable Information (PII) in the database (names, addresses, phone numbers).
@@ -27,7 +27,7 @@ The system consists of three main components:
 
 - **JotForm Integration:** Webhook integration to ingest weekly order submissions.
 - **Authentication:** The system accepts orders only if the phone number matches a verified number in the encrypted database.
-- **WhatsApp Opt-In (Security Friction):** During intake, users are offered WhatsApp (estimated 70% preference) but are presented with an explicit disclaimer: *"We offer WhatsApp for convenience, but it retains metadata. Do you consent to receive updates via WhatsApp?"*
+- **WhatsApp Opt-In (Security Friction):** During intake, users are offered WhatsApp (estimated 70% preference) but are presented with an explicit disclaimer: *"We offer WhatsApp for convenience, but it retains metadata on your device. Do you consent to receive updates via WhatsApp?"* (Implementation note: WhatsApp uses Baileys, a direct connection that avoids Meta Business API and its server-side log retention.)
 
 **4.2. Volunteer Management & Vetting**
 
@@ -50,7 +50,7 @@ The system consists of three main components:
 ### 5.1. The "Air-Gap Check-In" Workflow (Airplane Mode Support)
 
 1. **Download:** Driver downloads the encrypted route packet at the depot.
-2. **En Route (Online):** Driver taps "Heading to Route." Server sends recipient the initial alert. *(Note: If using WhatsApp, this must be a pre-approved Meta Message Template).*
+2. **En Route (Online):** Driver taps "Heading to Route." Server sends recipient the initial alert via their preferred channel (WhatsApp, Signal, or SMS).
 3. **The Approach (Airplane Mode):** App plays a loud audio alert and displays a red banner when the driver is within 500 m of a delivery address, prompting them to enable Airplane Mode.
 4. **The Drop (Offline):** Driver completes the drop-off and taps "Delivered." The app caches this timestamp.
 5. **The Sync (Online):** Driver drives away, turns Airplane Mode OFF. The app connects to the server and sends the final "Left food at door" message.
@@ -79,7 +79,8 @@ The system must support two distinct architectural models for driver-to-family c
 
 - **Infrastructure:** Docker containers for reproducible, easily-destroyed deployments.
 - **Database:** PostgreSQL with field-level encryption (e.g., `pgcrypto`). Keys must be managed externally (e.g., AWS KMS, HashiCorp Vault).
-- **Communication APIs:** \* Twilio for SMS and WhatsApp Business API routing.
-    - **CRITICAL:** Developers must create auto-delete scripts using Twilio's `MessageResource.Delete` and `CallResource.Delete` endpoints to purge metadata immediately post-delivery.
-    - **WhatsApp Constraint:** Developers must register and authorize "Message Templates" with Meta for any server-initiated delivery alerts, due to WhatsApp's 24-hour customer service window rules.
+- **Communication APIs:**
+    - **WhatsApp:** Baileys (direct WhatsApp Web connection). No third-party API, no Meta business verification, no message templates required. Messages are sent directly from a linked WhatsApp account. No server-side logs to scrub.
+    - **SMS:** Twilio for SMS routing. Auto-delete scripts use Twilio's `MessageResource.Delete` endpoint to purge metadata immediately post-delivery.
+    - **Signal:** signal-cli REST API (self-hosted, E2E encrypted).
 - **Mapping:** Mapbox or OpenStreetMap (OSM) for offline-capable routing, utilizing custom edge-weighting to avoid Exclusion Zones.

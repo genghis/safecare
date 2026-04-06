@@ -134,18 +134,17 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 
 ---
 
-## Threat 4: Twilio is Subpoenaed or Compromised
+## Threat 4: Third-Party Communication Provider is Subpoenaed
 
-**Scenario:** Law enforcement or Twilio itself provides access to message logs, revealing which phone numbers received delivery notifications.
+**Scenario:** Law enforcement requests message logs from a third-party communication provider.
 
-**What Twilio has:**
-- Message SIDs (unique IDs for each message)
-- Sender phone number (your Twilio number)
-- Recipient phone number
-- Message content ("Your delivery is on its way")
-- Timestamps
+**WhatsApp (via Baileys) — low risk:**
+- WhatsApp messages are sent via a direct connection from the SafeCare server, not through a business API. There is no intermediate service provider (like Twilio) that stores message logs.
+- WhatsApp itself has end-to-end encryption — Meta cannot read message content.
+- Meta can see metadata (who messaged whom, when) on their servers, but SafeCare's WhatsApp account is a generic prepaid number, not tied to the organization.
+- **Risk:** The prepaid WhatsApp number could be correlated with recipient numbers in Meta's metadata if subpoenaed. Use Signal for highest-risk recipients.
 
-**Defense layers:**
+**SMS (via Twilio) — moderate risk:**
 
 | Layer | Status | Protection |
 |-------|--------|------------|
@@ -153,13 +152,14 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | Daily 2 AM sweep | Implemented | Catches any SIDs missed by per-session cleanup. |
 | Vague message content | Implemented | Messages say "Your delivery has arrived" — no names, no addresses. |
 | Number rotation (14-day) | Implemented (job) | Twilio number rotated periodically so historical correlation is harder. |
-| Signal alternative | Implemented | E2E encrypted, Twilio never sees the message. Self-hosted. |
 
-**Best mitigation: Use Signal instead of Twilio.** With Signal:
+**Signal — lowest risk:**
 - Messages are end-to-end encrypted
 - The Signal server sees only that a message was sent, not its content
 - The signal-cli instance runs on your hardware
 - No third party has any message content or metadata
+
+**Best mitigation: Use Signal or WhatsApp instead of SMS.** SMS via Twilio has the most third-party exposure. WhatsApp via Baileys avoids the Twilio middleman entirely.
 
 ---
 
@@ -257,7 +257,8 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 | Field-level encryption (PII) | **Implemented** |
 | HMAC phone hashes | **Implemented** |
 | Delivery record auto-purge + VACUUM | **Implemented** |
-| Twilio log scrubbing | **Implemented** |
+| Twilio SMS log scrubbing | **Implemented** |
+| WhatsApp via Baileys (no third-party logs) | **Implemented** |
 | Driver phone TTL auto-purge | **Implemented** |
 | Purge confirmation tracking | **Implemented** |
 | Encrypted IndexedDB (PWA) | **Implemented** — AES-GCM-256, server-issued session key via HKDF, key in volatile sessionStorage |
@@ -286,7 +287,7 @@ SafeCare assumes the worst: that any device, account, or service provider WILL b
 
 ## Recommendations for Deploying Orgs
 
-1. **Use Signal, not SMS** — eliminates the Twilio exposure entirely
+1. **Use Signal or WhatsApp, not SMS** — eliminates the Twilio exposure entirely. WhatsApp via Baileys has no third-party log storage.
 2. **Store the encryption key QR code in a safe** — this is the only copy of the DEK; print it and lock it up
 3. **Scan the QR to unlock after every reboot** — the system is locked by design; this protects data if seized
 4. **Enable full-disk encryption** on the server (LUKS on Linux, FileVault on Mac, BitLocker on Windows)

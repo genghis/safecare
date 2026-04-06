@@ -18,6 +18,7 @@ import geocodeRoutes from './routes/geocode.routes.js';
 import tilesRoutes from './routes/tiles.routes.js';
 import webhookRoutes from './routes/webhook.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import whatsappRoutes from './routes/whatsapp.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import setupRoutes from './routes/setup.routes.js';
 import updateRoutes from './routes/update.routes.js';
@@ -56,6 +57,7 @@ async function main() {
   await fastify.register(tilesRoutes);
   await fastify.register(zoneRoutes);
   await fastify.register(updateRoutes);
+  await fastify.register(whatsappRoutes);
 
   // --- Routes that require DEK (PII encryption/decryption) ---
   // These return 423 Locked if the system hasn't been unlocked yet.

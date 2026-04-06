@@ -21,6 +21,7 @@ export const config: {
   readonly TWILIO_PHONE_NUMBER: string;
   readonly SIGNAL_CLI_URL: string;
   readonly SIGNAL_PHONE_NUMBER: string;
+  readonly WHATSAPP_AUTH_DIR: string;
   readonly JOTFORM_API_KEY: string | undefined;
   readonly PUBLIC_BASE_URL: string | undefined;
   readonly PORT: number;
@@ -52,6 +53,7 @@ export const config: {
   TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER ?? '',
   SIGNAL_CLI_URL: process.env.SIGNAL_CLI_URL ?? '',
   SIGNAL_PHONE_NUMBER: process.env.SIGNAL_PHONE_NUMBER ?? '',
+  WHATSAPP_AUTH_DIR: process.env.WHATSAPP_AUTH_DIR ?? '/app/whatsapp-auth',
   JOTFORM_API_KEY: process.env.JOTFORM_API_KEY,
   PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL,
   PORT: parseInt(process.env.PORT ?? '3001', 10),

@@ -71,12 +71,12 @@ Open **http://localhost:3000** — a setup wizard walks you through creating you
 - **Offline driver navigation** — map tiles and routes pre-cached on phones
 - **Airplane mode prompts** — privacy reminder near delivery areas with loud audio alert at 500 m
 - **7 languages** — English, Spanish, Arabic, Somali, French, Chinese, Ukrainian
-- **3 notification channels** — Signal (free, E2E), SMS (Twilio), WhatsApp (Twilio)
+- **3 notification channels** — Signal (free, E2E), WhatsApp (free, via Baileys), SMS (Twilio)
 - **Field-level encryption** — recipient PII encrypted with pgcrypto
 - **Driver phone encryption** — route data AES-GCM-256 encrypted in IndexedDB, key never on disk
 - **Remote wipe + panic erase** — admin can revoke driver routes remotely; drivers can instantly erase all data with a long-press button
 - **Encrypted backup + restore** — export all data passphrase-protected, restore on fresh install
-- **Webhook authentication** — Twilio signature validation, JotForm shared-secret auth
+- **Webhook authentication** — Twilio SMS signature validation, JotForm shared-secret auth
 - **Automatic data purge** — delivery records deleted + VACUUMed within 24 hours
 - **One-click updates** — check for new versions + OS patches from the dashboard
 - **Emergency destroy** — `scripts/destroy.sh` shreds everything
@@ -92,7 +92,7 @@ Open **http://localhost:3000** — a setup wizard walks you through creating you
 
 Map data is trimmed to your operating region viewport. A metro area (~20 MB) uses ~500 MB RAM total. The setup wizard shows a live RAM estimate as you define your region.
 
-Monthly operating cost: $0 (Signal only) to ~$6/mo (Twilio SMS).
+Monthly operating cost: $0 (Signal + WhatsApp) to ~$6/mo (adding Twilio SMS).
 
 ## Documentation
 

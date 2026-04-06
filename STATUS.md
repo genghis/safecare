@@ -68,14 +68,14 @@ Last updated: 2026-03-30
 | Recipient notifications ("on the way" / "delivered") | Done | Fired async on driver sync status updates |
 | i18n / localized messages | Done | 443 string keys across 6 languages (en, es, ar, so, fr, zh). Full coverage: notifications, driver PWA, admin dashboard. Language picker in settings. RTL support for Arabic. |
 | Twilio SMS send/receive | Done | REST API integration with SID tracking |
-| WhatsApp via Twilio | Done | Sends when recipient opts in, falls back to SMS otherwise |
+| WhatsApp via Baileys | Done | Direct WhatsApp Web connection — QR pairing from dashboard, no Twilio/Meta business API needed |
 | Signal via signal-cli | Done | Self-hosted container, E2E encrypted, free |
 | Twilio inbound SMS webhook | Done | POST /api/webhooks/twilio/sms for ack processing |
 | Recipient "GOT IT" ack flow | Done | Multi-language keyword matching, auto-purge on ack |
 | Orphaned food alert (15-min timeout) | Done | BullMQ job, dashboard endpoint, Redis tracking |
 | Number rotation monitoring | Done | Daily job, warns when rotation due |
 | Notification test endpoint | Done | POST /api/notifications/test for admin verification |
-| Twilio log auto-deletion | Done | Per-session scrub + daily 2AM sweep |
+| Twilio SMS log auto-deletion | Done | Per-session scrub + daily 2AM sweep (WhatsApp via Baileys has no server-side logs to scrub) |
 | Communication proxy (blind number pool) | Not done | Schema exists, no proxy logic |
 
 ## Phase 4: Volunteer Management -- PARTIAL
@@ -93,7 +93,7 @@ Last updated: 2026-03-30
 |---------|--------|-------|
 | Server-side data purge (hard DELETE + VACUUM) | Done | Hourly sweep + VACUUM, communication session cleanup |
 | Audit log cleanup (90-day sweep) | Done | Daily cron job |
-| Twilio log scrubbing | Done | Per-session + daily 2AM sweep, Redis SID tracking |
+| Twilio SMS log scrubbing | Done | Per-session + daily 2AM sweep, Redis SID tracking |
 | Purge confirmation loop | Done | 12h window, Redis tracking, dashboard warnings |
 | Dashboard purge warnings endpoint | Done | GET /api/dashboard/purge-warnings |
 | Emergency destroy script | Done | Cross-platform (Linux + macOS), shreds secrets, wipes volumes |
@@ -108,7 +108,7 @@ Last updated: 2026-03-30
 | Security verification tests | Done | 32 tests, encryption/purge/access controls |
 | Playwright integration tests | Done | 27 browser tests, fresh install + Detroit flow |
 | Encrypted backup export + restore | Done | AES-256-GCM + scrypt KDF, passphrase-protected, restore during fresh setup |
-| Webhook signature validation | Done | Twilio HMAC signatures, JotForm shared-secret auth, fail-closed |
+| Webhook signature validation | Done | Twilio SMS HMAC signatures, JotForm shared-secret auth, fail-closed |
 | Local tile serving | Done | Self-hosted tile proxy + cache, no external CDN for map tiles |
 | OTP delivery gating | Done | Fails closed if SMS/Signal delivery fails, clears pending OTP |
 | Driver enumeration protection | Done | Same response for existing/non-existing driver phone numbers |
@@ -172,7 +172,7 @@ All user-facing strings translated to 6 languages. Language selectable in Settin
 | Gap | Priority | Notes |
 |-----|----------|-------|
 | Exclusion zones | High | Draw "avoid" areas on map, OSRM edge-weighting. Currently zones are delivery-only. |
-| Communication proxy (blind number pool) | High | Twilio proxy so drivers/recipients never see each other's real numbers. Schema exists, no proxy logic. |
+| Communication proxy (blind number pool) | High | Proxy so drivers/recipients never see each other's real numbers. Schema exists, no proxy logic. |
 | Tailscale / tunnel networking | High | Recommended deployment documented in docs/REMOTE-ACCESS.md. Admin should stay private; public host should expose only driver + webhook paths. |
 | Route variation | Medium | Same driver gets same route pattern every time. |
 | Push notification remote wipe | Medium | Current wipe uses polling. Push would be instant even with app backgrounded. |

@@ -2,6 +2,7 @@ import Redis from 'ioredis';
 import { config } from '../config.js';
 import { t, SupportedLocale, DEFAULT_LOCALE } from '@safecare/shared';
 import { getTwilioScrubQueue, queueSessionScrub } from '../jobs/index.js';
+import { whatsappService } from './whatsapp.service.js';
 
 type Channel = 'sms' | 'whatsapp' | 'signal';
 
@@ -158,58 +159,28 @@ export class NotificationService {
   }
 
   /**
-   * Send a WhatsApp message via the Twilio REST API.
+   * Send a WhatsApp message via Baileys (direct WhatsApp Web connection).
+   *
+   * No Twilio, no Meta business verification — just a regular WhatsApp
+   * account linked by scanning a QR code from the dashboard. Messages
+   * leave no server-side logs to scrub (unlike Twilio).
    */
   private async sendWhatsApp(phone: string, message: string): Promise<SendResult> {
-    const accountSid = config.TWILIO_ACCOUNT_SID;
-    const authToken = config.TWILIO_AUTH_TOKEN;
-    const fromNumber = config.TWILIO_PHONE_NUMBER;
-
-    if (!accountSid || !authToken || !fromNumber) {
-      return { success: false, channel: 'whatsapp', error: 'Twilio not configured' };
+    if (!whatsappService.isConnected()) {
+      return { success: false, channel: 'whatsapp', error: 'WhatsApp not connected — pair from Settings' };
     }
 
-    try {
-      const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-      const credentials = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+    const result = await whatsappService.sendMessage(phone, message);
 
-      const body = new URLSearchParams({
-        To: `whatsapp:${phone}`,
-        From: `whatsapp:${fromNumber}`,
-        Body: message,
-      });
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${credentials}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: body.toString(),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        return {
-          success: false,
-          channel: 'whatsapp',
-          error: `Twilio API error ${response.status}: ${errorBody}`,
-        };
-      }
-
-      const data = await response.json();
-      const sid = data.sid as string;
-
-      await this.trackMessageSid(sid);
-
-      return { success: true, channel: 'whatsapp', messageId: sid };
-    } catch (err) {
-      return {
-        success: false,
-        channel: 'whatsapp',
-        error: err instanceof Error ? err.message : 'Unknown WhatsApp error',
-      };
+    if (result.success) {
+      return { success: true, channel: 'whatsapp', messageId: result.messageId };
     }
+
+    return {
+      success: false,
+      channel: 'whatsapp',
+      error: result.error ?? 'Unknown WhatsApp error',
+    };
   }
 
   /**
