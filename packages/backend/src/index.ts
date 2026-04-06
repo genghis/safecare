@@ -23,6 +23,7 @@ import settingsRoutes from './routes/settings.routes.js';
 import setupRoutes from './routes/setup.routes.js';
 import updateRoutes from './routes/update.routes.js';
 import { initQueues, closeQueues } from './jobs/index.js';
+import { initRelayForwarding } from './services/whatsapp-relay.service.js';
 
 async function main() {
   const fastify = Fastify({
@@ -82,6 +83,9 @@ async function main() {
 
   // --- Background jobs ---
   initQueues();
+
+  // --- WhatsApp relay forwarding ---
+  initRelayForwarding();
 
   // --- Graceful shutdown ---
   const shutdown = async (signal: string) => {

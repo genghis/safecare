@@ -280,6 +280,40 @@ export const driverPassengerAffinity = pgTable('driver_passenger_affinity', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+// ---------- whatsapp_lines ----------
+// Multiple WhatsApp numbers: one primary (outbound notifications) + pool for blind relay
+export const whatsappLines = pgTable('whatsapp_lines', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  label: text('label').notNull(),                          // "Main Line", "Relay #3"
+  phoneNumber: text('phone_number'),                       // E.164 once connected
+  status: text('status').default('disconnected'),          // disconnected|connecting|qr_ready|connected
+  isPrimary: boolean('is_primary').default(false),         // the main outbound notification line
+  isRelayPool: boolean('is_relay_pool').default(false),    // available for blind driver<->recipient relay
+  authDir: text('auth_dir').notNull(),                     // path to Baileys auth state
+  lastConnectedAt: timestamp('last_connected_at'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// ---------- whatsapp_relay_sessions ----------
+// Active blind relay: driver <-> pool number <-> recipient
+export const whatsappRelaySessions = pgTable('whatsapp_relay_sessions', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  whatsappLineId: uuid('whatsapp_line_id')
+    .references(() => whatsappLines.id)
+    .notNull(),
+  driverPhoneEnc: text('driver_phone_enc').notNull(),
+  recipientPhoneEnc: text('recipient_phone_enc').notNull(),
+  dispatchSessionId: uuid('dispatch_session_id').references(() => dispatchSessions.id),
+  shiftId: uuid('shift_id').references(() => shifts.id),
+  active: boolean('active').default(true),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 // ---------- intake_requests ----------
 // Raw ride/delivery requests from any channel, before coordinator processes them
 export const intakeRequests = pgTable('intake_requests', {

@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 import { config } from '../config.js';
 import { t, SupportedLocale, DEFAULT_LOCALE } from '@safecare/shared';
 import { getTwilioScrubQueue, queueSessionScrub } from '../jobs/index.js';
-import { whatsappService } from './whatsapp.service.js';
+import { whatsappPool } from './whatsapp-pool.service.js';
 
 type Channel = 'sms' | 'whatsapp' | 'signal';
 
@@ -166,11 +166,11 @@ export class NotificationService {
    * leave no server-side logs to scrub (unlike Twilio).
    */
   private async sendWhatsApp(phone: string, message: string): Promise<SendResult> {
-    if (!whatsappService.isConnected()) {
+    if (!whatsappPool.isPrimaryConnected()) {
       return { success: false, channel: 'whatsapp', error: 'WhatsApp not connected — pair from Settings' };
     }
 
-    const result = await whatsappService.sendMessage(phone, message);
+    const result = await whatsappPool.sendMessage(phone, message);
 
     if (result.success) {
       return { success: true, channel: 'whatsapp', messageId: result.messageId };

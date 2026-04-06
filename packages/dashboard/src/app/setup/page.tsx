@@ -109,11 +109,21 @@ export default function SetupPage() {
   });
   const [provisioning, setProvisioning] = useState(false);
 
-  // Step 4: Notifications
+  // Step 4: WhatsApp setup
   const [signalPhone, setSignalPhone] = useState("");
   const [twilioSid, setTwilioSid] = useState("");
   const [twilioToken, setTwilioToken] = useState("");
   const [twilioPhone, setTwilioPhone] = useState("");
+  const [waSetupStep, setWaSetupStep] = useState<1 | 2 | 3>(1);
+  const [waLines, setWaLines] = useState<Array<{
+    id: string; label: string; status: string;
+    phoneNumber: string | null; qrCode: string | null;
+    isPrimary: boolean; isRelayPool: boolean; error: string | null;
+  }>>([]);
+  const [waConnecting, setWaConnecting] = useState(false);
+  const [waError, setWaError] = useState("");
+  const [showAdvancedNotif, setShowAdvancedNotif] = useState(false);
+  const waQrPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Check setup progress on mount
   useEffect(() => {
@@ -650,55 +660,293 @@ export default function SetupPage() {
         )}
 
         {/* ================================================================ */}
-        {/* Step 4: Notification Setup */}
+        {/* Step 4: WhatsApp & Notification Setup */}
         {/* ================================================================ */}
         {step === 4 && (
           <Card>
             <CardHeader>
-              <CardTitle>{t('dashboard.setup.setupNotifications')}</CardTitle>
+              <CardTitle>{t('dashboard.setup.whatsappSetup')}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {t('dashboard.setup.notificationsDesc')}
+                {t('dashboard.setup.whatsappSetupDesc')}
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Signal */}
-              <div className="rounded-md border p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold">{t('dashboard.setup.signalRecommended')}</h3>
-                    <p className="text-xs text-muted-foreground">{t('dashboard.setup.signalDesc')}</p>
+              {/* Sub-step indicator */}
+              <div className="flex items-center gap-3">
+                {[1, 2, 3].map((s) => (
+                  <div key={s} className="flex items-center gap-2">
+                    <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium ${
+                      s < waSetupStep ? "bg-emerald-600 text-white"
+                        : s === waSetupStep ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                    }`}>
+                      {s < waSetupStep ? "\u2713" : s}
+                    </div>
+                    <span className={`text-xs ${s === waSetupStep ? "font-medium" : "text-muted-foreground"}`}>
+                      {s === 1 ? t('dashboard.setup.waStep1Label') : s === 2 ? t('dashboard.setup.waStep2Label') : t('dashboard.setup.waStep3Label')}
+                    </span>
+                    {s < 3 && <div className="w-4 h-px bg-border" />}
                   </div>
-                  <span className="text-xs bg-emerald-600/20 text-emerald-600 px-2 py-1 rounded-md font-medium">{t('dashboard.common.free')}</span>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">{t('dashboard.setup.signalPhoneLabel')}</label>
-                  <Input value={signalPhone} onChange={(e) => setSignalPhone(e.target.value)} placeholder="+1234567890" className="text-sm" />
-                </div>
+                ))}
               </div>
 
-              {/* Twilio SMS */}
-              <div className="rounded-md border p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold">{t('dashboard.setup.twilioSms')}</h3>
-                    <p className="text-xs text-muted-foreground">{t('dashboard.setup.twilioDesc')}</p>
+              {/* Sub-step 1: Get a SIM card */}
+              {waSetupStep === 1 && (
+                <div className="space-y-4">
+                  <div className="rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-5 space-y-4">
+                    <h3 className="text-base font-semibold">{t('dashboard.setup.waGetSimTitle')}</h3>
+                    <div className="space-y-3 text-sm text-muted-foreground">
+                      <div className="flex gap-3">
+                        <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">1</span>
+                        <p>{t('dashboard.setup.waGetSimStep1')}</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">2</span>
+                        <p>{t('dashboard.setup.waGetSimStep2')}</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">3</span>
+                        <p>{t('dashboard.setup.waGetSimStep3')}</p>
+                      </div>
+                    </div>
+                    <div className="rounded-md bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-700 dark:text-amber-400">
+                      {t('dashboard.setup.waSimTip')}
+                    </div>
                   </div>
-                  <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-md">{t('dashboard.common.optional')}</span>
+                  <Button onClick={() => setWaSetupStep(2)} className="w-full" size="lg">
+                    {t('dashboard.setup.waSimReady')}
+                  </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">{t('dashboard.setup.accountSid')}</label>
-                    <Input value={twilioSid} onChange={(e) => setTwilioSid(e.target.value)} placeholder="AC..." className="text-sm" />
+              )}
+
+              {/* Sub-step 2: Install WhatsApp and register */}
+              {waSetupStep === 2 && (
+                <div className="space-y-4">
+                  <div className="rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-5 space-y-4">
+                    <h3 className="text-base font-semibold">{t('dashboard.setup.waInstallTitle')}</h3>
+                    <div className="space-y-3 text-sm text-muted-foreground">
+                      <div className="flex gap-3">
+                        <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">1</span>
+                        <p>{t('dashboard.setup.waInstallStep1')}</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">2</span>
+                        <p>{t('dashboard.setup.waInstallStep2')}</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">3</span>
+                        <p>{t('dashboard.setup.waInstallStep3')}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">{t('dashboard.setup.authToken')}</label>
-                    <Input type="password" value={twilioToken} onChange={(e) => setTwilioToken(e.target.value)} placeholder="Token" className="text-sm" />
+                  <div className="flex gap-2">
+                    <Button variant="ghost" onClick={() => setWaSetupStep(1)}>{t('dashboard.common.back')}</Button>
+                    <Button onClick={() => setWaSetupStep(3)} className="flex-1" size="lg">
+                      {t('dashboard.setup.waInstallDone')}
+                    </Button>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">{t('dashboard.setup.twilioPhoneLabel')}</label>
-                  <Input value={twilioPhone} onChange={(e) => setTwilioPhone(e.target.value)} placeholder="+1234567890" className="text-sm" />
+              )}
+
+              {/* Sub-step 3: Link to SafeCare (scan QR) */}
+              {waSetupStep === 3 && (
+                <div className="space-y-4">
+                  <div className="rounded-lg border p-5 space-y-4">
+                    <h3 className="text-base font-semibold">{t('dashboard.setup.waLinkTitle')}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {t('dashboard.setup.waLinkDesc')}
+                    </p>
+
+                    {/* Check if we have a connected primary line */}
+                    {(() => {
+                      const primaryLine = waLines.find((l) => l.isPrimary);
+                      const isConnected = primaryLine?.status === 'connected';
+                      const hasQr = primaryLine?.status === 'qr_ready' && primaryLine?.qrCode;
+
+                      if (isConnected) {
+                        return (
+                          <div className="rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-4 text-center space-y-2">
+                            <div className="text-3xl">&#10003;</div>
+                            <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                              {t('dashboard.setup.waConnected')}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {primaryLine?.phoneNumber}
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="space-y-4">
+                          {/* Instructions */}
+                          <div className="rounded-md bg-muted/50 p-3 space-y-2 text-sm">
+                            <p className="font-medium">{t('dashboard.setup.waLinkInstructions')}</p>
+                            <ol className="list-decimal list-inside space-y-1 text-xs text-muted-foreground">
+                              <li>{t('dashboard.setup.waLinkStep1')}</li>
+                              <li>{t('dashboard.setup.waLinkStep2')}</li>
+                              <li>{t('dashboard.setup.waLinkStep3')}</li>
+                            </ol>
+                          </div>
+
+                          {/* QR Code area */}
+                          {hasQr ? (
+                            <div className="flex flex-col items-center gap-3 p-4 rounded-md border bg-white dark:bg-black">
+                              <img
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(primaryLine!.qrCode!)}`}
+                                alt="WhatsApp QR Code"
+                                className="w-64 h-64"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                {t('dashboard.setup.waQrScanPrompt')}
+                              </p>
+                            </div>
+                          ) : waConnecting ? (
+                            <div className="flex flex-col items-center gap-3 p-8">
+                              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                              <p className="text-sm text-muted-foreground">{t('dashboard.setup.waWaitingForQr')}</p>
+                            </div>
+                          ) : (
+                            <Button
+                              onClick={async () => {
+                                setWaError("");
+                                setWaConnecting(true);
+
+                                // Create primary line if none exists
+                                let targetLineId: string | null = null;
+                                const existing = waLines.find((l) => l.isPrimary);
+
+                                if (existing) {
+                                  targetLineId = existing.id;
+                                } else {
+                                  const createRes = await apiPost<{ id: string }>("/api/whatsapp/lines", {
+                                    label: "Main Line",
+                                    isPrimary: true,
+                                    isRelayPool: false,
+                                  });
+                                  if (createRes.ok && createRes.data?.id) {
+                                    targetLineId = createRes.data.id;
+                                    setWaLines((prev) => [...prev, {
+                                      id: createRes.data!.id, label: "Main Line",
+                                      status: "disconnected", phoneNumber: null,
+                                      qrCode: null, isPrimary: true, isRelayPool: false, error: null,
+                                    }]);
+                                  } else {
+                                    setWaError(createRes.error || "Failed to create WhatsApp line");
+                                    setWaConnecting(false);
+                                    return;
+                                  }
+                                }
+
+                                // Start connection
+                                const connectRes = await apiPost<{ status: string; qrCode?: string }>(`/api/whatsapp/lines/${targetLineId}/connect`);
+                                if (connectRes.ok && connectRes.data) {
+                                  setWaLines((prev) => prev.map((l) =>
+                                    l.id === targetLineId
+                                      ? { ...l, status: connectRes.data!.status, qrCode: connectRes.data!.qrCode ?? null }
+                                      : l
+                                  ));
+                                }
+
+                                // Start polling for QR/connection updates
+                                if (waQrPollRef.current) clearInterval(waQrPollRef.current);
+                                waQrPollRef.current = setInterval(async () => {
+                                  const qrRes = await apiGet<{ status: string; qrCode: string | null }>(`/api/whatsapp/lines/${targetLineId}/qr`);
+                                  if (qrRes.ok && qrRes.data) {
+                                    setWaLines((prev) => prev.map((l) =>
+                                      l.id === targetLineId
+                                        ? { ...l, status: qrRes.data!.status, qrCode: qrRes.data!.qrCode }
+                                        : l
+                                    ));
+                                    if (qrRes.data.status === 'connected') {
+                                      // Fetch full line data for phone number
+                                      const linesRes = await apiGet<Array<{ id: string; label: string; status: string; phoneNumber: string | null; qrCode: string | null; isPrimary: boolean; isRelayPool: boolean; error: string | null }>>("/api/whatsapp/lines");
+                                      if (linesRes.ok && linesRes.data) {
+                                        setWaLines(linesRes.data);
+                                      }
+                                      if (waQrPollRef.current) {
+                                        clearInterval(waQrPollRef.current);
+                                        waQrPollRef.current = null;
+                                      }
+                                      setWaConnecting(false);
+                                    }
+                                  }
+                                }, 2000);
+
+                                setWaConnecting(false);
+                              }}
+                              className="w-full"
+                              size="lg"
+                            >
+                              {t('dashboard.setup.waStartPairing')}
+                            </Button>
+                          )}
+
+                          {waError && (
+                            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">{waError}</div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  <Button variant="ghost" onClick={() => setWaSetupStep(2)} className="text-xs">{t('dashboard.common.back')}</Button>
                 </div>
+              )}
+
+              {/* Advanced: Signal & Twilio (collapsible) */}
+              <div className="border-t pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedNotif(!showAdvancedNotif)}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <span className={`transition-transform ${showAdvancedNotif ? "rotate-90" : ""}`}>&#9654;</span>
+                  {t('dashboard.setup.advancedChannels')}
+                </button>
+
+                {showAdvancedNotif && (
+                  <div className="mt-4 space-y-4">
+                    {/* Signal */}
+                    <div className="rounded-md border p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-sm font-semibold">{t('dashboard.setup.signalRecommended')}</h3>
+                          <p className="text-xs text-muted-foreground">{t('dashboard.setup.signalDesc')}</p>
+                        </div>
+                        <span className="text-xs bg-emerald-600/20 text-emerald-600 px-2 py-1 rounded-md font-medium">{t('dashboard.common.free')}</span>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">{t('dashboard.setup.signalPhoneLabel')}</label>
+                        <Input value={signalPhone} onChange={(e) => setSignalPhone(e.target.value)} placeholder="+1234567890" className="text-sm" />
+                      </div>
+                    </div>
+
+                    {/* Twilio SMS */}
+                    <div className="rounded-md border p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-sm font-semibold">{t('dashboard.setup.twilioSms')}</h3>
+                          <p className="text-xs text-muted-foreground">{t('dashboard.setup.twilioDesc')}</p>
+                        </div>
+                        <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-md">{t('dashboard.common.optional')}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">{t('dashboard.setup.accountSid')}</label>
+                          <Input value={twilioSid} onChange={(e) => setTwilioSid(e.target.value)} placeholder="AC..." className="text-sm" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">{t('dashboard.setup.authToken')}</label>
+                          <Input type="password" value={twilioToken} onChange={(e) => setTwilioToken(e.target.value)} placeholder="Token" className="text-sm" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">{t('dashboard.setup.twilioPhoneLabel')}</label>
+                        <Input value={twilioPhone} onChange={(e) => setTwilioPhone(e.target.value)} placeholder="+1234567890" className="text-sm" />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Map import status (small, non-blocking) */}
@@ -710,8 +958,14 @@ export default function SetupPage() {
               )}
             </CardContent>
             <CardFooter className="flex gap-2">
-              <Button data-testid="setup-skip-notifications" variant="ghost" onClick={() => setStep(5)}>{t('dashboard.setup.skipForNow')}</Button>
-              <Button data-testid="setup-continue-notifications" onClick={() => setStep(5)} className="flex-1" size="lg">{t('dashboard.common.continue')}</Button>
+              <Button data-testid="setup-skip-notifications" variant="ghost" onClick={() => {
+                if (waQrPollRef.current) { clearInterval(waQrPollRef.current); waQrPollRef.current = null; }
+                setStep(5);
+              }}>{t('dashboard.setup.skipForNow')}</Button>
+              <Button data-testid="setup-continue-notifications" onClick={() => {
+                if (waQrPollRef.current) { clearInterval(waQrPollRef.current); waQrPollRef.current = null; }
+                setStep(5);
+              }} className="flex-1" size="lg">{t('dashboard.common.continue')}</Button>
             </CardFooter>
           </Card>
         )}
