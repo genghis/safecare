@@ -5,6 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SafeCare — Mutual Aid Delivery System</title>
   <meta name="description" content="A secure, privacy-first logistics platform for managing volunteer food deliveries to at-risk families. Flash an SD card, plug in a Raspberry Pi, and go.">
+  <!--
+    Firebase Analytics (Google Analytics 4)
+    Measurement ID is wired into the safecare-maps Firebase project.
+    All page views and a small set of click events are tracked — see
+    the click handler at the bottom of this file for the full list.
+    IP addresses are anonymized; no personal data is collected.
+  -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3GWDJF4X73"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-3GWDJF4X73', {
+      anonymize_ip: true,
+      allow_ad_personalization_signals: false,
+    });
+  </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -66,8 +83,8 @@
     <span class="badge">Open Source</span>
   </div>
   <div class="hero-buttons">
-    <a href="/download" class="btn btn-large">Download SD Card Image</a>
-    <a href="https://github.com/jasontitus/safecare/blob/main/GETTING-STARTED.md" class="btn btn-outline" style="border-color:rgba(255,255,255,0.5); color:white;">Setup Guide</a>
+    <a href="/download" class="btn btn-large" data-track="download" data-track-location="hero">Download SD Card Image</a>
+    <a href="https://github.com/jasontitus/safecare/blob/main/GETTING-STARTED.md" class="btn btn-outline" style="border-color:rgba(255,255,255,0.5); color:white;" data-track="setup_guide" data-track-location="hero">Setup Guide</a>
   </div>
 </div>
 
@@ -152,8 +169,8 @@
   <div class="cta">
     <h2>Get Started</h2>
     <p>Flash the SD card image to a Raspberry Pi. A setup wizard handles everything else from your phone.</p>
-    <a href="/download" class="btn btn-large">Download Image (528 MB)</a>
-    <a href="https://github.com/jasontitus/safecare" class="btn btn-outline" style="margin-left: 12px;">View on GitHub</a>
+    <a href="/download" class="btn btn-large" data-track="download" data-track-location="cta">Download Image (528 MB)</a>
+    <a href="https://github.com/jasontitus/safecare" class="btn btn-outline" style="margin-left: 12px;" data-track="github" data-track-location="cta">View on GitHub</a>
   </div>
 
   <h2>Hardware</h2>
@@ -170,13 +187,39 @@
     Pre-built OSRM routing data for all 50 US states and 50 metro areas.
     Each deployment downloads only what it needs based on its operating region.
   </p>
-  <p style="margin-bottom:8px;"><a href="/manifest.json" style="color:#1a6b3c; font-weight:600;">manifest.json</a> — Index of all available regions</p>
+  <p style="margin-bottom:8px;"><a href="/manifest.json" style="color:#1a6b3c; font-weight:600;" data-track="manifest" data-track-location="map_data">manifest.json</a> — Index of all available regions</p>
   <p style="color:#999; font-size:14px;">Updated quarterly. Total: ~40 GB across all regions. Monthly cost: ~$1.</p>
 </div>
 
 <footer>
-  <p>SafeCare is open source software. <a href="https://github.com/jasontitus/safecare">GitHub</a> · <a href="https://github.com/jasontitus/safecare/blob/main/GETTING-STARTED.md">Setup Guide</a> · <a href="mailto:info@safecare.app">info@safecare.app</a></p>
+  <p>SafeCare is open source software. <a href="https://github.com/jasontitus/safecare" data-track="github" data-track-location="footer">GitHub</a> · <a href="https://github.com/jasontitus/safecare/blob/main/GETTING-STARTED.md" data-track="setup_guide" data-track-location="footer">Setup Guide</a> · <a href="mailto:info@safecare.app" data-track="email_contact" data-track-location="footer">info@safecare.app</a></p>
 </footer>
+
+<!--
+  Click instrumentation
+  Any element with `data-track="event_name"` fires a GA4 event when clicked.
+  Optional `data-track-location` adds a location label so the same event can
+  be distinguished by where on the page it was clicked (e.g. hero vs footer).
+  Tracked events:
+    - download (location: hero | cta)
+    - setup_guide (location: hero | footer)
+    - github (location: cta | footer)
+    - manifest (location: map_data)
+    - email_contact (location: footer)
+-->
+<script>
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-track]');
+    if (!el || typeof gtag !== 'function') return;
+    var name = el.getAttribute('data-track');
+    var location = el.getAttribute('data-track-location') || 'unknown';
+    gtag('event', name, {
+      location: location,
+      link_url: el.getAttribute('href') || null,
+      link_text: (el.textContent || '').trim().slice(0, 64),
+    });
+  }, { capture: true });
+</script>
 
 </body>
 </html>
