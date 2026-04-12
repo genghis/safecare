@@ -26,6 +26,16 @@ SAFECARE_ROOT = os.environ.get("SAFECARE_ROOT", "/opt/safecare")
 MOCK_MODE = os.environ.get("SAFECARE_MOCK", "") == "1"
 RECOVERY_MODE = os.environ.get("SAFECARE_RECOVERY", "") == "1"
 
+# Read deployment variant from .variant sentinel (written at image build time)
+_variant_path = os.path.join(SAFECARE_ROOT, ".variant")
+try:
+    with open(_variant_path) as _f:
+        VARIANT = _f.read().strip()
+except FileNotFoundError:
+    VARIANT = "safecare"
+if VARIANT not in ("safecare", "rideshare", "full"):
+    VARIANT = "safecare"
+
 app = Flask(__name__)
 app.config["WIFI_STATUS"] = "idle"
 app.config["WIFI_TARGET"] = ""
@@ -286,10 +296,19 @@ def docker_status():
                 except json.JSONDecodeError:
                     pass
 
-    core_ready = (
-        services.get("backend", {}).get("health") == "healthy"
-        and services.get("dashboard", {}).get("status") == "running"
-    )
+    # Check readiness based on which dashboard variant is deployed
+    backend_healthy = services.get("backend", {}).get("health") == "healthy"
+    if VARIANT == "rideshare":
+        dashboard_running = services.get("rideshare", {}).get("status") == "running"
+    elif VARIANT == "full":
+        dashboard_running = (
+            services.get("dashboard", {}).get("status") == "running"
+            and services.get("rideshare", {}).get("status") == "running"
+        )
+    else:
+        dashboard_running = services.get("dashboard", {}).get("status") == "running"
+
+    core_ready = backend_healthy and dashboard_running
     return jsonify({"services": services, "coreReady": core_ready})
 
 
@@ -351,8 +370,9 @@ def _connect_wifi(ssid, password):
 
 def _start_docker():
     try:
+        cmd = ["docker", "compose", "--profile", VARIANT, "up", "-d"]
         subprocess.run(
-            ["docker", "compose", "up", "-d"],
+            cmd,
             cwd=os.path.join(SAFECARE_ROOT, "docker"),
             timeout=300, capture_output=True,
         )

@@ -185,6 +185,10 @@ services:
       WHATSAPP_AUTH_DIR: /app/whatsapp-auth
       ALLOW_TEST_OTP_ECHO: ${ALLOW_TEST_OTP_ECHO:-false}
 
+  # ---------------------------------------------------------------------------
+  # SafeCare Delivery Dashboard (food/supply delivery coordination)
+  # Included in profiles: safecare, full (or when no profile is specified)
+  # ---------------------------------------------------------------------------
   dashboard:
     build:
       context: ../
@@ -200,10 +204,39 @@ services:
     environment:
       PORT: 3000
       HOSTNAME: "0.0.0.0"
+    profiles:
+      - safecare
+      - full
+
+  # ---------------------------------------------------------------------------
+  # RideShare Dashboard (ride coordination + referral network)
+  # Included in profiles: rideshare, full
+  #
+  # Same backend, same auth, same encryption — focused UI for rides.
+  # ---------------------------------------------------------------------------
+  rideshare:
+    build:
+      context: ../
+      dockerfile: packages/rideshare/Dockerfile
+    container_name: safecare-rideshare
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    depends_on:
+      - backend
+    env_file:
+      - ../.env
+    environment:
+      PORT: 3002
+      HOSTNAME: "0.0.0.0"
+    profiles:
+      - rideshare
+      - full
 
   # ---------------------------------------------------------------------------
   # Driver PWA (Progressive Web App)
   # Served as static files. Drivers access via phone browser.
+  # Shared by both SafeCare and RideShare deployments.
   # ---------------------------------------------------------------------------
   pwa:
     build:
