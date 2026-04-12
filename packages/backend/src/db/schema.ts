@@ -64,6 +64,11 @@ export const drivers = pgTable('drivers', {
   vehicleDescriptionEnc: text('vehicle_description_enc'),  // encrypted: "red ford focus"
   maxDeliveries: integer('max_deliveries').default(3),
   maxRidesPerWeek: integer('max_rides_per_week').default(10),
+  vehicleStatus: text('vehicle_status').default('unknown'),        // clean | hot | unknown
+  passengerCapacity: integer('passenger_capacity').default(4),     // seats excluding driver
+  insuranceVerified: boolean('insurance_verified').default(false),
+  insuranceNotes: text('insurance_notes'),
+  serviceRadius: text('service_radius').default('neighborhood'),   // neighborhood | metro | regional
   serviceTypes: text('service_types').array().default(['delivery']),
   languages: text('languages').array(),
   availability: jsonb('availability').default([]),  // AvailabilitySlot[]
@@ -244,12 +249,16 @@ export const shifts = pgTable('shifts', {
   dropoffLocationId: uuid('dropoff_location_id')
     .references(() => savedLocations.id)
     .notNull(),
+  serviceType: text('service_type').default('ride'),               // ride | transit_escort
   date: date('date').notNull(),
   pickupTime: time('pickup_time').notNull(),
   estimatedDurationMinutes: integer('estimated_duration_minutes').default(60),
   label: text('label'),                        // "work 1 to home"
   pickupNeighborhood: text('pickup_neighborhood'),
   dropoffNeighborhood: text('dropoff_neighborhood'),
+  requiresCleanVehicle: boolean('requires_clean_vehicle').default(false),
+  passengerCount: integer('passenger_count').default(1),
+  carSeatRequired: boolean('car_seat_required').default(false),
   status: text('status').default('open'),      // open|claimed|confirmed|in_progress|completed|cancelled|no_show
   claimedAt: timestamp('claimed_at'),
   confirmedAt: timestamp('confirmed_at'),
@@ -330,5 +339,69 @@ export const intakeRequests = pgTable('intake_requests', {
   linkedRecipientId: uuid('linked_recipient_id').references(() => recipients.id),
   linkedRideScheduleId: uuid('linked_ride_schedule_id').references(() => rideSchedules.id),
   rejectionReason: text('rejection_reason'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// ---------- referral_providers ----------
+// Vetted professionals and services that admins can search instead of 50+ person Signal chats
+export const referralProviders = pgTable('referral_providers', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  category: text('category').notNull(),            // medical, legal, automotive, etc.
+  nameEnc: text('name_enc').notNull(),             // pgp_sym_encrypt(name, DEK)
+  nameHash: text('name_hash').notNull(),           // HMAC for lookups
+  businessNameEnc: text('business_name_enc'),
+  phoneEnc: text('phone_enc'),
+  phoneHash: text('phone_hash'),
+  emailEnc: text('email_enc'),
+  addressEnc: text('address_enc'),
+  neighborhoods: text('neighborhoods').array().default([]),
+  lat: numeric('lat'),
+  lng: numeric('lng'),
+  languages: text('languages').array().default(['en']),
+  lowBono: boolean('low_bono').default(false),
+  slidingScale: boolean('sliding_scale').default(false),
+  acceptsUninsured: boolean('accepts_uninsured').default(false),
+  specialties: text('specialties').array().default([]),
+  notes: text('notes'),
+  status: text('status').default('under_review'),  // active | inactive | under_review
+  createdBy: uuid('created_by').references(() => adminUsers.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// ---------- referral_vouches ----------
+// Which admins vouch for which providers, with trust level
+export const referralVouches = pgTable('referral_vouches', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  providerId: uuid('provider_id')
+    .references(() => referralProviders.id, { onDelete: 'cascade' })
+    .notNull(),
+  adminId: uuid('admin_id')
+    .references(() => adminUsers.id)
+    .notNull(),
+  level: text('level').notNull().default('community_known'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  uniqueIndex('referral_vouches_provider_admin_unique').on(table.providerId, table.adminId),
+]);
+
+// ---------- referral_lookups ----------
+// Search audit log — what was searched, by whom
+export const referralLookups = pgTable('referral_lookups', {
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  adminId: uuid('admin_id')
+    .references(() => adminUsers.id)
+    .notNull(),
+  query: text('query'),
+  category: text('category'),
+  neighborhood: text('neighborhood'),
+  resultCount: integer('result_count').default(0),
   createdAt: timestamp('created_at').defaultNow(),
 });

@@ -17,7 +17,11 @@ export type StrictnessLevel = 'standard' | 'high' | 'maximum';
 
 export type CommunicationPreference = 'sms' | 'whatsapp';
 
-export type ServiceType = 'delivery' | 'ride';
+export type ServiceType = 'delivery' | 'ride' | 'transit_escort';
+
+export type VehicleStatus = 'clean' | 'hot' | 'unknown';
+
+export type ServiceRadius = 'neighborhood' | 'metro' | 'regional';
 
 export type ShiftStatus =
   | 'open'        // visible on shift board, no driver yet
@@ -81,12 +85,17 @@ export interface Driver {
   vehicleSize: VehicleSize;
   vehicleModel: string;
   vehicleDescription: string | null; // free-text: "red ford focus, grey hat"
-  maxDeliveries: number;        // max stops per shift based on vehicle + preference
-  maxRidesPerWeek: number;      // weekly ride capacity
-  serviceTypes: ServiceType[];  // what services this driver provides
+  vehicleStatus: VehicleStatus;      // clean / hot / unknown — gates sensitive rides
+  passengerCapacity: number;         // seats excluding driver
+  maxDeliveries: number;             // max cargo stops per shift
+  maxRidesPerWeek: number;           // weekly ride capacity
+  insuranceVerified: boolean;
+  insuranceNotes: string | null;
+  serviceRadius: ServiceRadius;      // neighborhood / metro / regional
+  serviceTypes: ServiceType[];       // what services this driver provides
   languages: string[];
   availability: AvailabilitySlot[];
-  deliveryZoneIds: string[];    // zones this driver is willing to cover
+  deliveryZoneIds: string[];         // zones this driver is willing to cover
   teamName: string;
   createdAt: Date;
 }
@@ -215,6 +224,7 @@ export interface Shift {
   rideScheduleId: string | null; // null if ad-hoc
   recipientId: string;
   driverId: string | null;       // null until claimed
+  serviceType: ServiceType;      // 'ride' or 'transit_escort'
   pickupLocationId: string;
   dropoffLocationId: string;
   date: string;                  // YYYY-MM-DD
@@ -223,6 +233,9 @@ export interface Shift {
   label: string | null;          // "work 1 to home"
   pickupNeighborhood: string | null;
   dropoffNeighborhood: string | null;
+  requiresCleanVehicle: boolean;
+  passengerCount: number;
+  carSeatRequired: boolean;
   status: ShiftStatus;
   claimedAt: Date | null;
   confirmedAt: Date | null;
@@ -340,4 +353,81 @@ export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+}
+
+// --- Referral network types ---
+
+export type ReferralCategory =
+  | 'medical'
+  | 'dental'
+  | 'veterinary'
+  | 'legal'
+  | 'immigration'
+  | 'automotive'
+  | 'housing'
+  | 'mental_health'
+  | 'childcare'
+  | 'translation'
+  | 'financial'
+  | 'employment'
+  | 'education'
+  | 'food'
+  | 'clothing'
+  | 'utilities'
+  | 'other';
+
+export type ProviderStatus = 'active' | 'inactive' | 'under_review';
+
+export type VouchLevel = 'personally_used' | 'trusted_referral' | 'community_known';
+
+export interface ReferralProvider {
+  id: string;
+  category: ReferralCategory;
+  name: string;                       // encrypted at rest
+  businessName: string | null;        // encrypted at rest
+  phone: string | null;               // encrypted at rest
+  email: string | null;               // encrypted at rest
+  address: string | null;             // encrypted at rest
+  neighborhoods: string[];            // coarse areas served
+  lat: number | null;
+  lng: number | null;
+  languages: string[];
+  lowBono: boolean;                   // offers reduced/free services
+  slidingScale: boolean;
+  acceptsUninsured: boolean;
+  specialties: string[];              // free-text tags: "family law", "brake repair"
+  notes: string | null;
+  status: ProviderStatus;
+  vouchCount: number;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ReferralVouch {
+  id: string;
+  providerId: string;
+  adminId: string;
+  adminEmail: string;
+  level: VouchLevel;
+  notes: string | null;
+  createdAt: Date;
+}
+
+/** What admins see when searching the referral directory */
+export interface ReferralSearchResult {
+  provider: ReferralProvider;
+  vouches: ReferralVouch[];
+  relevanceScore: number;
+}
+
+/** Structured lookup log — what was searched, who searched */
+export interface ReferralLookup {
+  id: string;
+  adminId: string;
+  query: string;
+  category: ReferralCategory | null;
+  neighborhood: string | null;
+  resultCount: number;
+  createdAt: Date;
 }
