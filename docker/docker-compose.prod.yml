@@ -1,9 +1,12 @@
 # Production override — uses pre-built images from GitHub Container Registry.
 # The RPi provisioner uses this instead of building images locally.
 #
-# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Usage:
+#   SafeCare only:  docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile safecare up -d
+#   RideShare only: docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile rideshare up -d
+#   Both:           docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile full up -d
 #
-# Set SAFECARE_VERSION in .env to pin to a specific release (e.g., 0.2.0).
+# Set SAFECARE_VERSION in .env to pin to a specific release (e.g., 0.4.0).
 # Defaults to "latest" if not set.
 
 services:
@@ -13,6 +16,10 @@ services:
 
   dashboard:
     image: ghcr.io/jasontitus/safecare-dashboard:${SAFECARE_VERSION:-latest}
+    build: !reset null
+
+  rideshare:
+    image: ghcr.io/jasontitus/safecare-rideshare:${SAFECARE_VERSION:-latest}
     build: !reset null
 
   pwa:

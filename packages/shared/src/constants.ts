@@ -69,6 +69,21 @@ export const INTAKE_SOURCES: Record<string, { label: string; description: string
 export const SERVICE_TYPES: Record<string, { label: string; description: string }> = {
   delivery: { label: 'Food Delivery', description: 'One-time food delivery to recipient' },
   ride: { label: 'Ride', description: 'Scheduled transportation for passenger' },
+  transit_escort: { label: 'Transit Escort', description: 'Volunteer accompanies someone on public transit' },
+};
+
+/** Vehicle security status */
+export const VEHICLE_STATUSES: Record<string, { label: string; description: string }> = {
+  clean: { label: 'Clean', description: 'Not known to law enforcement — can be used for sensitive trips' },
+  flagged: { label: 'Flagged', description: 'May be recognized — best suited for low-profile tasks only' },
+  unknown: { label: 'Unknown', description: 'Status unverified — treat as flagged until confirmed' },
+};
+
+/** Driver service radius options */
+export const SERVICE_RADII: Record<string, { label: string; description: string }> = {
+  neighborhood: { label: 'Neighborhood', description: 'Covers local neighborhood only' },
+  metro: { label: 'Metro', description: 'Point-to-point across the metro area' },
+  regional: { label: 'Regional', description: 'Willing to drive across the region' },
 };
 
 /** Strictness level descriptions for dispatch sessions */
@@ -112,3 +127,40 @@ export const DAYS_OF_WEEK = [
   { value: 'sat', label: 'Saturday', short: 'Sat' },
   { value: 'sun', label: 'Sunday', short: 'Sun' },
 ] as const;
+
+// --- Referral network constants ---
+
+/** Referral provider categories */
+export const REFERRAL_CATEGORIES: Record<string, { label: string; description: string }> = {
+  medical: { label: 'Medical', description: 'Doctors, clinics, urgent care' },
+  dental: { label: 'Dental', description: 'Dentists, oral surgery' },
+  veterinary: { label: 'Veterinary', description: 'Vets, animal care' },
+  legal: { label: 'Legal', description: 'Attorneys, paralegals, legal aid' },
+  immigration: { label: 'Immigration', description: 'Immigration attorneys, DACA, asylum assistance' },
+  automotive: { label: 'Automotive', description: 'Mechanics, body shops, towing' },
+  housing: { label: 'Housing', description: 'Landlords, shelters, housing assistance' },
+  mental_health: { label: 'Mental Health', description: 'Therapists, counselors, crisis support' },
+  childcare: { label: 'Childcare', description: 'Daycare, babysitting, after-school programs' },
+  translation: { label: 'Translation', description: 'Interpreters, document translation' },
+  financial: { label: 'Financial', description: 'Tax prep, banking, financial counseling' },
+  employment: { label: 'Employment', description: 'Job placement, resume help, training' },
+  education: { label: 'Education', description: 'Tutoring, GED, ESL classes' },
+  food: { label: 'Food', description: 'Food banks, pantries, meal programs' },
+  clothing: { label: 'Clothing', description: 'Clothing closets, donation centers' },
+  utilities: { label: 'Utilities', description: 'Utility assistance, phone plans' },
+  other: { label: 'Other', description: 'Other community resources' },
+};
+
+/** Vouch trust levels */
+export const VOUCH_LEVELS: Record<string, { label: string; description: string }> = {
+  personally_used: { label: 'Personally Used', description: 'I have personally used this provider' },
+  trusted_referral: { label: 'Trusted Referral', description: 'Referred by someone I trust' },
+  community_known: { label: 'Community Known', description: 'Known in the community but I haven\'t used them directly' },
+};
+
+/** Provider status labels */
+export const PROVIDER_STATUSES: Record<string, { label: string; description: string }> = {
+  active: { label: 'Active', description: 'Verified and available for referrals' },
+  inactive: { label: 'Inactive', description: 'No longer available or unresponsive' },
+  under_review: { label: 'Under Review', description: 'Recently added, pending more vouches' },
+};

@@ -2,5 +2,6 @@ packages:
   - "packages/shared"
   - "packages/backend"
   - "packages/dashboard"
+  - "packages/rideshare"
   - "packages/pwa"
   # packages/mobile excluded — stale React Native code, replaced by PWA

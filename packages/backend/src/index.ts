@@ -22,6 +22,8 @@ import whatsappRoutes from './routes/whatsapp.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import setupRoutes from './routes/setup.routes.js';
 import updateRoutes from './routes/update.routes.js';
+import rideRoutes from './routes/ride.routes.js';
+import referralRoutes from './routes/referral.routes.js';
 import { initQueues, closeQueues } from './jobs/index.js';
 import { initRelayForwarding } from './services/whatsapp-relay.service.js';
 
@@ -73,6 +75,8 @@ async function main() {
     await scoped.register(dashboardRoutes);
     await scoped.register(webhookRoutes);
     await scoped.register(notificationRoutes);
+    await scoped.register(rideRoutes);
+    await scoped.register(referralRoutes);
   });
 
   // --- Health check ---

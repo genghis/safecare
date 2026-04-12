@@ -1,6 +1,6 @@
-# Ride Coordination — Design Proposal
+# Ride Coordination — Design & Implementation
 
-> **Status: Proposed (refined April 2026)** — Data model v1 is in place, UI is not yet built. The screenshots below are mockups. This document was significantly revised after a second round of coordinator feedback in April 2026 — see "[Refined design — April 2026](#refined-design--april-2026)" below for what changed.
+> **Status: Implemented (April 2026)** — Backend services, API routes, and a freestanding rideshare dashboard are built. The data model includes all refined fields from coordinator feedback. See the **[Rideshare Admin Guide](RIDESHARE-GUIDE.md)** for the user-facing walkthrough.
 
 SafeCare is expanding from food delivery to include **mutual aid transportation coordination**: scheduled rides, ad-hoc rides, and public-transit escorts. This was driven by detailed feedback from coordinators in active mutual aid driving groups who currently manage rides through spreadsheets, Signal polls, and WhatsApp messages.
 
@@ -12,7 +12,7 @@ Coordinators across multiple driving groups are hitting the same bottlenecks:
 - **Scheduling is duplicated** — coordinators maintain parallel spreadsheets for their own tracking and for driver-facing views, with Signal polls filling gaps
 - **Privacy is ad-hoc** — drivers share personal cell numbers with passengers and use whatever translation app they can find
 - **Relationships matter** — driving groups strongly prioritize ongoing driver-passenger relationships, but current tools don't track or support this
-- **Cars get categorized as "clean" or "hot/known"** based on surveillance exposure, and that determines what jobs each driver can take. Coordinators currently track this in their heads or in side spreadsheets.
+- **Cars get categorized as "clean" or "flagged"** based on whether the vehicle may be recognized, and that determines what jobs each driver can take. Coordinators currently track this in their heads or in side spreadsheets.
 - **Same drivers do everything** — there's "quite a lot of double dipping" between rides and food deliveries even when they're coordinated through separate channels. The same Signal group hears "we need 5 more cars to deliver groceries today" and "mom and infant need a ride to perinatal care" within minutes of each other.
 
 SafeCare already solves many of these problems for food delivery (encrypted PII, multi-language notifications, offline maps, blind communication proxy). The same infrastructure applies directly to rides — but the **dispatching model is different**, and rides have security and capacity concerns deliveries don't.
@@ -27,7 +27,7 @@ SafeCare already solves many of these problems for food delivery (encrypted PII,
 | **Relationships** | Transactional | Ongoing, preferred pairings |
 | **Geography** | **Neighborhood clustered** — drivers cover 1-2 zones, routes are nearest-neighbor sorted | **Metro-wide** — point-to-point or round-trip across the whole region |
 | **Capacity axis** | Cargo (bags, boxes) | Passengers (seats) — separate field |
-| **Vehicle status** | Doesn't matter | **Critical** — clean vs hot determines which rides a driver can take |
+| **Vehicle status** | Doesn't matter | **Critical** — clean vs flagged determines which rides a driver can take |
 | **Locations** | Single address per recipient | Multiple named locations (home, work 1, work 2) |
 | **Data retention** | Purged within 24 hours | Schedules persist, shift history retained |
 
@@ -49,12 +49,12 @@ Key elements:
 
 ### Driver & Vehicle Profile
 
-Per-driver view showing the security primitive (clean / hot / unknown), capacity on two axes (passengers AND cargo), insurance status, service radius (neighborhood / metro / regional), service-type opt-ins, and preferred passenger pairings.
+Per-driver view showing the vehicle status (clean / flagged / unknown), capacity on two axes (passengers AND cargo), insurance status, service radius (neighborhood / metro / regional), service-type opt-ins, and preferred passenger pairings.
 
 ![Driver and Vehicle Profile](mockups/screenshots/driver-profile.png)
 
 Key elements:
-- **Vehicle status badge** — Clean / Hot / Unknown, prominent at the top of the Vehicle card. This isn't a soft preference; it gates which shifts the driver can take.
+- **Vehicle status badge** — Clean / Flagged / Unknown, prominent at the top of the Vehicle card. This isn't a soft preference; it gates which shifts the driver can take.
 - **Two capacity axes** — `4 seats` (used by ride dispatch) is independent of `~3 boxes` (used by delivery dispatch). A sedan can carry 4 passengers OR 3 grocery boxes but rarely both at once.
 - **Insurance verified** — coordinators want to know they have a current copy of insurance for the drivers covering sensitive trips.
 - **Service radius** — `Metro` selected for rides, but the driver's delivery zones are still neighborhood-clustered. Different geography models for the same driver.
@@ -140,17 +140,17 @@ open → claimed → confirmed → in_progress → completed
 
 After a second round of feedback from an active mutual aid coordinator, several pieces of the original design need revision. The schema additions for these are sketched in [`docker/migrations/004-clean-cars.sql`](../docker/migrations/004-clean-cars.sql) (proposed, not yet committed).
 
-### Vehicle status: clean vs hot/known
+### Vehicle status: clean vs flagged
 
-> "Most people's cars are considered hot/known to the feds or clean/able to be used for driving to sensitive locations or transporting passengers."
+> "Most people's cars are considered [recognized] or clean/able to be used for driving to sensitive locations or transporting passengers."
 
-This is a security primitive, not a soft preference. Every driver's vehicle gets one of three status values:
+This is an operational awareness primitive, not a soft preference. Every driver's vehicle gets one of three status values:
 
-- **Clean** — not known to law enforcement / surveillance. Can be used for sensitive trips: perinatal care, court, ICE-related appointments, abortion services, etc.
-- **Hot** — has been flagged or otherwise associated with mutual aid activity. Still useful for low-risk grocery deliveries, but should NOT be used for high-stakes rides.
+- **Clean** — not associated with mutual aid activity. Can be used for sensitive trips: perinatal care, court, immigration-related appointments, etc.
+- **Flagged** — may be recognized or associated with mutual aid activity. Still useful for low-risk grocery deliveries, but should not be used for sensitive rides.
 - **Unknown** — newer drivers or status unverified.
 
-**Schema change:** Add `vehicle_status` field to `drivers`. Add `requires_clean_vehicle` flag to `shifts`. The matching algorithm hides clean-only shifts from drivers whose vehicle is hot or unknown.
+**Schema change:** Add `vehicle_status` field to `drivers`. Add `requires_clean_vehicle` flag to `shifts`. The matching algorithm hides clean-only shifts from drivers whose vehicle is flagged or unknown.
 
 ### Capacity is two axes, not one
 
@@ -187,18 +187,25 @@ Coordinators today juggle these in one Signal group. The original design would h
 - **Volunteer-needs-ride-to-distro tracking:** I had this in the original mockup but the coordinator said it "happens somewhat organically on site" — building dedicated tracking adds admin load instead of reducing it. Removed from the refined design.
 - **Hyperlocal ride matching:** see "metro-wide" above. The original schema had rides inheriting `delivery_zone_ids` filtering — that needs to go.
 
-## What's Not Built Yet
+## Implementation Status
 
-To be clear about current status:
-
-- **Data model v1** — Done (migration `002-ride-coordination.sql`, Drizzle schema, TypeScript types)
-- **Data model v2 — clean cars + transit escort + capacity split** — Sketched in [`docker/migrations/004-clean-cars.sql`](../docker/migrations/004-clean-cars.sql), not yet committed
-- **Backend services** — Not started (CRUD, shift generation, claim/confirm flow, affinity tracking, intake processing)
-- **API routes** — Not started
-- **Dashboard UI** — Not started (the screenshots above are static HTML mockups)
-- **Driver PWA integration** — Not started (shift board in the driver app)
-- **Notifications** — Not started (shift claim alerts, day-before passenger messages)
-- **Blind communication proxy** — Schema exists, proxy logic not implemented (needed for both deliveries and rides)
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Data model v1 (base ride tables) | Done | Migration `002-ride-coordination.sql` |
+| Data model v2 (vehicle status, capacity, referrals) | Done | Migration `004-clean-cars-referrals.sql` |
+| Backend ride service | Done | Shift lifecycle, schedules, intake, affinity tracking |
+| Backend referral service | Done | Provider CRUD, vouch system, search, encrypted PII |
+| API routes (rides) | Done | 20+ endpoints under `/api/rides/` |
+| API routes (referrals) | Done | CRUD, search, vouch under `/api/referrals/` |
+| Rideshare dashboard | Done | Freestanding Next.js app on `:3002` |
+| Referral directory UI | Done | Search, add, vouch — replaces Signal group chatter |
+| Docker profiles | Done | `--profile rideshare` for standalone deployment |
+| RPi image variant | Done | `build-image.sh rideshare` produces separate image |
+| Unit tests | Done | `ride.test.ts` (15 tests), `referral.test.ts` (14 tests) |
+| E2E smoke tests | Done | `tests/rideshare-smoke.sh` (40+ tests) |
+| Driver PWA integration | Not started | Shift board in the driver app |
+| Notifications | Not started | Shift claim alerts, day-before passenger messages |
+| Blind communication proxy | Not started | Schema exists, proxy logic needed for ride relay |
 
 ## Regenerating Mockup Screenshots
 

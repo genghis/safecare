@@ -2,22 +2,38 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# SafeCare RPi Image Builder
+# SafeCare / RideShare RPi Image Builder
 #
 # Builds a flashable SD card image using pi-gen in Docker.
 # Works on ARM64 macOS (native) or x86_64 with QEMU.
 #
 # Usage:
-#   ./scripts/rpi/build/build-image.sh
+#   ./scripts/rpi/build/build-image.sh                  # SafeCare (delivery) image
+#   ./scripts/rpi/build/build-image.sh rideshare         # RideShare image
+#   ./scripts/rpi/build/build-image.sh full              # Both dashboards
+#
+# The VARIANT controls which Docker Compose profile is activated at boot:
+#   safecare  → delivery dashboard on :3000
+#   rideshare → rideshare dashboard on :3002
+#   full      → both dashboards
 #
 # Output:
-#   scripts/rpi/build/output/safecare-<date>.img.xz
+#   scripts/rpi/build/output/<variant>-<date>.img.xz
 #
 # Prerequisites:
 #   - Docker running
 #   - ~10 GB free disk space
 #   - ~30-60 min build time
 # ---------------------------------------------------------------------------
+
+VARIANT="${1:-safecare}"
+if [[ "$VARIANT" != "safecare" && "$VARIANT" != "rideshare" && "$VARIANT" != "full" ]]; then
+  echo "Usage: $0 [safecare|rideshare|full]"
+  echo "  safecare  - Food/supply delivery dashboard (default)"
+  echo "  rideshare - Ride coordination + referral network dashboard"
+  echo "  full      - Both dashboards"
+  exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
@@ -49,17 +65,30 @@ fi
 # Write pi-gen config
 # ---------------------------------------------------------------------------
 
+log "Building $VARIANT variant..."
 log "Writing pi-gen config..."
 
-cat > "$PIGEN_DIR/config" <<'EOF'
-IMG_NAME=safecare
+# Set image name and hostname based on variant
+if [ "$VARIANT" = "rideshare" ]; then
+  IMG_NAME="rideshare"
+  HOSTNAME="rideshare"
+elif [ "$VARIANT" = "full" ]; then
+  IMG_NAME="safecare-full"
+  HOSTNAME="safecare"
+else
+  IMG_NAME="safecare"
+  HOSTNAME="safecare"
+fi
+
+cat > "$PIGEN_DIR/config" <<EOF
+IMG_NAME=$IMG_NAME
 FIRST_USER_NAME=pi
 FIRST_USER_PASSWD=safecare
 ENABLE_SSH=1
 LOCALE_DEFAULT=en_US.UTF-8
 KEYBOARD_KEYMAP=us
 TIMEZONE_DEFAULT=UTC
-TARGET_HOSTNAME=safecare
+TARGET_HOSTNAME=$HOSTNAME
 # Skip stage2 (Pi desktop packages) — SafeCare stage installs what we need
 STAGE_LIST="stage0 stage1 stage-safecare"
 # Build 64-bit ARM image (required for Pi 4/5, and for native build on ARM64 macOS)
@@ -107,6 +136,10 @@ rsync -a --exclude='.git' \
          --exclude='__pycache__' \
          "$REPO_ROOT/" "$CONFIG_FILES/opt/safecare/"
 
+# Write the variant so the provisioner knows which profile to activate
+echo "$VARIANT" > "$CONFIG_FILES/opt/safecare/.variant"
+log "Variant '$VARIANT' written to .variant sentinel"
+
 # ---------------------------------------------------------------------------
 # Build the image
 # ---------------------------------------------------------------------------
@@ -145,17 +178,17 @@ if [ -n "$IMG_FILE" ]; then
 
   if [ -n "$RAW_IMG" ]; then
     log "Compressing with xz -9 (this takes a few minutes)..."
-    FINAL_NAME="safecare-${DATE}.img.xz"
+    FINAL_NAME="${IMG_NAME}-${DATE}.img.xz"
     xz -9 -T0 -k "$RAW_IMG"
     mv "${RAW_IMG}.xz" "$OUTPUT_DIR/$FINAL_NAME"
   else
-    FINAL_NAME="safecare-${DATE}.zip"
+    FINAL_NAME="${IMG_NAME}-${DATE}.zip"
     cp "$IMG_FILE" "$OUTPUT_DIR/$FINAL_NAME"
   fi
   SIZE=$(du -h "$OUTPUT_DIR/$FINAL_NAME" | cut -f1)
   log ""
   log "============================================"
-  log "  Image built successfully!"
+  log "  Image built successfully! (variant: $VARIANT)"
   log "  File: $OUTPUT_DIR/$FINAL_NAME"
   log "  Size: $SIZE"
   log "============================================"
