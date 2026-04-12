@@ -25,7 +25,7 @@ interface Driver {
 
 const vehicleStatusColors: Record<string, "success" | "destructive" | "warning"> = {
   clean: "success",
-  hot: "destructive",
+  flagged: "destructive",
   unknown: "warning",
 };
 
@@ -64,7 +64,7 @@ export default function DriversPage() {
       <div className="flex items-center gap-4 mb-6">
         <span className="text-sm text-muted-foreground">Vehicle status:</span>
         <div className="flex gap-2">
-          {["", "clean", "hot", "unknown"].map((status) => (
+          {["", "clean", "flagged", "unknown"].map((status) => (
             <button
               key={status || "all"}
               onClick={() => setVehicleFilter(status)}

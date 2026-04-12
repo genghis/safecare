@@ -64,7 +64,7 @@ export const drivers = pgTable('drivers', {
   vehicleDescriptionEnc: text('vehicle_description_enc'),  // encrypted: "red ford focus"
   maxDeliveries: integer('max_deliveries').default(3),
   maxRidesPerWeek: integer('max_rides_per_week').default(10),
-  vehicleStatus: text('vehicle_status').default('unknown'),        // clean | hot | unknown
+  vehicleStatus: text('vehicle_status').default('unknown'),        // clean | flagged | unknown
   passengerCapacity: integer('passenger_capacity').default(4),     // seats excluding driver
   insuranceVerified: boolean('insurance_verified').default(false),
   insuranceNotes: text('insurance_notes'),

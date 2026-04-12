@@ -241,7 +241,7 @@ export class RideService {
       )
       .orderBy(asc(shifts.date), asc(shifts.pickupTime));
 
-    // Filter: hide clean-only shifts from hot/unknown drivers
+    // Filter: hide clean-only shifts from flagged/unknown drivers
     if (driver.vehicleStatus !== 'clean') {
       shiftRows = shiftRows.filter(s => !s.requiresCleanVehicle);
     }

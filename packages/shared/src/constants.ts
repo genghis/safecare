@@ -75,8 +75,8 @@ export const SERVICE_TYPES: Record<string, { label: string; description: string 
 /** Vehicle security status */
 export const VEHICLE_STATUSES: Record<string, { label: string; description: string }> = {
   clean: { label: 'Clean', description: 'Not known to law enforcement — can be used for sensitive trips' },
-  hot: { label: 'Hot / Known', description: 'Associated with mutual aid activity — low-risk jobs only' },
-  unknown: { label: 'Unknown', description: 'Status unverified — treat as hot until confirmed' },
+  flagged: { label: 'Flagged', description: 'May be recognized — best suited for low-profile tasks only' },
+  unknown: { label: 'Unknown', description: 'Status unverified — treat as flagged until confirmed' },
 };
 
 /** Driver service radius options */

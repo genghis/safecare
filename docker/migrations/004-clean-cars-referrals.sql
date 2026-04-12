@@ -8,7 +8,7 @@ BEGIN;
 
 -- ========== Part 1: Vehicle & ride refinements ==========
 
--- Add vehicle security status (clean / hot / unknown)
+-- Add vehicle security status (clean / flagged / unknown)
 DO $$
 BEGIN
   IF NOT EXISTS (

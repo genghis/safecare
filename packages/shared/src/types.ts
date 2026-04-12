@@ -19,7 +19,7 @@ export type CommunicationPreference = 'sms' | 'whatsapp';
 
 export type ServiceType = 'delivery' | 'ride' | 'transit_escort';
 
-export type VehicleStatus = 'clean' | 'hot' | 'unknown';
+export type VehicleStatus = 'clean' | 'flagged' | 'unknown';
 
 export type ServiceRadius = 'neighborhood' | 'metro' | 'regional';
 
@@ -85,7 +85,7 @@ export interface Driver {
   vehicleSize: VehicleSize;
   vehicleModel: string;
   vehicleDescription: string | null; // free-text: "red ford focus, grey hat"
-  vehicleStatus: VehicleStatus;      // clean / hot / unknown — gates sensitive rides
+  vehicleStatus: VehicleStatus;      // clean / flagged / unknown — gates sensitive rides
   passengerCapacity: number;         // seats excluding driver
   maxDeliveries: number;             // max cargo stops per shift
   maxRidesPerWeek: number;           // weekly ride capacity

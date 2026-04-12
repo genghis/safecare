@@ -130,7 +130,7 @@ describe('RideService — Shift Lifecycle', () => {
   });
 
   describe('claimShift — vehicle status enforcement', () => {
-    it('rejects claim from hot vehicle on clean-only shift', async () => {
+    it('rejects claim from flagged vehicle on clean-only shift', async () => {
       // Return a clean-only shift
       dbSelectResults = [{
         id: 'shift-1',
@@ -139,7 +139,7 @@ describe('RideService — Shift Lifecycle', () => {
         passengerCount: 1,
       }];
 
-      // Override for the second select (driver lookup) to return hot vehicle
+      // Override for the second select (driver lookup) to return flagged vehicle
       const origSelectFrom = mockSelectFrom;
       let callCount = 0;
       mockSelectFrom.mockImplementation(() => {
@@ -149,7 +149,7 @@ describe('RideService — Shift Lifecycle', () => {
           return { where: () => [{ id: 'shift-1', status: 'open', requiresCleanVehicle: true, passengerCount: 1 }] };
         }
         // Second call: driver lookup
-        return { where: () => [{ vehicleStatus: 'hot' }] };
+        return { where: () => [{ vehicleStatus: 'flagged' }] };
       });
 
       const result = await service.claimShift('shift-1', 'driver-1');

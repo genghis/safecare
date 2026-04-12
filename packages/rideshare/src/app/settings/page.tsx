@@ -35,7 +35,7 @@ export default function SettingsPage() {
               <li>Shift board — week-ahead view with claim management</li>
               <li>Ride schedules — recurring templates with auto-generation</li>
               <li>Intake queue — multi-channel request processing</li>
-              <li>Driver vehicle status — clean/hot/unknown tracking</li>
+              <li>Driver vehicle status — clean/flagged/unknown tracking</li>
               <li>Referral directory — vetted provider search</li>
             </ul>
           </CardContent>
@@ -96,12 +96,12 @@ export default function SettingsPage() {
               <p>Not known to law enforcement or surveillance. Safe for sensitive trips: perinatal care, court, ICE-related appointments, abortion services.</p>
             </div>
             <div>
-              <p className="font-medium text-red-600 dark:text-red-400">Hot / Known</p>
-              <p>Flagged or associated with mutual aid activity. Still fine for grocery deliveries, but should NOT be used for high-stakes rides.</p>
+              <p className="font-medium text-red-600 dark:text-red-400">Flagged</p>
+              <p>Vehicle may be recognized. Still fine for grocery deliveries, but should not be used for sensitive rides.</p>
             </div>
             <div>
               <p className="font-medium text-amber-600 dark:text-amber-400">Unknown</p>
-              <p>Newer drivers or status unverified. Treat as hot until a coordinator confirms otherwise.</p>
+              <p>Newer drivers or status unverified. Treat as flagged until a coordinator confirms otherwise.</p>
             </div>
           </CardContent>
         </Card>
