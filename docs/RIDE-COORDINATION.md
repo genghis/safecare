@@ -1,6 +1,6 @@
-# Ride Coordination — Design Proposal
+# Ride Coordination — Design & Implementation
 
-> **Status: Proposed (refined April 2026)** — Data model v1 is in place, UI is not yet built. The screenshots below are mockups. This document was significantly revised after a second round of coordinator feedback in April 2026 — see "[Refined design — April 2026](#refined-design--april-2026)" below for what changed.
+> **Status: Implemented (April 2026)** — Backend services, API routes, and a freestanding rideshare dashboard are built. The data model includes all refined fields from coordinator feedback. See the **[Rideshare Admin Guide](RIDESHARE-GUIDE.md)** for the user-facing walkthrough.
 
 SafeCare is expanding from food delivery to include **mutual aid transportation coordination**: scheduled rides, ad-hoc rides, and public-transit escorts. This was driven by detailed feedback from coordinators in active mutual aid driving groups who currently manage rides through spreadsheets, Signal polls, and WhatsApp messages.
 
@@ -187,18 +187,25 @@ Coordinators today juggle these in one Signal group. The original design would h
 - **Volunteer-needs-ride-to-distro tracking:** I had this in the original mockup but the coordinator said it "happens somewhat organically on site" — building dedicated tracking adds admin load instead of reducing it. Removed from the refined design.
 - **Hyperlocal ride matching:** see "metro-wide" above. The original schema had rides inheriting `delivery_zone_ids` filtering — that needs to go.
 
-## What's Not Built Yet
+## Implementation Status
 
-To be clear about current status:
-
-- **Data model v1** — Done (migration `002-ride-coordination.sql`, Drizzle schema, TypeScript types)
-- **Data model v2 — clean cars + transit escort + capacity split** — Sketched in [`docker/migrations/004-clean-cars.sql`](../docker/migrations/004-clean-cars.sql), not yet committed
-- **Backend services** — Not started (CRUD, shift generation, claim/confirm flow, affinity tracking, intake processing)
-- **API routes** — Not started
-- **Dashboard UI** — Not started (the screenshots above are static HTML mockups)
-- **Driver PWA integration** — Not started (shift board in the driver app)
-- **Notifications** — Not started (shift claim alerts, day-before passenger messages)
-- **Blind communication proxy** — Schema exists, proxy logic not implemented (needed for both deliveries and rides)
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Data model v1 (base ride tables) | Done | Migration `002-ride-coordination.sql` |
+| Data model v2 (vehicle status, capacity, referrals) | Done | Migration `004-clean-cars-referrals.sql` |
+| Backend ride service | Done | Shift lifecycle, schedules, intake, affinity tracking |
+| Backend referral service | Done | Provider CRUD, vouch system, search, encrypted PII |
+| API routes (rides) | Done | 20+ endpoints under `/api/rides/` |
+| API routes (referrals) | Done | CRUD, search, vouch under `/api/referrals/` |
+| Rideshare dashboard | Done | Freestanding Next.js app on `:3002` |
+| Referral directory UI | Done | Search, add, vouch — replaces Signal group chatter |
+| Docker profiles | Done | `--profile rideshare` for standalone deployment |
+| RPi image variant | Done | `build-image.sh rideshare` produces separate image |
+| Unit tests | Done | `ride.test.ts` (15 tests), `referral.test.ts` (14 tests) |
+| E2E smoke tests | Done | `tests/rideshare-smoke.sh` (40+ tests) |
+| Driver PWA integration | Not started | Shift board in the driver app |
+| Notifications | Not started | Shift claim alerts, day-before passenger messages |
+| Blind communication proxy | Not started | Schema exists, proxy logic needed for ride relay |
 
 ## Regenerating Mockup Screenshots
 
