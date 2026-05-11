@@ -227,6 +227,17 @@ For Raspberry Pi images, the variant is baked in at build time:
 ./scripts/rpi/build/build-image.sh full           # both dashboards
 ```
 
+### Updating a Pi already in the field
+
+Dashboard and backend source is baked into `/opt/safecare` at image build time and built into Docker images on first boot. Existing Pis do **not** pull updates automatically — to ship a fix without re-flashing, SSH in and rebuild the affected service:
+
+```bash
+cd /opt/safecare && git pull
+cd docker && docker compose up -d --build dashboard   # or backend, rideshare, etc.
+```
+
+This preserves all data (postgres + redis volumes are untouched). To roll a whole fleet, re-flash with a freshly built image instead — it's a clean slate and ships the latest captive portal too.
+
 ## Security
 
 The rideshare dashboard inherits all of SafeCare's security architecture:
