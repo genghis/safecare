@@ -68,7 +68,10 @@ cd tests/integration && npx playwright test
 - PWA dashboard requires auth
 - Database encryption via API
 
-### 4. Full Flow Tests (`integration/full-flow.spec.ts`)
+### 4. Setup Wizard UI (`integration/setup-wizard-ui.spec.ts`)
+**1 Playwright browser test** — Drives the setup wizard through its UI (no API shortcuts), guarding against regressions where the operating-region step gets stuck. Asserts that Save Region is enabled on mount without requiring map pan/zoom, and that clicking it advances to the maps step with `operatingRegionSet=true`.
+
+### 5. Full Flow Tests (`integration/full-flow.spec.ts`)
 **17 Playwright tests** — Complete Detroit metro delivery flow.
 
 - Admin login

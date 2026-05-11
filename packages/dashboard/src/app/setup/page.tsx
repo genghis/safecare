@@ -94,6 +94,7 @@ export default function SetupPage() {
   } | null>(null);
   const [label, setLabel] = useState("");
   const [savingRegion, setSavingRegion] = useState(false);
+  const [tilesUnavailable, setTilesUnavailable] = useState(false);
 
   // Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -544,10 +545,20 @@ export default function SetupPage() {
                 )}
               </div>
 
+              {tilesUnavailable && (
+                <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm space-y-1" data-testid="setup-region-tiles-warning">
+                  <p className="font-medium text-amber-700 dark:text-amber-400">Map tiles aren&apos;t downloaded yet</p>
+                  <p className="text-xs text-muted-foreground">
+                    That&apos;s expected on a fresh install — they download in the next step. You can still pick your region now: search for your city above, confirm the bordered area covers your service area, then click <span className="font-medium">Save Region &amp; Continue</span>.
+                  </p>
+                </div>
+              )}
+
               <SettingsMap lat={lat} lng={lng} zoom={zoom}
                 onBoundsChange={(newBounds, newZoom, center) => {
                   setBounds(newBounds); setZoom(newZoom); setLat(center.lat); setLng(center.lng);
-                }} />
+                }}
+                onTileError={() => setTilesUnavailable(true)} />
 
               {/* Size estimate */}
               {bounds && (() => {

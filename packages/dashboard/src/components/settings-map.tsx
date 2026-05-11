@@ -17,6 +17,20 @@ interface SettingsMapProps {
   lng: number;
   zoom: number;
   onBoundsChange: (bounds: SettingsMapBounds, zoom: number, center: { lat: number; lng: number }) => void;
+  onTileError?: () => void;
+}
+
+function emitBounds(
+  map: ReturnType<typeof useMap>,
+  onBoundsChange: (bounds: SettingsMapBounds, zoom: number, center: { lat: number; lng: number }) => void,
+) {
+  const b = map.getBounds();
+  const c = map.getCenter();
+  onBoundsChange(
+    { south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() },
+    map.getZoom(),
+    { lat: c.lat, lng: c.lng },
+  );
 }
 
 function BoundsTracker({
@@ -26,15 +40,18 @@ function BoundsTracker({
 }) {
   const map = useMapEvents({
     moveend() {
-      const b = map.getBounds();
-      const c = map.getCenter();
-      onBoundsChange(
-        { south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() },
-        map.getZoom(),
-        { lat: c.lat, lng: c.lng },
-      );
+      emitBounds(map, onBoundsChange);
     },
   });
+
+  // Seed bounds immediately on mount so the parent's `bounds` state is non-null
+  // even if the user never pans/zooms. Without this, the gating button on the
+  // setup wizard stays disabled until the first moveend, which is a common
+  // "stuck at the map step" trap when tiles are blank on a fresh install.
+  useEffect(() => {
+    emitBounds(map, onBoundsChange);
+  }, [map, onBoundsChange]);
+
   return null;
 }
 
@@ -42,16 +59,21 @@ function RecenterMap({
   lat,
   lng,
   zoom,
+  onBoundsChange,
 }: {
   lat: number;
   lng: number;
   zoom: number;
+  onBoundsChange: (bounds: SettingsMapBounds, zoom: number, center: { lat: number; lng: number }) => void;
 }) {
   const map = useMap();
 
   useEffect(() => {
     map.setView([lat, lng], zoom, { animate: true });
-  }, [lat, lng, zoom, map]);
+    // Emit bounds synchronously too — setView fires moveend on real moves,
+    // but a no-op (same view) won't, leaving stale bounds.
+    emitBounds(map, onBoundsChange);
+  }, [lat, lng, zoom, map, onBoundsChange]);
 
   return null;
 }
@@ -61,6 +83,7 @@ export default function SettingsMap({
   lng,
   zoom,
   onBoundsChange,
+  onTileError,
 }: SettingsMapProps) {
   const tileUrlTemplate = resolveDashboardTileUrlTemplate();
 
@@ -72,9 +95,13 @@ export default function SettingsMap({
         className="w-full h-full"
         style={{ width: "100%", height: "100%" }}
       >
-        <TileLayer attribution="SafeCare tile cache" url={tileUrlTemplate} />
+        <TileLayer
+          attribution="SafeCare tile cache"
+          url={tileUrlTemplate}
+          eventHandlers={onTileError ? { tileerror: () => onTileError() } : undefined}
+        />
         <BoundsTracker onBoundsChange={onBoundsChange} />
-        <RecenterMap lat={lat} lng={lng} zoom={zoom} />
+        <RecenterMap lat={lat} lng={lng} zoom={zoom} onBoundsChange={onBoundsChange} />
       </MapContainer>
 
       {/* Viewport border to show "this is the selection" */}
