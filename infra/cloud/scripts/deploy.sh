@@ -41,6 +41,11 @@ info "  DRIVER_HOST    = ${DRIVER_HOST}"
 info "docker compose up -d --build"
 compose up -d --build
 
+# Caddy's Caddyfile is bind-mounted, so a content-only edit doesn't trigger
+# a compose recreate. Restart explicitly so Caddyfile changes always land.
+# ~2s of edge unavailability; acceptable for cloud-dev.
+compose restart caddy
+
 apply_pending_migrations
 
 ok "Deploy complete."
