@@ -1,0 +1,65 @@
+# SafeCare cloud-dev edge.
+#
+# Two public hostnames per instance:
+#   {$PRIMARY_HOST}    -> delivery dashboard (Next.js on :3000) + backend at /api/*
+#   {$RIDESHARE_HOST}  -> rideshare dashboard (Next.js on :3002) + backend at /api/*
+#
+# Both sites are gated by HTTP basic auth with a single shared user.
+# ADMIN_BCRYPT is the output of `caddy hash-password --plaintext '<pw>'`.
+#
+# When growing to multiple named instances on one host, copy this block
+# per instance with the instance's hostnames and ADMIN_BCRYPT, or generate
+# the file from a template at deploy time.
+
+{
+    email {$ACME_EMAIL}
+}
+
+(safecare_auth) {
+    basicauth {
+        admin {$ADMIN_BCRYPT}
+    }
+}
+
+{$PRIMARY_HOST} {
+    import safecare_auth
+
+    @api path /api/* /api
+    handle @api {
+        reverse_proxy backend:3001
+    }
+
+    handle {
+        reverse_proxy dashboard:3000
+    }
+}
+
+{$RIDESHARE_HOST} {
+    import safecare_auth
+
+    @api path /api/* /api
+    handle @api {
+        reverse_proxy backend:3001
+    }
+
+    handle {
+        reverse_proxy rideshare:3002
+    }
+}
+
+# Driver PWA. Drivers' phones hit this hostname; the PWA's same-origin
+# /api/* calls land back on the backend through this same Caddy site.
+# Auto-HTTPS gives us the secure context PWAs need (service workers,
+# IndexedDB encryption APIs, geolocation, camera for QR scanning).
+{$DRIVER_HOST} {
+    import safecare_auth
+
+    @api path /api/* /api
+    handle @api {
+        reverse_proxy backend:3001
+    }
+
+    handle {
+        reverse_proxy pwa:5173
+    }
+}

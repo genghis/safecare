@@ -1,0 +1,131 @@
+#cloud-config
+# SafeCare cloud-dev first-boot bootstrap.
+#
+# What this script does (and what it deliberately doesn't):
+#   - Installs Docker + compose plugin.
+#   - Creates a non-root `safecare` user with sudo + docker access.
+#   - Disables root SSH + password SSH.
+#   - Clones the repo from genghis/safecare to /opt/safecare.
+#   - Generates a base .env with fresh JWT + HMAC secrets.
+#   - Creates /opt/safecare-snapshots/ for baked map snapshots.
+#   - Sets up ufw as defense-in-depth alongside the Hetzner cloud firewall.
+#
+#   It does NOT bring the stack up. That happens via the deploy workflow,
+#   which knows the Caddy env vars (PRIMARY_HOST, ADMIN_BCRYPT, etc.) from
+#   GitHub secrets and SSHes in to run `docker compose up -d`.
+#
+# Variables (substituted by Terraform's templatefile()):
+#   $${ssh_public_key}  — the safecare user's authorized SSH key
+#   $${repo_url}        — git URL to clone (default genghis/safecare)
+#   $${repo_branch}     — branch to check out (default main)
+
+users:
+  - name: safecare
+    groups: [docker, sudo]
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+ssh_pwauth: false
+disable_root: true
+
+# package_upgrade pulls the full security update set, which on a fresh
+# Ubuntu image typically adds 3-8 minutes to first boot. Phase 3's deploy
+# workflow MUST wait for /var/lib/safecare/.bootstrap-ready (created at
+# the end of runcmd) before attempting any work — racing apt-upgrade
+# leaves docker half-installed and breaks the first deploy.
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - git
+  - jq
+  - zstd
+  - htop
+  - ufw
+
+write_files:
+  - path: /etc/docker/daemon.json
+    permissions: "0644"
+    content: |
+      {
+        "log-driver": "local",
+        "log-opts": { "max-size": "20m", "max-file": "5" }
+      }
+
+  # Marker file that the deploy workflow can check before trying to run
+  # compose. If this file is missing, the box hasn't finished cloud-init yet.
+  - path: /var/lib/safecare/.bootstrap-pending
+    permissions: "0644"
+    content: ""
+
+runcmd:
+  # ---- Docker install ----
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - chmod a+r /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker
+
+  # ---- Clone the repo ----
+  # Assumes the repo is public. If we ever flip it to private, replace the
+  # plain HTTPS clone with a deploy-key flow:
+  #   - inject a read-only deploy key as a cloud-init write_files entry,
+  #   - run `GIT_SSH_COMMAND='ssh -i /root/.ssh/deploy_key' git clone git@...`
+  - rm -rf /opt/safecare
+  - git clone --branch ${repo_branch} ${repo_url} /opt/safecare
+  - chown -R safecare:safecare /opt/safecare
+
+  # ---- Snapshot dir ----
+  - mkdir -p /opt/safecare-snapshots
+  - chown safecare:safecare /opt/safecare-snapshots
+
+  # ---- Generate base .env (DB/JWT/HMAC) ----
+  # Caddy env vars (PRIMARY_HOST, ADMIN_BCRYPT, etc.) are injected by the
+  # deploy workflow via shell env, not via this .env — see the comment in
+  # docker-compose.cloud.yml for why.
+  - |
+    JWT=$(openssl rand -hex 32)
+    HMAC=$(openssl rand -hex 32)
+    cat > /opt/safecare/.env <<EOF
+    DATABASE_URL=postgres://safecare:safecare@postgres:5432/safecare
+    REDIS_URL=redis://redis:6379
+    JWT_SECRET=$JWT
+    HMAC_KEY=$HMAC
+    NODE_ENV=production
+    MAP_DATA_PATH=/opt/safecare/docker/nominatim-data/data.osm.pbf
+    EOF
+    chown safecare:safecare /opt/safecare/.env
+    chmod 600 /opt/safecare/.env
+
+  # ---- Firewall ----
+  # The REAL firewall is the Hetzner Cloud one defined in Terraform — it
+  # filters at the network level, before traffic ever reaches the host.
+  # ufw here is defense-in-depth only: Docker bypasses ufw for published
+  # ports via the DOCKER-USER iptables chain, so if a container ever
+  # publishes a port we forgot to lock down, ufw will NOT save us.
+  # (Our cloud-compose override removes all `ports:` publishing; this is
+  # the safety net for "someone SSHes in and runs a stray server.")
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+
+  # ---- Mark bootstrap complete ----
+  - rm -f /var/lib/safecare/.bootstrap-pending
+  - touch /var/lib/safecare/.bootstrap-ready
+  - chown -R safecare:safecare /var/lib/safecare
+
+# Reboot if the kernel was upgraded so we land on the new one before deploys.
+power_state:
+  mode: reboot
+  condition: test -f /var/run/reboot-required
+  delay: "+1"
+  message: Rebooting to pick up kernel updates
