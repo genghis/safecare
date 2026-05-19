@@ -129,18 +129,32 @@ export default async function setupRoutes(fastify: FastifyInstance) {
             // 64-char hex string as `bytea` if left untyped, and pgcrypto
             // then sees a different key than what was used to encrypt.
             // Force `text` on both encrypt and decrypt sites.
+            request.log.warn({
+              encType: typeof encryptedValue,
+              encIsBuffer: Buffer.isBuffer(encryptedValue),
+              encPreview: typeof encryptedValue === 'string'
+                ? encryptedValue.slice(0, 30)
+                : Buffer.isBuffer(encryptedValue)
+                  ? (encryptedValue as Buffer).slice(0, 15).toString('hex')
+                  : String(encryptedValue).slice(0, 30),
+              encLen: (encryptedValue as any)?.length,
+              dekFirst10: dek.slice(0, 10),
+              dekLen: dek.length,
+            }, 'DEBUG: unlock decrypt inputs');
             const decryptResult = await db.execute<{ plaintext: string }>(
               sql`SELECT pgp_sym_decrypt(${encryptedValue}::bytea, ${dek}::text) AS plaintext`,
             );
             const plaintext = decryptResult[0]?.plaintext;
+            request.log.warn({ plaintext, matched: plaintext === 'safecare' }, 'DEBUG: unlock decrypt result');
             if (plaintext !== 'safecare') {
               return reply.code(403).send({
                 success: false,
                 error: 'Invalid encryption key',
               });
             }
-          } catch {
+          } catch (err) {
             // pgp_sym_decrypt throws on wrong key
+            request.log.error({ err }, 'DEBUG: unlock decrypt threw');
             return reply.code(403).send({
               success: false,
               error: 'Invalid encryption key',
