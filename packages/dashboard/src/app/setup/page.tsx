@@ -321,23 +321,37 @@ export default function SetupPage() {
           </p>
         </div>
 
-        {/* Progress steps */}
+        {/* Progress steps. Completed steps (s.num < step) are clickable to
+            jump back; the current step is highlighted; future steps are
+            disabled (forward nav still has to go through the per-step
+            actions so we don't leave state behind). */}
         <div className="flex items-center justify-center gap-1 mb-8">
-          {STEPS.map((s) => (
-            <div key={s.num} className="flex items-center gap-1">
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                s.num < step ? "bg-emerald-600 text-white"
-                  : s.num === step ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}>
-                {s.num < step ? "\u2713" : s.num}
+          {STEPS.map((s) => {
+            const isPast = s.num < step;
+            const isCurrent = s.num === step;
+            const goBack = () => isPast && setStep(s.num);
+            return (
+              <div key={s.num} className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={goBack}
+                  disabled={!isPast}
+                  aria-label={`Go to step ${s.num}: ${t(s.labelKey)}`}
+                  className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                    isPast ? "bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer"
+                      : isCurrent ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground cursor-not-allowed"
+                  }`}
+                >
+                  {isPast ? "\u2713" : s.num}
+                </button>
+                <span className={`text-xs hidden sm:inline ${
+                  isCurrent ? "font-medium" : "text-muted-foreground"
+                }`}>{t(s.labelKey)}</span>
+                {s.num < STEPS.length && <div className="w-4 h-px bg-border hidden sm:block" />}
               </div>
-              <span className={`text-xs hidden sm:inline ${
-                s.num === step ? "font-medium" : "text-muted-foreground"
-              }`}>{t(s.labelKey)}</span>
-              {s.num < STEPS.length && <div className="w-4 h-px bg-border hidden sm:block" />}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* ================================================================ */}
