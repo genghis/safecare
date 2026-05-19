@@ -697,53 +697,42 @@ async function downloadPbf(
     let downloadedBytes = 0;
     let lastProgressUpdate = 0;
 
-    const reader = response.body!.getReader();
+    // Bridge fetch's WHATWG ReadableStream to a Node Readable so we can
+    // pipe it to a file. The previous custom `Readable({ async read() })`
+    // wrapper stalled after the first 4KB chunk — the `async read` pattern
+    // doesn't compose cleanly with `pipeline()` and back-pressure, and the
+    // stream would never request more data after the first chunk landed.
+    const source = Readable.fromWeb(response.body as any);
     const fileStream = createWriteStream(MAP_DATA_PATH);
 
-    // Create a readable stream from the fetch reader
-    const readable = new Readable({
-      async read() {
-        try {
-          const { done, value } = await reader.read();
-          if (done) {
-            this.push(null);
-            return;
-          }
-          downloadedBytes += value.byteLength;
-
-          // Update progress in Redis at most every 2 seconds
-          const now = Date.now();
-          if (now - lastProgressUpdate > 2000) {
-            lastProgressUpdate = now;
-            const progress = totalBytes > 0
-              ? Math.round((downloadedBytes / totalBytes) * 100)
-              : 0;
-            const dlMB = (downloadedBytes / 1024 / 1024).toFixed(0);
-            const totalMB = totalBytes > 0
-              ? (totalBytes / 1024 / 1024).toFixed(0)
-              : '?';
-
-            await redis.set(
-              PROVISION_STATUS_KEY,
-              JSON.stringify({
-                status: 'downloading',
-                progress,
-                state: stateName,
-                sizeBytes: totalBytes,
-                downloadedBytes,
-                message: `Downloading ${stateName} (${dlMB} MB / ${totalMB} MB)...`,
-              }),
-            );
-          }
-
-          this.push(value);
-        } catch (err) {
-          this.destroy(err as Error);
-        }
-      },
+    source.on('data', (chunk: Buffer) => {
+      downloadedBytes += chunk.length;
+      const now = Date.now();
+      if (now - lastProgressUpdate > 2000) {
+        lastProgressUpdate = now;
+        const progress = totalBytes > 0
+          ? Math.round((downloadedBytes / totalBytes) * 100)
+          : 0;
+        const dlMB = (downloadedBytes / 1024 / 1024).toFixed(0);
+        const totalMB = totalBytes > 0
+          ? (totalBytes / 1024 / 1024).toFixed(0)
+          : '?';
+        // Fire-and-forget; we don't want Redis latency to throttle the stream.
+        redis.set(
+          PROVISION_STATUS_KEY,
+          JSON.stringify({
+            status: 'downloading',
+            progress,
+            state: stateName,
+            sizeBytes: totalBytes,
+            downloadedBytes,
+            message: `Downloading ${stateName} (${dlMB} MB / ${totalMB} MB)...`,
+          }),
+        ).catch(() => { /* don't kill the download on a Redis hiccup */ });
+      }
     });
 
-    await pipeline(readable, fileStream);
+    await pipeline(source, fileStream);
 
     // Download complete -- extract to viewport bbox if bounds provided
     let finalPath = MAP_DATA_PATH;
