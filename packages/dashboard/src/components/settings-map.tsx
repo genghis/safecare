@@ -18,6 +18,13 @@ interface SettingsMapProps {
   zoom: number;
   onBoundsChange: (bounds: SettingsMapBounds, zoom: number, center: { lat: number; lng: number }) => void;
   onTileError?: () => void;
+  // Override the tile URL template + subdomains + attribution. Used by the
+  // setup wizard to render public OpenStreetMap tiles before the local
+  // SafeCare tile cache has been provisioned (without this, the wizard's
+  // map is a useless gray box).
+  tileUrlOverride?: string;
+  tileSubdomainsOverride?: string;
+  tileAttributionOverride?: string;
 }
 
 function emitBounds(
@@ -97,8 +104,12 @@ export default function SettingsMap({
   zoom,
   onBoundsChange,
   onTileError,
+  tileUrlOverride,
+  tileSubdomainsOverride,
+  tileAttributionOverride,
 }: SettingsMapProps) {
-  const tileUrlTemplate = resolveDashboardTileUrlTemplate();
+  const tileUrlTemplate = tileUrlOverride ?? resolveDashboardTileUrlTemplate();
+  const attribution = tileAttributionOverride ?? "SafeCare tile cache";
 
   return (
     <div className="relative w-full h-[400px] rounded-md overflow-hidden">
@@ -109,8 +120,9 @@ export default function SettingsMap({
         style={{ width: "100%", height: "100%" }}
       >
         <TileLayer
-          attribution="SafeCare tile cache"
+          attribution={attribution}
           url={tileUrlTemplate}
+          subdomains={tileSubdomainsOverride ?? "abc"}
           eventHandlers={onTileError ? { tileerror: () => onTileError() } : undefined}
         />
         <BoundsTracker onBoundsChange={onBoundsChange} />

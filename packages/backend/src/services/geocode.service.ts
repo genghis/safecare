@@ -16,6 +16,7 @@ export interface ReverseGeocodingResult {
 
 const USER_AGENT = 'SafeCare/1.0 (mutual-aid-delivery)';
 const RATE_LIMIT_MS = 1100; // Nominatim requires max 1 req/sec
+const PUBLIC_NOMINATIM = 'https://nominatim.openstreetmap.org';
 
 export class GeocodeService {
   private lastRequestAt = 0;
@@ -29,31 +30,42 @@ export class GeocodeService {
     this.lastRequestAt = Date.now();
   }
 
-  async search(query: string, limit = 5, viewbox?: string): Promise<GeocodingResult[]> {
-    await this.rateLimit();
-
-    const url = new URL('/search', config.GEOCODING_URL);
-    url.searchParams.set('q', query);
-    url.searchParams.set('format', 'jsonv2');
-    url.searchParams.set('limit', String(limit));
-    url.searchParams.set('addressdetails', '1');
-    url.searchParams.set('countrycodes', 'us');
-
-    if (viewbox) {
-      url.searchParams.set('viewbox', viewbox);
-      url.searchParams.set('bounded', '0');
-    }
-
+  // Attempt the request against `base`. Returns parsed JSON on 2xx, throws
+  // on any error so callers can fall through to a fallback base.
+  private async fetchJson(base: string, path: string, params: URLSearchParams) {
+    const url = new URL(path, base);
+    for (const [k, v] of params) url.searchParams.set(k, v);
     const response = await fetch(url.toString(), {
       headers: { 'User-Agent': USER_AGENT },
       signal: AbortSignal.timeout(5000),
     });
-
     if (!response.ok) {
-      throw new Error(`Geocoding search failed: ${response.status}`);
+      throw new Error(`Nominatim ${path} failed: ${response.status} (${base})`);
+    }
+    return response.json();
+  }
+
+  async search(query: string, limit = 5, viewbox?: string): Promise<GeocodingResult[]> {
+    await this.rateLimit();
+
+    const params = new URLSearchParams();
+    params.set('q', query);
+    params.set('format', 'jsonv2');
+    params.set('limit', String(limit));
+    params.set('addressdetails', '1');
+    params.set('countrycodes', 'us');
+    if (viewbox) {
+      params.set('viewbox', viewbox);
+      params.set('bounded', '0');
     }
 
-    const data = (await response.json()) as any[];
+    let data: any[];
+    try {
+      data = (await this.fetchJson(config.GEOCODING_URL, '/search', params)) as any[];
+    } catch (err) {
+      if (!config.USE_PUBLIC_GEOCODE_FALLBACK) throw err;
+      data = (await this.fetchJson(PUBLIC_NOMINATIM, '/search', params)) as any[];
+    }
 
     return data.map((item) => ({
       displayName: item.display_name ?? '',
@@ -67,21 +79,18 @@ export class GeocodeService {
   async reverse(lat: number, lng: number): Promise<ReverseGeocodingResult> {
     await this.rateLimit();
 
-    const url = new URL('/reverse', config.GEOCODING_URL);
-    url.searchParams.set('lat', String(lat));
-    url.searchParams.set('lon', String(lng));
-    url.searchParams.set('format', 'jsonv2');
+    const params = new URLSearchParams();
+    params.set('lat', String(lat));
+    params.set('lon', String(lng));
+    params.set('format', 'jsonv2');
 
-    const response = await fetch(url.toString(), {
-      headers: { 'User-Agent': USER_AGENT },
-      signal: AbortSignal.timeout(5000),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Reverse geocoding failed: ${response.status}`);
+    let data: any;
+    try {
+      data = await this.fetchJson(config.GEOCODING_URL, '/reverse', params);
+    } catch (err) {
+      if (!config.USE_PUBLIC_GEOCODE_FALLBACK) throw err;
+      data = await this.fetchJson(PUBLIC_NOMINATIM, '/reverse', params);
     }
-
-    const data = (await response.json()) as any;
 
     return {
       displayName: data.display_name ?? '',

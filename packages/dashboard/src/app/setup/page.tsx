@@ -576,7 +576,18 @@ export default function SetupPage() {
                 onBoundsChange={(newBounds, newZoom, center) => {
                   setBounds(newBounds); setZoom(newZoom); setLat(center.lat); setLng(center.lng);
                 }}
-                onTileError={() => setTilesUnavailable(true)} />
+                onTileError={() => setTilesUnavailable(true)}
+                /* Until the local SafeCare tile cache exists, fall back to
+                 * public OpenStreetMap tiles so the wizard's region picker
+                 * isn't a useless gray box. After provisioning, this prop
+                 * drops away and we use the local cache. */
+                {...(provisionStatus.status !== "ready"
+                  ? {
+                      tileUrlOverride: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                      tileSubdomainsOverride: "abc",
+                      tileAttributionOverride: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    }
+                  : {})} />
 
               {/* Size estimate */}
               {bounds && (() => {

@@ -38,6 +38,11 @@ export const config: {
   readonly TILE_MAX_ZOOM: number;
   readonly PROVISION_SERVICE_URL: string;
   readonly ALLOW_TEST_OTP_ECHO: boolean;
+  // When local Nominatim isn't reachable (typical pre-provision setup),
+  // fall back to the public nominatim.openstreetmap.org. Defaults on so the
+  // wizard's region picker works out of the box. Set to false for fully
+  // air-gapped deployments that should NEVER egress to OSM.
+  readonly USE_PUBLIC_GEOCODE_FALLBACK: boolean;
 } = {
   DATABASE_URL:
     process.env.DATABASE_URL ??
@@ -80,6 +85,7 @@ export const config: {
   // Explicit opt-in only — never auto-enable based on NODE_ENV.
   // Set ALLOW_TEST_OTP_ECHO=true in .env or docker-compose for test harnesses.
   ALLOW_TEST_OTP_ECHO: process.env.ALLOW_TEST_OTP_ECHO === 'true',
+  USE_PUBLIC_GEOCODE_FALLBACK: process.env.USE_PUBLIC_GEOCODE_FALLBACK !== 'false',
 };
 
 /**
