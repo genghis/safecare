@@ -86,9 +86,13 @@ export default function SetupPage() {
   const [restoredSummary, setRestoredSummary] = useState<BackupImportSummary | null>(null);
 
   // Step 2: Operating region
+  // Default to US geographic center at zoom 9 (~one-state viewport). zoom 4
+  // covered the entire contiguous US, which made the wizard's initial size
+  // estimate aggregate all 50 state PBFs and show a 14 GB download warning
+  // before the user had panned anywhere.
   const [lat, setLat] = useState(39.8283);
   const [lng, setLng] = useState(-98.5795);
-  const [zoom, setZoom] = useState(4);
+  const [zoom, setZoom] = useState(9);
   const [bounds, setBounds] = useState<{
     south: number; west: number; north: number; east: number;
   } | null>(null);
