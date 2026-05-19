@@ -21,28 +21,32 @@
     }
 }
 
+# NOTE: basic auth is scoped to non-API routes only. The dashboard's fetch()
+# sets `Authorization: Bearer <jwt>` for API calls, which overrides the
+# browser's cached basic-auth header — so gating /api/* with basic auth
+# would cause every XHR to 401, and the dashboard's "401 → /login" handler
+# would loop forever. The API has its own JWT / admin / unlock checks; basic
+# auth on the HTML pages keeps the URL gated for casual discovery.
 {$PRIMARY_HOST} {
-    import safecare_auth
-
     @api path /api/* /api
     handle @api {
         reverse_proxy backend:3001
     }
 
     handle {
+        import safecare_auth
         reverse_proxy dashboard:3000
     }
 }
 
 {$RIDESHARE_HOST} {
-    import safecare_auth
-
     @api path /api/* /api
     handle @api {
         reverse_proxy backend:3001
     }
 
     handle {
+        import safecare_auth
         reverse_proxy rideshare:3002
     }
 }
@@ -52,14 +56,13 @@
 # Auto-HTTPS gives us the secure context PWAs need (service workers,
 # IndexedDB encryption APIs, geolocation, camera for QR scanning).
 {$DRIVER_HOST} {
-    import safecare_auth
-
     @api path /api/* /api
     handle @api {
         reverse_proxy backend:3001
     }
 
     handle {
+        import safecare_auth
         reverse_proxy pwa:5173
     }
 }
