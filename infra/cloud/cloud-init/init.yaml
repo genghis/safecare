@@ -98,8 +98,12 @@ runcmd:
     JWT_SECRET=$JWT
     HMAC_KEY=$HMAC
     NODE_ENV=production
-    MAP_DATA_PATH=/opt/safecare/docker/nominatim-data/data.osm.pbf
     EOF
+    # IMPORTANT: do NOT set MAP_DATA_PATH here. The backend runs in a
+    # container that bind-mounts ./nominatim-data to /app/map-data; the
+    # default container path is correct. Setting MAP_DATA_PATH to a host
+    # path makes the backend ENOENT when trying to write the downloaded
+    # PBF inside the container.
     chown safecare:safecare /opt/safecare/.env
     chmod 600 /opt/safecare/.env
 
