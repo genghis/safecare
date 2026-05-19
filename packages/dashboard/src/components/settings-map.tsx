@@ -1,7 +1,7 @@
 "use client";
 
 import { MapContainer, TileLayer, useMapEvents, useMap } from "react-leaflet";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import { resolveDashboardTileUrlTemplate } from "@/lib/api-base";
 
@@ -38,9 +38,17 @@ function BoundsTracker({
 }: {
   onBoundsChange: (bounds: SettingsMapBounds, zoom: number, center: { lat: number; lng: number }) => void;
 }) {
+  // Hold the latest callback in a ref so effects don't re-run when callers
+  // pass a fresh inline function each render (which would cause an infinite
+  // setState loop via emitBounds → parent setState → new ref → effect refire).
+  const cbRef = useRef(onBoundsChange);
+  useEffect(() => {
+    cbRef.current = onBoundsChange;
+  }, [onBoundsChange]);
+
   const map = useMapEvents({
     moveend() {
-      emitBounds(map, onBoundsChange);
+      emitBounds(map, cbRef.current);
     },
   });
 
@@ -49,8 +57,8 @@ function BoundsTracker({
   // setup wizard stays disabled until the first moveend, which is a common
   // "stuck at the map step" trap when tiles are blank on a fresh install.
   useEffect(() => {
-    emitBounds(map, onBoundsChange);
-  }, [map, onBoundsChange]);
+    emitBounds(map, cbRef.current);
+  }, [map]);
 
   return null;
 }
@@ -68,12 +76,17 @@ function RecenterMap({
 }) {
   const map = useMap();
 
+  const cbRef = useRef(onBoundsChange);
+  useEffect(() => {
+    cbRef.current = onBoundsChange;
+  }, [onBoundsChange]);
+
   useEffect(() => {
     map.setView([lat, lng], zoom, { animate: true });
     // Emit bounds synchronously too — setView fires moveend on real moves,
     // but a no-op (same view) won't, leaving stale bounds.
-    emitBounds(map, onBoundsChange);
-  }, [lat, lng, zoom, map, onBoundsChange]);
+    emitBounds(map, cbRef.current);
+  }, [lat, lng, zoom, map]);
 
   return null;
 }
