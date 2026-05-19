@@ -1,0 +1,22 @@
+# Copy to terraform.tfvars (gitignored) and fill in.
+
+# REQUIRED -------------------------------------------------------------------
+
+# Hetzner Cloud API token. Generate at:
+#   https://console.hetzner.cloud/projects → your project → Security → API tokens
+hcloud_token = "your-hcloud-api-token-here"
+
+# SSH public key that should be allowed to log in as the `safecare` user.
+# Paste the literal key string. If you'd rather read from a file, swap to:
+#   ssh_public_key = file("~/.ssh/safecare-cloud.pub")
+ssh_public_key = "ssh-ed25519 AAAA... your-key-comment"
+
+
+# OPTIONAL OVERRIDES ---------------------------------------------------------
+
+# instance_name     = "dev"            # short slug; defaults to "dev"
+# server_type       = "cpx31"          # 8GB AMD; see variables.tf for alternatives
+# location          = "hil"            # Hetzner DC; hil = Hillsboro OR
+# ssh_allowed_cidrs = ["198.51.100.0/24", "203.0.113.42/32"]
+# repo_url          = "https://github.com/genghis/safecare.git"
+# repo_branch       = "main"

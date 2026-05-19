@@ -1,0 +1,95 @@
+# Cloud-dev override layered on top of docker/docker-compose.yml.
+#
+# Differences from the base:
+#  - Hardcoded container_name removed so the compose project name namespaces
+#    everything (lets multiple instances coexist on one host).
+#  - Host port publishing removed for every service; Caddy fronts the web
+#    apps and the data services stay private to the docker network.
+#  - Caddy added as the public entrypoint (TLS + basic auth + reverse proxy).
+#  - All services get `restart: unless-stopped` even where the base didn't,
+#    for unattended operation on a cloud box.
+#
+# Usage:
+#   COMPOSE_PROJECT_NAME=safecare-dev \
+#     docker compose \
+#       -f docker/docker-compose.yml \
+#       -f infra/cloud/docker-compose.cloud.yml \
+#       --profile full up -d
+
+services:
+  postgres:
+    container_name: !reset null
+    ports: !reset []
+
+  redis:
+    container_name: !reset null
+    ports: !reset []
+
+  nominatim:
+    container_name: !reset null
+    ports: !reset []
+
+  osrm:
+    container_name: !reset null
+    ports: !reset []
+
+  signal:
+    container_name: !reset null
+    ports: !reset []
+
+  backend:
+    container_name: !reset null
+    ports: !reset []
+
+  dashboard:
+    container_name: !reset null
+    ports: !reset []
+
+  rideshare:
+    container_name: !reset null
+    ports: !reset []
+
+  pwa:
+    container_name: !reset null
+    ports: !reset []
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Path is relative to the compose *project directory*, which defaults
+      # to the first -f file's directory (docker/), not this file's. So we
+      # climb out to the repo root and back into infra/cloud.
+      - ../infra/cloud/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    environment:
+      # IMPORTANT: ADMIN_BCRYPT must be set via shell env or the compose CLI
+      # `--env-file`, NOT via the .env compose reads automatically. Bcrypt
+      # hashes contain `$` characters which docker-compose interprets as
+      # variable expansion inside .env values unless escaped to `$$`. The
+      # Phase 3 deploy workflow sets these in the SSH step's env block,
+      # which sidesteps the issue cleanly.
+      PRIMARY_HOST: ${PRIMARY_HOST:?PRIMARY_HOST must be set (e.g. dev.example.com)}
+      RIDESHARE_HOST: ${RIDESHARE_HOST:?RIDESHARE_HOST must be set}
+      DRIVER_HOST: ${DRIVER_HOST:?DRIVER_HOST must be set (the PWA hostname for phones)}
+      ADMIN_BCRYPT: ${ADMIN_BCRYPT:?ADMIN_BCRYPT must be set (caddy hash-password output, shell-injected)}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+    depends_on:
+      - dashboard
+      - rideshare
+      - backend
+      - pwa
+    # Only `full` — Caddyfile reverse-proxies to both dashboard and rideshare
+    # upstreams, so partial profiles would 502 on the missing side.
+    profiles:
+      - full
+
+volumes:
+  caddydata:
+    driver: local
+  caddyconfig:
+    driver: local

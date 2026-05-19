@@ -1,0 +1,58 @@
+name: cloud-reset-soft
+
+# Wipe app state (Postgres + Redis + WhatsApp/Signal auth) on the cloud box.
+# Map data is kept; the wizard re-runs from a clean app state.
+
+on:
+  workflow_dispatch:
+    inputs:
+      instance:
+        description: "Cloud instance name"
+        required: true
+        default: "dev"
+
+concurrency:
+  group: cloud-${{ inputs.instance }}
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SSH_USER: safecare
+      SSH_HOST: ${{ secrets.CLOUD_HOST }}
+      INSTANCE: ${{ inputs.instance }}
+
+    steps:
+      - name: Validate inputs
+        # See cloud-deploy.yml for rationale.
+        env:
+          INSTANCE_IN: ${{ inputs.instance }}
+        run: |
+          if ! [[ "$INSTANCE_IN" =~ ^[a-z0-9][a-z0-9-]{0,30}$ ]]; then
+            echo "ERROR: invalid instance name '$INSTANCE_IN'" >&2; exit 1
+          fi
+
+      - name: Set up SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CLOUD_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Run reset-soft on the box
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new "$SSH_USER@$SSH_HOST" "bash -se" <<EOF
+          set -euo pipefail
+          if [ ! -f /etc/safecare/cloud-env ]; then
+            echo "ERROR: /etc/safecare/cloud-env missing. Run the cloud-deploy workflow at least once first." >&2
+            exit 1
+          fi
+          set -a
+          source /etc/safecare/cloud-env
+          set +a
+          cd /opt/safecare
+          bash infra/cloud/scripts/reset-soft.sh --instance '$INSTANCE'
+          EOF
