@@ -125,26 +125,22 @@ export default async function setupRoutes(fastify: FastifyInstance) {
           // Canary exists — validate the DEK against it
           const encryptedValue = canaryRows[0].encrypted_value;
           try {
+            // ${dek}::text is load-bearing: postgres.js will infer a
+            // 64-char hex string as `bytea` if left untyped, and pgcrypto
+            // then sees a different key than what was used to encrypt.
+            // Force `text` on both encrypt and decrypt sites.
             const decryptResult = await db.execute<{ plaintext: string }>(
-              sql`SELECT pgp_sym_decrypt(${encryptedValue}::bytea, ${dek}) AS plaintext`,
+              sql`SELECT pgp_sym_decrypt(${encryptedValue}::bytea, ${dek}::text) AS plaintext`,
             );
             const plaintext = decryptResult[0]?.plaintext;
-            request.log.warn({
-              encValuePrefix: encryptedValue.slice(0, 40),
-              encValueLen: encryptedValue.length,
-              dekLen: dek.length,
-              plaintext,
-              matched: plaintext === 'safecare',
-            }, 'DEK canary check (debug)');
             if (plaintext !== 'safecare') {
               return reply.code(403).send({
                 success: false,
                 error: 'Invalid encryption key',
               });
             }
-          } catch (err) {
+          } catch {
             // pgp_sym_decrypt throws on wrong key
-            request.log.error({ err, encValuePrefix: encryptedValue.slice(0, 40) }, 'DEK canary decrypt threw');
             return reply.code(403).send({
               success: false,
               error: 'Invalid encryption key',
@@ -152,8 +148,9 @@ export default async function setupRoutes(fastify: FastifyInstance) {
           }
         } else {
           // No canary — first unlock. Store one for future validation.
+          // See above re: ${dek}::text.
           await db.execute(
-            sql`INSERT INTO dek_canary (id, encrypted_value) VALUES (1, pgp_sym_encrypt('safecare', ${dek}))`,
+            sql`INSERT INTO dek_canary (id, encrypted_value) VALUES (1, pgp_sym_encrypt('safecare', ${dek}::text))`,
           );
         }
       } catch {
@@ -167,7 +164,7 @@ export default async function setupRoutes(fastify: FastifyInstance) {
             )`,
           );
           await db.execute(
-            sql`INSERT INTO dek_canary (id, encrypted_value) VALUES (1, pgp_sym_encrypt('safecare', ${dek})) ON CONFLICT (id) DO NOTHING`,
+            sql`INSERT INTO dek_canary (id, encrypted_value) VALUES (1, pgp_sym_encrypt('safecare', ${dek}::text)) ON CONFLICT (id) DO NOTHING`,
           );
         } catch {
           // Non-fatal — canary is a nice-to-have for validation
