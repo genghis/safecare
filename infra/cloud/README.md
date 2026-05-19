@@ -124,3 +124,27 @@ After that, the iteration loop is:
 - Code change → `cloud-deploy` with that branch.
 - App state weird → `cloud-reset-soft`.
 - Want to test wizard end-to-end from a fresh DB → `cloud-reset-hard`.
+
+## Follow-up beads (cloud-dev backlog)
+
+- **Auto-unlock the backend after deploy.** The DEK is in-memory only, so
+  every `compose up -d` that recreates the backend forces a manual
+  /unlock step. For cloud-dev this is friction-per-deploy. Stash a
+  `DEV_DEK` GH secret, have `deploy.sh` POST it to `/api/setup/unlock`
+  after `compose up` (and idempotently — if already unlocked, no-op).
+- **Distinguish basic-auth 401 vs JWT 401 in the dashboard.** Today
+  `packages/dashboard/src/lib/api.ts:87` treats any 401 as "JWT expired
+  → /login", which compounds Caddy basic-auth failures into redirect
+  loops. Inspect the `WWW-Authenticate` header on the 401, only
+  redirect on the JWT case.
+
+- **Audit all pgcrypto call sites for missing ::text cast on the DEK.**
+  postgres.js infers 64-hex strings as `bytea` when binding without an
+  explicit type, which broke unlock (canary encrypt vs decrypt paths
+  diverged). Fixed in `setup.routes.ts` but the same pattern is in
+  `recipient.service.ts`, `driver.service.ts`, `referral.service.ts`,
+  `ride.service.ts`, `backup.service.ts`, plus inline `pgp_sym_decrypt`
+  calls in many route files. They may round-trip OK if both sides bind
+  symmetrically — or may be silently corrupting PII. Needs a round-trip
+  test per site. The centralized helper at `db/encryption.ts` should
+  also add `::text` so future call sites get it for free.
