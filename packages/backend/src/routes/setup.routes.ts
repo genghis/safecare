@@ -115,57 +115,34 @@ export default async function setupRoutes(fastify: FastifyInstance) {
 
       const { dek } = parsed.data;
 
-      // Check if a canary row exists and validate the DEK against it
+      // Check if a canary row exists and validate the DEK against it.
+      //
+      // The encrypted_value column is TEXT (it holds the `\xHEX...` text
+      // representation of bytea). Reading as TEXT, then re-sending as a
+      // parameter with `::bytea`, mangles the bytes via postgres.js's
+      // parameter serialization. Cast to bytea in the SELECT so the
+      // value comes back as a Buffer (binary) and can be sent back as
+      // bytea cleanly. Same applies for ${dek}::text — see below.
       try {
-        const canaryRows = await db.execute<{ encrypted_value: string }>(
-          sql`SELECT encrypted_value FROM dek_canary WHERE id = 1`,
+        const canaryRows = await db.execute<{ encrypted_value: Buffer }>(
+          sql`SELECT encrypted_value::bytea AS encrypted_value FROM dek_canary WHERE id = 1`,
         );
 
         if (canaryRows.length > 0) {
-          // Canary exists — validate the DEK against it
-          const encryptedValue = canaryRows[0].encrypted_value;
-          // DIAGNOSTIC: same-statement encrypt+decrypt with the SAME dek
-          // parameter. If this fails, postgres.js is corrupting the binding.
-          // If this succeeds, the column round-trip is to blame.
+          const encryptedBytes = canaryRows[0].encrypted_value;
           try {
-            const roundTrip = await db.execute<{ rt: string }>(
-              sql`SELECT pgp_sym_decrypt(pgp_sym_encrypt('hello', ${dek}::text), ${dek}::text) AS rt`,
-            );
-            request.log.warn({ rt: roundTrip[0]?.rt }, 'DEBUG: inline round-trip');
-          } catch (err) {
-            request.log.error({ err }, 'DEBUG: inline round-trip threw');
-          }
-          try {
-            // ${dek}::text is load-bearing: postgres.js will infer a
-            // 64-char hex string as `bytea` if left untyped, and pgcrypto
-            // then sees a different key than what was used to encrypt.
-            // Force `text` on both encrypt and decrypt sites.
-            request.log.warn({
-              encType: typeof encryptedValue,
-              encIsBuffer: Buffer.isBuffer(encryptedValue),
-              encPreview: typeof encryptedValue === 'string'
-                ? encryptedValue.slice(0, 30)
-                : Buffer.isBuffer(encryptedValue)
-                  ? (encryptedValue as Buffer).slice(0, 15).toString('hex')
-                  : String(encryptedValue).slice(0, 30),
-              encLen: (encryptedValue as any)?.length,
-              dekFirst10: dek.slice(0, 10),
-              dekLen: dek.length,
-            }, 'DEBUG: unlock decrypt inputs');
             const decryptResult = await db.execute<{ plaintext: string }>(
-              sql`SELECT pgp_sym_decrypt(${encryptedValue}::bytea, ${dek}::text) AS plaintext`,
+              sql`SELECT pgp_sym_decrypt(${encryptedBytes}, ${dek}::text) AS plaintext`,
             );
             const plaintext = decryptResult[0]?.plaintext;
-            request.log.warn({ plaintext, matched: plaintext === 'safecare' }, 'DEBUG: unlock decrypt result');
             if (plaintext !== 'safecare') {
               return reply.code(403).send({
                 success: false,
                 error: 'Invalid encryption key',
               });
             }
-          } catch (err) {
+          } catch {
             // pgp_sym_decrypt throws on wrong key
-            request.log.error({ err }, 'DEBUG: unlock decrypt threw');
             return reply.code(403).send({
               success: false,
               error: 'Invalid encryption key',
