@@ -124,6 +124,17 @@ export default async function setupRoutes(fastify: FastifyInstance) {
         if (canaryRows.length > 0) {
           // Canary exists — validate the DEK against it
           const encryptedValue = canaryRows[0].encrypted_value;
+          // DIAGNOSTIC: same-statement encrypt+decrypt with the SAME dek
+          // parameter. If this fails, postgres.js is corrupting the binding.
+          // If this succeeds, the column round-trip is to blame.
+          try {
+            const roundTrip = await db.execute<{ rt: string }>(
+              sql`SELECT pgp_sym_decrypt(pgp_sym_encrypt('hello', ${dek}::text), ${dek}::text) AS rt`,
+            );
+            request.log.warn({ rt: roundTrip[0]?.rt }, 'DEBUG: inline round-trip');
+          } catch (err) {
+            request.log.error({ err }, 'DEBUG: inline round-trip threw');
+          }
           try {
             // ${dek}::text is load-bearing: postgres.js will infer a
             // 64-char hex string as `bytea` if left untyped, and pgcrypto
