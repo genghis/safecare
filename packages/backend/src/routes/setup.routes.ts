@@ -115,18 +115,28 @@ export default async function setupRoutes(fastify: FastifyInstance) {
 
       const { dek } = parsed.data;
 
-      // Check if a canary row exists and validate the DEK against it
+      // Check if a canary row exists and validate the DEK against it.
+      //
+      // The encrypted_value column is TEXT (holding bytea's `\xHEX...`
+      // text representation). If we read it back as a JS string and
+      // re-send it with a ::bytea cast in the next query, the bytes
+      // pgcrypto receives don't match what was originally written and
+      // decryption fails with "Wrong key or corrupt data" — making the
+      // SAME DEK that just succeeded fail on every subsequent unlock
+      // (i.e. every time the backend restarts and the in-memory DEK is
+      // wiped). Cast to bytea in the SELECT so the value comes back as
+      // a Buffer and re-binds cleanly.
       try {
-        const canaryRows = await db.execute<{ encrypted_value: string }>(
-          sql`SELECT encrypted_value FROM dek_canary WHERE id = 1`,
+        const canaryRows = await db.execute<{ encrypted_value: Buffer }>(
+          sql`SELECT encrypted_value::bytea AS encrypted_value FROM dek_canary WHERE id = 1`,
         );
 
         if (canaryRows.length > 0) {
           // Canary exists — validate the DEK against it
-          const encryptedValue = canaryRows[0].encrypted_value;
+          const encryptedBytes = canaryRows[0].encrypted_value;
           try {
             const decryptResult = await db.execute<{ plaintext: string }>(
-              sql`SELECT pgp_sym_decrypt(${encryptedValue}::bytea, ${dek}) AS plaintext`,
+              sql`SELECT pgp_sym_decrypt(${encryptedBytes}, ${dek}) AS plaintext`,
             );
             const plaintext = decryptResult[0]?.plaintext;
             if (plaintext !== 'safecare') {
