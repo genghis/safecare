@@ -129,14 +129,22 @@ export default async function setupRoutes(fastify: FastifyInstance) {
               sql`SELECT pgp_sym_decrypt(${encryptedValue}::bytea, ${dek}) AS plaintext`,
             );
             const plaintext = decryptResult[0]?.plaintext;
+            request.log.warn({
+              encValuePrefix: encryptedValue.slice(0, 40),
+              encValueLen: encryptedValue.length,
+              dekLen: dek.length,
+              plaintext,
+              matched: plaintext === 'safecare',
+            }, 'DEK canary check (debug)');
             if (plaintext !== 'safecare') {
               return reply.code(403).send({
                 success: false,
                 error: 'Invalid encryption key',
               });
             }
-          } catch {
+          } catch (err) {
             // pgp_sym_decrypt throws on wrong key
+            request.log.error({ err, encValuePrefix: encryptedValue.slice(0, 40) }, 'DEK canary decrypt threw');
             return reply.code(403).send({
               success: false,
               error: 'Invalid encryption key',
