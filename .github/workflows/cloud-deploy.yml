@@ -1,0 +1,110 @@
+name: cloud-deploy
+
+# Manual deploy of a branch onto the shared cloud-dev box.
+# See infra/cloud/README.md for the secrets this workflow requires.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: true
+        default: "main"
+      instance:
+        description: "Cloud instance name (matches docker compose project namespacing)"
+        required: true
+        default: "dev"
+
+# Serialize deploy/reset on the same instance so a soft-reset doesn't
+# stomp a half-finished deploy (or vice versa).
+concurrency:
+  group: cloud-${{ inputs.instance }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SSH_USER: safecare
+      SSH_HOST: ${{ secrets.CLOUD_HOST }}
+      BRANCH: ${{ inputs.branch }}
+      INSTANCE: ${{ inputs.instance }}
+
+    steps:
+      - name: Validate inputs
+        # workflow_dispatch inputs are interpolated into shell heredocs
+        # below, so the runner — and anyone with workflow_dispatch perms —
+        # could execute arbitrary commands on the box. Validate against
+        # conservative regexes before they reach any shell.
+        env:
+          BRANCH_IN: ${{ inputs.branch }}
+          INSTANCE_IN: ${{ inputs.instance }}
+        run: |
+          if ! [[ "$BRANCH_IN" =~ ^[A-Za-z0-9._/-]{1,200}$ ]]; then
+            echo "ERROR: invalid branch name '$BRANCH_IN'" >&2; exit 1
+          fi
+          if ! [[ "$INSTANCE_IN" =~ ^[a-z0-9][a-z0-9-]{0,30}$ ]]; then
+            echo "ERROR: invalid instance name '$INSTANCE_IN'" >&2; exit 1
+          fi
+
+      - name: Set up SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CLOUD_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Stage cloud-env locally
+        # Use printf %q so values pass through shell-safely. Critical for
+        # ADMIN_BCRYPT, which contains literal `$` characters that would
+        # otherwise be interpreted by anything that re-parses the file.
+        env:
+          PRIMARY_HOST: ${{ secrets.PRIMARY_HOST }}
+          RIDESHARE_HOST: ${{ secrets.RIDESHARE_HOST }}
+          DRIVER_HOST: ${{ secrets.DRIVER_HOST }}
+          ADMIN_BCRYPT: ${{ secrets.ADMIN_BCRYPT }}
+          ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
+        run: |
+          {
+            printf 'export PRIMARY_HOST=%q\n'   "$PRIMARY_HOST"
+            printf 'export RIDESHARE_HOST=%q\n' "$RIDESHARE_HOST"
+            printf 'export DRIVER_HOST=%q\n'    "$DRIVER_HOST"
+            printf 'export ADMIN_BCRYPT=%q\n'   "$ADMIN_BCRYPT"
+            printf 'export ACME_EMAIL=%q\n'     "$ACME_EMAIL"
+          } > cloud-env
+
+      - name: Wait for cloud-init to finish first-boot bootstrap
+        # If the box is brand-new, cloud-init may still be running apt-upgrade.
+        # The marker is touched at the very end of runcmd; wait up to 20 min.
+        run: |
+          for _ in $(seq 1 120); do
+            if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 \
+                  "$SSH_USER@$SSH_HOST" \
+                  "test -f /var/lib/safecare/.bootstrap-ready"; then
+              echo "Bootstrap ready."
+              exit 0
+            fi
+            echo "Waiting for /var/lib/safecare/.bootstrap-ready..."
+            sleep 10
+          done
+          echo "ERROR: bootstrap-ready marker never appeared (20min timeout)" >&2
+          exit 1
+
+      - name: Push cloud-env to box
+        run: |
+          scp -o StrictHostKeyChecking=accept-new cloud-env "$SSH_USER@$SSH_HOST:/tmp/cloud-env"
+          ssh -o StrictHostKeyChecking=accept-new "$SSH_USER@$SSH_HOST" \
+            "sudo install -D -m 0640 -o $SSH_USER -g $SSH_USER /tmp/cloud-env /etc/safecare/cloud-env && rm /tmp/cloud-env"
+
+      - name: Check out branch on box + deploy
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new "$SSH_USER@$SSH_HOST" "bash -se" <<EOF
+          set -euo pipefail
+          cd /opt/safecare
+          git fetch --all --prune
+          git checkout '$BRANCH'
+          git reset --hard 'origin/$BRANCH'
+          bash infra/cloud/scripts/deploy.sh --instance '$INSTANCE'
+          EOF

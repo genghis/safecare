@@ -1,0 +1,68 @@
+name: cloud-reset-hard
+
+# Wipe everything on the cloud box (app data + map data). Restores from
+# /opt/safecare-snapshots/maps-<instance>.tar.zst if it exists.
+
+on:
+  workflow_dispatch:
+    inputs:
+      instance:
+        description: "Cloud instance name"
+        required: true
+        default: "dev"
+      restore:
+        description: "Restore from snapshot if present?"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+concurrency:
+  group: cloud-${{ inputs.instance }}
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SSH_USER: safecare
+      SSH_HOST: ${{ secrets.CLOUD_HOST }}
+      INSTANCE: ${{ inputs.instance }}
+      RESTORE_FLAG: ${{ inputs.restore == 'false' && '--no-restore' || '' }}
+
+    steps:
+      - name: Validate inputs
+        # See cloud-deploy.yml for rationale. The `restore` input is a
+        # GH choice — runtime values are already constrained to true/false.
+        env:
+          INSTANCE_IN: ${{ inputs.instance }}
+        run: |
+          if ! [[ "$INSTANCE_IN" =~ ^[a-z0-9][a-z0-9-]{0,30}$ ]]; then
+            echo "ERROR: invalid instance name '$INSTANCE_IN'" >&2; exit 1
+          fi
+
+      - name: Set up SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CLOUD_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Run reset-hard on the box
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new "$SSH_USER@$SSH_HOST" "bash -se" <<EOF
+          set -euo pipefail
+          if [ ! -f /etc/safecare/cloud-env ]; then
+            echo "ERROR: /etc/safecare/cloud-env missing. Run the cloud-deploy workflow at least once first." >&2
+            exit 1
+          fi
+          set -a
+          source /etc/safecare/cloud-env
+          set +a
+          cd /opt/safecare
+          bash infra/cloud/scripts/reset-hard.sh --instance '$INSTANCE' $RESTORE_FLAG
+          EOF
